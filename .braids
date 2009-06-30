@@ -1,0 +1,8 @@
+--- 
+dojo: 
+  squashed: false
+  url: git://github.com/dojo/dojo.git
+  type: git
+  revision: e138c9b407ae575f6febcb226ca90e5177e1f555
+  branch: master
+  remote: braid/dojo
