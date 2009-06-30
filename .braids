@@ -1,4 +1,11 @@
 --- 
+dojox: 
+  squashed: false
+  url: git://github.com/dojo/dojox.git
+  type: git
+  revision: bd367ef1c5e825733777b6add18b333731cad069
+  branch: master
+  remote: braid/dojox
 dojo: 
   squashed: false
   url: git://github.com/dojo/dojo.git
