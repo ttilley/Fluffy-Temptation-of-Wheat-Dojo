@@ -6,6 +6,13 @@ dojox:
   revision: bd367ef1c5e825733777b6add18b333731cad069
   branch: master
   remote: braid/dojox
+util: 
+  squashed: false
+  url: git://github.com/dojo/util.git
+  type: git
+  revision: 37fd19680ad1f3cde6e3470eafbe3f92134c3b32
+  branch: master
+  remote: braid/util
 dojo: 
   squashed: false
   url: git://github.com/dojo/dojo.git
