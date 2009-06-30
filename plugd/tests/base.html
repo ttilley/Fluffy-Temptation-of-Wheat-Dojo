@@ -1,0 +1,416 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+	"http://www.w3.org/TR/html4/strict.dtd">
+<html>
+	<head>
+		<title>Testing dojo.fx</title>
+		
+		<style type="text/css">
+			.thing {
+				margin:0; padding:0;
+				width:200px;
+				height:200px;
+			}
+			.cb {
+				height:100px;
+				width:400px;
+				padding:20px;
+			}
+		</style>
+		
+		<script type="text/javascript" src="../../dojo/dojo.js" djConfig="isDebug: true"></script>
+
+		<script type="text/javascript">
+			dojo.require("doh.runner");
+			dojo.require("dojo.NodeList-manipulate");
+			dojo.require("dojo.NodeList-traverse");
+			dojo.require("plugd.base");
+			
+			dojo.addOnLoad(function(){
+				doh.register("t", 
+					[
+					
+						function show(t){
+							
+							dojo.show("showMe");
+							var s = dojo.style("showMe","display");
+							t.f(s == "none");
+							
+						},
+						
+						function hide(t){
+							
+							dojo.hide("showMe");
+							var s = dojo.style("showMe","display");
+							t.is(s, "none");
+							
+						},
+						
+						function toggle(t){
+
+							dojo.toggle("showMe");
+							var s = dojo.style("showMe","display");
+							t.f(s == "none");
+						},
+						
+						// FIXME: need async tests for "slow", "fast", and "mild" -- ugh
+												
+						function destroy(t){
+							
+							dojo.query("#bar").destroy();
+							t.is(undefined, dojo.byId("bar"));
+							
+						},
+												
+						function create(t){
+						
+							var n = dojo.create("div");
+							dojo.addClass(n,"createdDiv");
+							t.t(dojo.hasClass(n,"createdDiv"));
+							dojo.place(n, dojo.body());
+							t.is(n, dojo.query("div.createdDiv")[0]);	
+						},
+						
+						function createFromString(t){
+							
+							var n = dojo.create("<div class='bar'><p class='baz'>hi</p></div>");
+							dojo.place(n, dojo.body());
+							t.is(1, dojo.query("div.bar > p.baz").length);
+							
+						},
+						
+						function createTwice(t){
+						
+							var holder = dojo.create("div");
+							dojo.place(holder, dojo.body());
+							
+							// create two nodes before placing them anywhere:
+							var n1 = dojo.create("<p class='once'>hi</p>");
+							var n2 = dojo.create("<div class='once'>hi</div>");
+							// _now_ place them:
+							dojo.place(n1, holder);
+							dojo.place(n2, holder);
+							
+							t.is(1, dojo.query("p.once").length);
+							t.is(1, dojo.query("div.once").length);
+							t.is(2, dojo.query(".once").length);
+							
+						},
+						
+						function createStringQuery(t){
+						
+							dojo.query("#foo")
+								.create("<p class='created'>created</p>")
+									.removeClass('created')
+									.addClass('changed')
+									.appendTo("#foo")
+								.end()
+								// do more with id="foo" matches:
+								// ...
+							;
+								
+							var n = dojo.query("p.changed");
+							t.is(1, n.length)
+							t.f(dojo.hasClass(n[0], "created"));
+							
+						},
+						
+//						function wrapList(t){
+//							
+//							dojo.query("#foo")
+//								.wrap("div", true)
+//									.addClass("hasBar")
+//								.end()
+//								.addClass("innerBar")
+//							;
+//								
+//							var n = dojo.query(".hasBar > .innerBar").length;
+//							t.is(1, n);
+//							
+//						},
+//						
+						function get(t){
+							if(dojo.NodeList.prototype.__compatMode){
+								t.is(dojo.byId("appendTest"), dojo.query("#appendTest").get());
+							}else{
+								t.t(true); // always pass in non-compat mode, function doesn't exist
+							}
+						},
+						
+						function hoverAPI_both(t){
+							dojo.query("#foo > li").hover(function(e){ 
+								t.is("mouseover", e.type);
+							}, function(e){ 
+								t.is("mouseout", e.type);
+							});
+						},
+						
+						function hoverAPI_one(t){
+							dojo.query("#foo > li").hover(function(e){ 
+								
+							});
+							// if no errors thrown ...
+						},
+						
+						function hoverClass(t){
+							
+							dojo.query("#foo > li").hoverClass("over");
+							// no errors thrown. need UI testing.
+							
+						},
+						
+						function val_get(t){
+							var v = dojo.query("#withval").val();
+							t.is(v, "baz");
+						},
+						
+						function val_set(t){
+							dojo.query("#withval").val("bar");
+							var v = dojo.query("#withval").val();
+							t.is(v, "bar");
+						},
+						
+//						function val_multi(t){
+//						
+//							var l = dojo.query("#withval, #newval").val();
+//							console.dir(l);
+//							t.is(2, l.length);
+//							t.is(l[0], dojo.byId("withval").value);
+//							t.is(l[1], dojo.byId("newval").value);
+//						},
+						
+						function val_multi_set(t){
+							var n = "newValue";
+							dojo.query("#withval, #newval").val(n);
+							t.is(n, dojo.byId("withval").value);
+							t.is(n, dojo.byId("newval").value);
+						},
+						
+						function generate_custom(t){
+							var id = dojo.generateId("my_");
+							t.is("my_4", id);
+						},
+						
+						function generate_plain(t){
+							var id = dojo.generateId();
+							t.t(dojo.isString(id));
+							t.is(undefined, dojo.byId(id));
+						},
+						
+						function magic_query(t){
+							dojo.query("<div class='fazzle'>poo</div>")
+								.place(dojo.body());
+								
+							var n = dojo.query(".fazzle");
+							
+							t.is(n.length, 1)	
+							t.is(n[0].innerHTML,"poo");
+						},
+						
+						function magic_chain(t){
+							dojo.query("<a href='foo.html'>bar</a>")
+								.addClass("link")
+								.onclick(dojo.stopEvent)
+								.place(dojo.body())
+							;
+							t.is(dojo.query(".link").length, 1)
+						},
+						
+						function qw_basic(t){
+							t.is(3, dojo.qw("a b c").length);
+						},
+						
+						function qw_whitespace(t){
+							t.is(4, dojo.qw("a     b      c     d").length);
+						},
+						
+						function qw_mixed(t){
+							t.is(8, dojo.qw("this, is a + fun + test !!!").length);
+						},
+						
+						function wq_single(t){
+							var str = "asinglelinewithnowhitespace";
+							var a = dojo.qw(str);
+							t.is(1, a.length);
+							t.is(str, a[0]);
+						},
+						
+						function qw_null(t){
+							var n = dojo.qw();
+							t.is(0, n.length);
+							t.t(dojo.isArray(n));
+						},
+						
+						function wq_falsly(t){
+							
+							var n = dojo.qw(false);
+							t.is(0, n.length);
+							t.t(dojo.isArray(n));
+							
+							n = dojo.qw(undefined);
+							t.is(0, n.length);
+							t.t(dojo.isArray(n));
+							
+						},
+						
+						function bacicOnLoad(t){
+							dojo.load("dojo.behavior", function(){
+								t.t(dojo.isFunction(dojo.behavior.add));
+							});
+						},
+						
+						function shorthandaddOnLoad(t){
+							dojo.load(function(){
+								t.t(true);
+							});
+						},
+						
+						function abasic(t){
+							dojo.load("dojo.NodeList-fx");
+						},
+						
+						function basicMultiple(t){
+							dojo.load("dojo.dnd.Source", "dojo.data.ItemFileReadStore");
+							dojo.addOnLoad(function(){
+								t.t(dojo.isFunction(dojo.data.ItemFileReadStore));
+							})
+						},
+						
+						function multipleOnLoad(t){
+							dojo.load("dojo.string", "dojo.date", function(){
+								t.t(dojo.isFunction(dojo.string.substitute));
+							});
+						},
+						
+						function wq_nullstring(t){
+							var x = dojo.qw("");
+							t.is(0, x.length);
+							t.t(dojo.isArray(x));
+						},
+						
+						function pubsub(t){
+							// test enhanced dojo.pub function
+							dojo.subscribe("foo", function(){
+								t.is(1, arguments.length);
+								t.is(1, arguments[0]);
+							});
+							dojo.pub("foo", 1);
+						},
+						
+						function each(t){
+						
+							var ob = {
+								a:"b", c:"d", "1":"d", e:function(arg){}
+							};
+							
+							var x = 0;
+							dojo.forIn(ob, function(value, key){
+								x++;
+							});
+							
+							t.is(4, x);
+							
+							dojo.forIn(ob, function(_, __, dict){
+								t.is(ob, dict);
+							});
+							
+							dojo.forIn(ob, function(val, key){
+								t.is(this, ob);
+								t.is(ob[key], this[key]);
+								t.is(this[key], val);
+							}, ob);
+						
+						},
+												
+						function eachWithScope(t){
+							
+							var obj = {
+								a:"b"
+							};
+							
+							dojo.forIn(obj, function(item, key){
+								t.is(obj, this);
+								t.is("b", item);
+								t.is(obj.a, item);
+								t.is(this.a, item);
+								t.is("a", key);
+							}, obj);
+							
+						},
+						
+						function size_basic(t){
+							var s = dojo.query("#sizeTest").size();
+							t.is(200, s.w);
+							t.is(200, s.h);
+						},
+						
+						function size_multi(t){
+							
+							var s = dojo.query(".thing").size();
+							dojo.forEach(s, function(size){
+								t.is(200, size.w);
+								t.is(200, size.h);
+							});
+							
+						},
+						
+						function size_contentBox(t){
+						
+							var s = dojo.query(".cb").size("contentBox");
+							t.is(400, s.w);
+							t.is(100, s.h);
+							
+						},
+						
+						function size_coords(t){
+							var s = dojo.query(".cb").size("coords");
+							t.is(440, s.w);
+							t.is(140, s.h);
+						},
+						
+						// globals are borked after this test:
+						function conflict(t){
+							dojo.conflict();
+							t.t(dojo.isFunction($));
+						},
+						
+						function conflict_query(t){
+							t.is(1, $("#foo").length);
+						}
+					]
+				);
+				doh.run();
+			});
+		</script>
+	<body>
+
+		<h1>Base Plugins QuickTest</h1>
+
+		<ul id="foo"><li class="bar">one</li></ul>
+		<ul id="bar"><li class="inbar">one</li></ul>
+
+		<div id="cloneTest">
+			<div class="needsData"></div>
+			<div class="needsData"></div>
+			<div class="needsData"></div>
+			<p class="cloneMe">sample</p>
+		</div>
+
+		<div id="appendTest"></div> <div id="appendMe">now</div>
+
+		<p id="showMe" style="display:none">I'm hidden</p>
+		
+		<input id="withval" value="baz" type="text"> 
+		<input id="nullval" value="" type="text">
+		<input id="newval" value="baz" type="text">
+		
+		<ul>
+			<li id="my_1">1</li><li id="my_2">2</li><li id="my_3">3</li>
+		</ul>
+		
+		<div class="thing" id="sizeTest"><p>Foo!</p></div>
+		<p class="thing">Foo!</p>
+		
+		<div class="cb"><p>Yo!</p></div>
+		
+	</body>
+</html>

@@ -1,0 +1,29 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+	"http://www.w3.org/TR/html4/strict.dtd">
+<html>
+	<head>
+		<title>Testing dojo.fx</title>
+		<script type="text/javascript" src="../../dojo/dojo.js" djConfig="conflict:true"></script>
+		<script type="text/javascript">
+			dojo.require("doh.runner");
+			dojo.require("plugd.base");
+
+			dojo.addOnLoad(function(){
+				doh.register("t", 
+					[
+					
+						function autoConflict(t){
+							t.t(dojo.isFunction($));
+							t.t(dojo.isFunction($));
+							t.is(1, $("#bar").length);
+							t.t(dojo.isFunction($.fn.ready));
+						}
+					]
+				);
+				doh.run();
+			});
+		</script>
+	<body>
+		<div id="bar">baz</div>
+	</body>
+</html>

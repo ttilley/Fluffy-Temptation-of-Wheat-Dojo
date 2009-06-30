@@ -1,0 +1,148 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+	"http://www.w3.org/TR/html4/strict.dtd">
+<html>
+	<head>
+		<title>Testing dojo.fx</title>
+		<script type="text/javascript" src="../../dojo/dojo.js" djConfig="isDebug: true"></script>
+		<script type="text/javascript" src="../node.js"></script>
+		<script type="text/javascript" src="../trigger.js"></script>
+		<script type="text/javascript">
+			dojo.require("doh.runner");
+
+			dojo.addOnLoad(function(){
+				doh.register("t", 
+					[
+						function simple(t){
+							
+							var d = new doh.Deferred();
+							var clicks = 0;
+							var timer = setTimeout(function(){
+								d.errback();
+							}, 1000);
+							
+							var p = dojo.byId("showMe");
+							dojo.connect(p, "onclick", function(e, a){
+								t.is(a, undefined); // fake node events don't get curried args
+								t.is("click", e.type);
+								clicks++;
+								if(clicks == 3){
+									d.callback(e);
+									clearTimeout(timer);
+								}
+							});
+							
+							// two variations, testing /on/
+							dojo.trigger("showMe", "onclick", 1);
+							dojo.trigger("showMe", "click");
+							
+							// passing a node directly (please use strings in real life, or refs)
+							dojo.trigger(dojo.byId("showMe"), "click");
+							
+							return d;
+						},
+						
+						function simplequery(t){
+							
+							var d = new doh.Deferred();
+							dojo.query("#foo").onclick(function(e){
+								t.is("click", e.type);
+								d.callback(true);
+							}).trigger("onclick");
+							return d;
+						},
+						
+						// syntaxes:
+						// dojo.trigger(obj, "method"); // fire obj.method() in scope: obj
+						// dojo.trigger(node, "event"); // fire "onevent" for node
+						// dojo.trigger(obj.method); // seems silly?
+						// dojo.trigger(obj, function(){ }); // hitch(obj, fn())() really?
+												
+						function simpleFunc(t){
+
+							var fires = 0;
+							var d = new doh.Deferred();
+							var obj = {
+								method: function(){
+									// console.log('fired', this);
+								}
+							};
+							
+							var foo = setTimeout(function(){
+								d.errback("fail.");
+							}, 1000);
+							
+							dojo.connect(obj, "method", function(){
+								fires++;
+								if(fires == 3){
+									d.callback(true);
+									clearTimeout(foo);
+								}
+							});
+							
+							dojo.trigger(obj, "method");
+							dojo.trigger(obj.method);
+							
+							dojo.trigger(obj, function(){
+								this.method();
+							});
+							
+							return d;
+						},
+												
+						function triggerArgs(t){
+							var d = new doh.Deferred();
+							dojo.trigger(null, function(a,b,c){
+								t.is(1, a);
+								t.is(2, b);
+								t.is(3, c);
+								d.callback(true);
+							}, 1, 2, 3);
+							return d;
+							
+						},
+						
+						function nodetrigger(t){
+							var d = new doh.Deferred();
+							var n = dojo.node("nodetest");
+							
+							n.connect("onclick", function(e){
+								d.callback(true);
+							}).trigger("onclick");
+							
+							return d;
+						}
+					
+					]
+				);
+				doh.run();
+			});
+		</script>
+	<body>
+
+		<h1>Base Plugins QuickTest</h1>
+
+		<ul id="foo"><li class="bar">one</li></ul>
+		<ul id="bar"><li class="inbar">one</li></ul>
+
+		<div id="cloneTest">
+			<div class="needsData"></div>
+			<div class="needsData"></div>
+			<div class="needsData"></div>
+			<p class="cloneMe">sample</p>
+		</div>
+
+		<div id="appendTest"></div> <div id="appendMe">now</div>
+
+		<p id="showMe" style="display:none">I'm hidden</p>
+		
+		<input id="withval" value="baz" type="text"> 
+		<input id="nullval" value="" type="text">
+		<input id="newval" value="baz" type="text">
+		
+		<ul>
+			<li id="my_1">1</li><li id="my_2">2</li><li id="my_3">3</li>
+		</ul>
+		
+		<p id="nodetest">hi</p>
+	</body>
+</html>
