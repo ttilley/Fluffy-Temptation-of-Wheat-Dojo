@@ -13,3 +13,10 @@ dojo:
   revision: e138c9b407ae575f6febcb226ca90e5177e1f555
   branch: master
   remote: braid/dojo
+dijit: 
+  squashed: false
+  url: git://github.com/dojo/dijit.git
+  type: git
+  revision: ffcd513ed5b60b4906f0f88635249da03e94bfc5
+  branch: master
+  remote: braid/dijit
