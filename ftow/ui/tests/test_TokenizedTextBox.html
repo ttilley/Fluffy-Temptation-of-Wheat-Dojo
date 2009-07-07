@@ -25,7 +25,7 @@
     <body class="tundra">
         <div>
             <p>Plain tokens</p>
-            <form style="width: 300px; clear: both; border: 1px solid black;">
+            <form style="width: 300px; clear: both; border: 1px solid black; padding:1em;">
                 <span dojoType="ftow.ui.Token">Tilley, Travis</span>
                 <span dojoType="ftow.ui.Token">Tilley, Lindsay</span>
                 <span label="a" dojoType="ftow.ui.Token">Tilley, Magellan</span>
@@ -33,10 +33,8 @@
                 <span label="   " dojoType="ftow.ui.Token">Tilley, Tifa</span>
                 <span dojoType="ftow.ui.ExpandingTextBox"></span>
             </form>
-            <p>Test against look and feel of other widgets</p>
-            <form style="width: 500px; clear: both; border: 1px solid black;">
-                <br/>
-                <br/>
+            <p>Test against look and feel of ValidationTextBox</p>
+            <form style="width: 500px; clear: both; border: 1px dashed black; padding:1em;">
                 <p>
                     <label style="width:100px;">
                         ValidationTextBox:
@@ -47,11 +45,23 @@
                     <label style="width:100px;">
                         TokenizedTextBox:
                     </label>
-                    <input id="ttb" name="values[]" tokenizeChars=",;" dojoType="ftow.ui.TokenizedTextBox" style="width: 30em;"/>
+                    <input name="values[]" dojoType="ftow.ui.TokenizedTextBox" style="width: 30em;"/>
                 </p>
-                <br/>
-                <br/>
             </form>
+<p>tokenizeChars set to ',;'</p>
+<form style="width: 500px; clear: both; border: 1px dashed black; padding:1em;">
+	<input name="values[]" tokenizeChars=',;' dojoType="ftow.ui.TokenizedTextBox" style="width: 30em;"/>
+</form>
+<p>tokenizeRegExp set to: '\d\d\d-\d\d\d-\d\d\d\d'</p>
+<form style="width: 500px; clear: both; border: 1px dashed black; padding:1em;">
+	<input name="values[]" dojoType="ftow.ui.TokenizedTextBox" style="width: 30em;"
+	       tokenizeRegExp="\d\d\d-\d\d\d-\d\d\d\d"/>
+</form>
+<p>tokenizeRegExp set to: '(\d\d\d-\d\d\d-\d\d\d\d|\(\d\d\d\) \d\d\d-\d\d\d\d|\(\d\d\d\) \d\d\d \d\d\d\d|\d\d\d\.\d\d\d\.\d\d\d\d|\d\d\d\/\d\d\d-\d\d\d\d|\d\d\d \d\d\d \d\d\d\d|\d\d\d-\d\d\d-\d\d\d\d x\d\d?\d?\d?|\(\d\d\d\) \d\d\d-\d\d\d\d x\d\d?\d?\d?|\(\d\d\d\) \d\d\d \d\d\d\d x\d\d?\d?\d?|\d\d\d\.\d\d\d\.\d\d\d\d x\d\d?\d?\d?|\d\d\d\/\d\d\d-\d\d\d\d x\d\d?\d?\d?|\d\d\d \d\d\d \d\d\d\d x\d\d?\d?\d?|\d\d\d\d\d\d\d\d\d\d)'</p>
+<form style="width: 500px; clear: both; border: 1px dashed black; padding:1em;">
+	<input name="values[]" dojoType="ftow.ui.TokenizedTextBox" style="width: 30em;"
+	       tokenizeRegExp="(\d\d\d-\d\d\d-\d\d\d\d|\(\d\d\d\) \d\d\d-\d\d\d\d|\(\d\d\d\) \d\d\d \d\d\d\d|\d\d\d\.\d\d\d\.\d\d\d\d|\d\d\d\/\d\d\d-\d\d\d\d|\d\d\d \d\d\d \d\d\d\d|\d\d\d-\d\d\d-\d\d\d\d x\d\d?\d?\d?|\(\d\d\d\) \d\d\d-\d\d\d\d x\d\d?\d?\d?|\(\d\d\d\) \d\d\d \d\d\d\d x\d\d?\d?\d?|\d\d\d\.\d\d\d\.\d\d\d\d x\d\d?\d?\d?|\d\d\d\/\d\d\d-\d\d\d\d x\d\d?\d?\d?|\d\d\d \d\d\d \d\d\d\d x\d\d?\d?\d?|\d\d\d\d\d\d\d\d\d\d)"/>
+</form>
         </div>
     </body>
 </html>
