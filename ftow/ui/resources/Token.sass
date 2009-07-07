@@ -1,0 +1,53 @@
+!backgroundColor = "white"
+!textColor = "black"
+
+.Token
+  :color = !textColor
+  :position relative
+  :display inline-block
+  :white-space nowrap
+  :padding 1px
+  :outline-style none
+  :text-decoration none
+  :cursor text
+  :vertical-align middle
+
+  *
+    :cursor text
+    :vertical-align middle
+
+  .TokenTopLeft, .TokenTopRight, .TokenBottomLeft, .TokenBottomRight,
+  .TokenTop, .TokenBottom
+    :display none
+
+  .TokenInner
+    :margin 0
+    :padding 0
+    :border 0
+    :width auto
+    :height auto
+
+  .TokenLeft, .TokenRight, .TokenInner
+    :position relative
+
+  .TokenTopLeft, .TokenTopRight, .TokenBottomLeft, .TokenBottomRight,
+  .TokenTop, .TokenBottom, .TokenRight, .TokenLeft
+    :background
+      :color transparent
+
+  .TokenCloseImage
+    :cursor pointer
+    :display inline-block
+
+  .TokenInner
+    :display block
+    :background
+      :color = !backgroundColor
+
+  .TokenContent
+    :display block
+    :white-space nowrap
+
+@import TokenTundra.sass
+@import TokenNihilo.sass
+@import TokenSoria.sass

@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+        <meta http-equiv="Content-type" content="text/html; charset=utf-8">
+        <title>test_TokenizedTextBox</title>
+        <style type="text/css">
+            @import url(../../../dojo/resources/dojo.css);
+            @import url(../../../dijit/themes/tundra/tundra.css);
+            @import url(../../../dijit/themes/nihilo/nihilo.css);
+            @import url(../../../dijit/themes/soria/soria.css);
+            @import url(../resources/Token.css);
+            @import url(../resources/ExpandingTextBox.css);
+            @import url(../resources/TokenizedTextBox.css);
+        </style>
+        <link id="themeStyles" rel="stylesheet" href="../../../dijit/themes/tundra/tundra.css"/>
+        <script type="text/javascript" src="../../../dojo/dojo.js" djConfig="parseOnLoad: true, modulePaths: {'ftow': '../../ftow'}">
+        </script>
+        <script type="text/javascript">
+            dojo.require('dijit.form.ValidationTextBox');
+            dojo.require('ftow.ui.TokenizedTextBox');
+            dojo.require('ftow.ui.ExpandingTextBox');
+        </script>
+    </head>
+    <body class="tundra">
+        <div>
+            <p>Plain tokens</p>
+            <form style="width: 300px; clear: both; border: 1px solid black;">
+                <span dojoType="ftow.ui.Token">Tilley, Travis</span>
+                <span dojoType="ftow.ui.Token">Tilley, Lindsay</span>
+                <span label="a" dojoType="ftow.ui.Token">Tilley, Magellan</span>
+                <span label="test" dojoType="ftow.ui.Token">Tilley, Buddy</span>
+                <span label="   " dojoType="ftow.ui.Token">Tilley, Tifa</span>
+                <span dojoType="ftow.ui.ExpandingTextBox"></span>
+            </form>
+            <p>Test against look and feel of other widgets</p>
+            <form style="width: 500px; clear: both; border: 1px solid black;">
+                </br>
+                </br>
+                <p>
+                    <label style="width:100px;">
+                        ValidationTextBox:
+                    </label>
+                    <input dojoType="dijit.form.ValidationTextBox" style="width: 30em;"/>
+                </p>
+                <p>
+                    <label style="width:100px;">
+                        TokenizedTextBox:
+                    </label>
+                    <input id="ttb" name="values[]" tokenizeChars=",;" dojoType="ftow.ui.TokenizedTextBox" style="width: 30em;"/>
+                </p>
+                </br>
+                </br>
+            </form>
+        </div>
+    </body>
+</html>

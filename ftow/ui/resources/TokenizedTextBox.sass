@@ -1,0 +1,33 @@
+.TokenizedTextBox
+  :width 15em
+  :border solid black 1px
+  :overflow hidden
+  :vertical-align middle
+  :cursor text
+
+  .dj_ie6 &
+    :vertical-align auto
+
+  input
+    :font-size inherit
+    :font-family inherit
+
+.TokenizedTextBoxReadOnly, .TokenizedTextBoxDisabled
+  :color #EEE
+
+.tundra
+
+  .TokenizedTextBox
+    :background #FFFFFF url(../images/validationInputBg.png) repeat-x scroll left top
+    :border 1px solid #B3B3B3
+    :margin 0 0.1em
+    :background #FFF url("../../../dijit/themes/tundra/images/validationInputBg.png") repeat-x top left
+    :line-height normal
+    :font-size 100%
+    :font-family sans-serif
+
+    .dj_ie6 &
+      :background #FFF url("../../../dijit/themes/tundra/images/validationInputBg.gif") repeat-x top left
+
+  .TokenizedTextBoxFocused
+    :border-color #406b9b
