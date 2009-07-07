@@ -21,7 +21,7 @@ dojo.declare('ftow.ui.TokenizedTextBox', [dijit._Widget, dijit._Templated, dijit
 	
 	tokenizeKeys: [dojo.keys.TAB, dojo.keys.ENTER],
 	tokenizeChars: '',
-	tokenizeRegex: '',
+	tokenizeRegExp: '',
 	
 	disabled: false,
 	
@@ -75,7 +75,7 @@ dojo.declare('ftow.ui.TokenizedTextBox', [dijit._Widget, dijit._Templated, dijit
 	},
 	
 	_tokenizeOnInput: function() {
-		var match = this.tokenizeRegex.exec(this.inputNode.attr('value'));
+		var match = this.tokenizeRegExp.exec(this.inputNode.attr('value'));
 		if (match) {
 			this._tokenize(match[1]);
 		}
@@ -124,12 +124,12 @@ dojo.declare('ftow.ui.TokenizedTextBox', [dijit._Widget, dijit._Templated, dijit
 	},
 	
 	postCreate: function() {
-		if (this.tokenizeRegex.length === 0 && this.tokenizeChars.length > 0) {
-			this.tokenizeRegex = this._tokenCharsToRegex();
+		if (this.tokenizeRegExp.length === 0 && this.tokenizeChars.length > 0) {
+			this.tokenizeRegExp = this._tokenCharsToRegex();
 		}
 		
-		if (this.tokenizeRegex.length > 0) {
-			this.tokenizeRegex = new RegExp(this.tokenizeRegex, 'i');
+		if (this.tokenizeRegExp.length > 0) {
+			this.tokenizeRegExp = new RegExp(this.tokenizeRegExp, 'i');
 			this.connect(this.inputNode, 'onInput', this._tokenizeOnInput);
 		}
 		
