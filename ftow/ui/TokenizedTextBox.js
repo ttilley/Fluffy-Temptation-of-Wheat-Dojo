@@ -134,7 +134,7 @@ dojo.declare('ftow.ui.TokenizedTextBox', [dijit._Widget, dijit._Templated, dijit
 		}
 		
 		this.connect(this.inputNode.textbox, 'onkeypress', this._keyCodeHandler);
-		this.connect(this.inputNode, 'onBlur', this._tokenizeOnBlur);
+		this.connect(this, 'onBlur', this._tokenizeOnBlur);
 		
 		this._setStateClass();
 	}
