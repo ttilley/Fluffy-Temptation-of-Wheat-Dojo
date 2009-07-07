@@ -88,9 +88,6 @@ dojo.declare('ftow.ui.TokenizedTextBox', [dijit._Widget, dijit._Templated, dijit
 			return;
 		}
 		
-		// prevent submission of any containing forms
-		e.preventDefault();
-		
 		var key = e.keyCode;
 		
 		switch (key) {
@@ -105,6 +102,10 @@ dojo.declare('ftow.ui.TokenizedTextBox', [dijit._Widget, dijit._Templated, dijit
 				if (pos === 0) {
 					this.inputNode._focusPrevious();
 				}
+				break;
+			case dojo.keys.ENTER:
+				// prevent submission of any containing forms
+				e.preventDefault();
 				break;
 			default:
 				this._tokenizeOnKey(key);
