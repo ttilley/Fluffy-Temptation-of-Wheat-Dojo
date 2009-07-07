@@ -63,24 +63,32 @@ dojo.declare('ftow.ui.TokenizedTextBox', [dijit._Widget, dijit._Templated, dijit
 		return data + trigger;
 	},
 	
+	_tokenize: function(val){
+		var value = val ? val : this.inputNode.attr('value');
+		this.inputNode.reset();
+		
+		if (value.length > 0) {
+			this._addToken({
+				label: value
+			});
+		}
+	},
+	
 	_tokenizeOnInput: function() {
 		var match = this.tokenizeRegex.exec(this.inputNode.attr('value'));
 		if (match) {
-			this.inputNode.reset();
-			this._addToken({
-				label: match[1]
-			});
+			this._tokenize(match[1]);
 		}
 	},
 	
 	_tokenizeOnKey: function(key) {
 		if (dojo.indexOf(this.tokenizeKeys, key) != -1) {
-			var label = this.inputNode.attr('value');
-			this.inputNode.reset();
-			this._addToken({
-				label: label
-			});
+			this._tokenize();
 		}
+	},
+	
+	_tokenizeOnBlur: function(){
+		this._tokenize();
 	},
 	
 	_keyCodeHandler: function(e) {
@@ -106,7 +114,6 @@ dojo.declare('ftow.ui.TokenizedTextBox', [dijit._Widget, dijit._Templated, dijit
 			case dojo.keys.ENTER:
 				// prevent submission of any containing forms
 				e.preventDefault();
-				break;
 			default:
 				this._tokenizeOnKey(key);
 		}
@@ -127,6 +134,7 @@ dojo.declare('ftow.ui.TokenizedTextBox', [dijit._Widget, dijit._Templated, dijit
 		}
 		
 		this.connect(this.inputNode.textbox, 'onkeypress', this._keyCodeHandler);
+		this.connect(this.inputNode, 'onBlur', this._tokenizeOnBlur);
 		
 		this._setStateClass();
 	}
