@@ -13,6 +13,10 @@
   font-family: inherit;
 }
 
+.TokenizedTextBoxFocused {
+  outline: 5px auto -webkit-focus-ring-color;
+}
+
 .TokenizedTextBoxReadOnly, .TokenizedTextBoxDisabled {
   color: #EEE;
 }
