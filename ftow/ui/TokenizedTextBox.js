@@ -88,6 +88,9 @@ dojo.declare('ftow.ui.TokenizedTextBox', [dijit._Widget, dijit._Templated, dijit
 			return;
 		}
 		
+		// prevent submission of any containing forms
+		e.preventDefault();
+		
 		var key = e.keyCode;
 		
 		switch (key) {
