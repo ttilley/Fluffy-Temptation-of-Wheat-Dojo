@@ -115,10 +115,14 @@ dojo.require("dojox.rpc.Rest");
 				// send the content location to the server
 				contentLocation = isPost && dojox.rpc.JsonRest._contentId;
 				var serviceAndId = jr.getServiceAndId(action.target.__id);
-				var service = serviceAndId.service; 
+				var service = serviceAndId.service;
+				var content = dojox.json.ref.toJson(action.content, false, service.servicePath, true);
+				if (kwArgs.rootAttribute) {
+					content = '{"' + kwArgs.rootAttribute + '":' + content + '}';
+				}
 				var dfd = action.deferred = service[action.method](
 									serviceAndId.id.replace(/#/,''), // if we are using references, we need eliminate #
-									dojox.json.ref.toJson(action.content, false, service.servicePath, true)
+									content
 								);
 				(function(object, dfd, service){
 					dfd.addCallback(function(value){

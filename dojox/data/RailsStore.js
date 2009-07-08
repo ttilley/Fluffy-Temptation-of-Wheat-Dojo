@@ -113,6 +113,10 @@ dojo.declare("dojox.data.RailsStore", dojox.data.JsonRestStore, {
 				sortBy : [],
 				sortDir : []
 			};
+			
+			if (!dojo.isArray(args.sort)) {
+				args.sort = [args.sort];
+			}
 
 			dojo.forEach(args.sort, function(item){
 				queryObj.sortBy.push(item.attribute);
@@ -138,14 +142,18 @@ dojo.declare("dojox.data.RailsStore", dojox.data.JsonRestStore, {
 		 * 'Example' with root_in_json: [{'example':{'id':1, 'text':'first'}}]
 		 */
 		if((typeof this.rootAttribute == 'undefined') && results[0]){
-			if(results[0][this.idAttribute]){
+			var rootAttribute = deferred.ioArgs.xhr.getResponseHeader("Root-Attribute");
+			if (dojo.isString(rootAttribute) && rootAttribute.length > 0) {
+				this.rootAttribute = rootAttribute;
+				console.debug('RailsStore: with root_in_json, attribute: ' + this.rootAttribute);
+			} else if(results[0][this.idAttribute]){
 				this.rootAttribute = false;
 				console.debug('RailsStore: without root_in_json');
 			}else{
 				for(var attribute in results[0]){
 					if(results[0][attribute][this.idAttribute]){
 						this.rootAttribute = attribute;
-						console.debug('RailsStore: with root_in_json, attribute: ' + attribute);
+						console.debug('RailsStore: with root_in_json, attribute: ' + this.rootAttribute);
 					}
 				}
 			}
@@ -163,5 +171,30 @@ dojo.declare("dojox.data.RailsStore", dojox.data.JsonRestStore, {
 		var count = results.length;
 		// if we don't know the length, and it is partial result, we will guess that it is twice as big, that will work for most widgets
 		return {totalCount:deferred.fullLength || (deferred.request.count == count ? (deferred.request.start || 0) + count * 2 : count), items: items};
+	},
+	save: function(kwArgs){
+		kwArgs = kwArgs || {};
+		if(!kwArgs.rootAttribute && this.rootAttribute){
+			kwArgs.rootAttribute = this.rootAttribute;
+		}
+		return this.inherited(arguments);
+	},
+	getValue: function(item, property, defaultValue){
+		var value = dojo.getObject(property, false, item);
+		return value || (property in item ? value : item._loadObject ?
+							(dojox.rpc._sync = true) && arguments.callee.call(this,dojox.data.ServiceStore.prototype.loadItem({item:item}) || {}, property, defaultValue) : defaultValue);
+	},
+	setValue: function(item, attribute, value){
+		var old = dojo.getObject(attribute, false, item);
+		var store = item.__id ? dojox.data._getStoreForItem(item) : this;
+		if(dojox.json.schema && store.schema && store.schema.properties){
+			dojox.json.schema.mustBeValid(dojox.json.schema.checkPropertyChange(value,store.schema.properties[attribute]));
+		}
+		if(attribute == store.idAttribute){
+			throw new Error("Can not change the identity attribute for an item");
+		}
+		store.changing(item);
+		dojo.setObject(attribute, value, item);
+		store.onSet(item,attribute,old,value);
 	}
 });
