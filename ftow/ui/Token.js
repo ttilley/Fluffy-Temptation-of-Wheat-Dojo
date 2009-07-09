@@ -5,7 +5,7 @@ dojo.require('dijit._Contained');
 
 dojo.declare('ftow.ui.Token', [dijit.form._FormWidget, dijit._Contained], {
 	templateString: null,
-	templatePath: dojo.moduleUrl('ftow.ui.resources', 'Token.html'),
+	templatePath: dojo.moduleUrl('ftow.ui.resources.templates', 'Token.html'),
 	
 	attributeMap: dojo.mixin(dojo.clone(dijit.form._FormWidget.prototype.attributeMap), {
 		value: "valueNode",

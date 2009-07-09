@@ -12,7 +12,7 @@ dojo.require('ftow.ui.ExpandingTextBox');
 
 dojo.declare('ftow.ui.TokenizedTextBox', [dijit._Widget, dijit._Templated, dijit._Container], {
 	templateString: null,
-	templatePath: dojo.moduleUrl('ftow.ui.resources', 'TokenizedTextBox.html'),
+	templatePath: dojo.moduleUrl('ftow.ui.resources.templates', 'TokenizedTextBox.html'),
 	
 	widgetsInTemplate: true,
 	

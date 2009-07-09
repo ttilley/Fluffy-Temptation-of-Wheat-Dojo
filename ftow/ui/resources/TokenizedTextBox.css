@@ -1,6 +1,6 @@
 .TokenizedTextBox {
   width: 15em;
-  border: solid black 1px;
+  border: 1px solid black;
   overflow: hidden;
   vertical-align: middle;
   cursor: text;
@@ -9,8 +9,11 @@
   vertical-align: auto;
 }
 .TokenizedTextBox input {
-  font-size: inherit;
+  font-weight: inherit;
+  font-style: inherit;
+  font-size: 100%;
   font-family: inherit;
+  vertical-align: baseline;
 }
 
 .TokenizedTextBoxFocused {
@@ -22,16 +25,18 @@
 }
 
 .tundra .TokenizedTextBox {
-  background: #FFFFFF url(../images/validationInputBg.png) repeat-x scroll left top;
+  background-color: #FFF;
+  background-image: url('../../../dijit/themes/tundra/images/validationInputBg.png');
+  background-repeat: repeat-x;
+  background-position: top left;
   border: 1px solid #B3B3B3;
   margin: 0 0.1em;
-  background: #FFF url("../../../dijit/themes/tundra/images/validationInputBg.png") repeat-x top left;
   line-height: normal;
   font-size: 100%;
   font-family: sans-serif;
 }
 .dj_ie6 .tundra .TokenizedTextBox {
-  background: #FFF url("../../../dijit/themes/tundra/images/validationInputBg.gif") repeat-x top left;
+  background-image: url('../../../dijit/themes/tundra/images/validationInputBg.gif');
 }
 .tundra .TokenizedTextBoxFocused {
   border-color: #406b9b;

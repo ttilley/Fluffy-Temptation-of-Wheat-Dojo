@@ -1,0 +1,61 @@
+@import config
+
+!close_image_width = 12px
+!close_image_height = 12px
+!border_radius = 4px
+
+!background = #E2E2E2
+!text = #000
+!border = #CCC
+
+!hover_text = #243C5F
+!hover_border = #92a0b3
+
+!focused_background = #FFF
+
+
+.tundra
+
+  .Token
+
+    .TokenCloseButton
+      :margin-left 0.5em
+
+    .TokenCloseImage
+      +dijit-background("transparent", "tundra", "tabClose.png", "no-repeat", "right top")
+      :width = !close_image_width
+      :height = !close_image_height
+
+      .dj_ie6 &
+        +dijit-background-image("tundra", "tabClose.gif")
+
+    .TokenCloseButtonHover
+
+      .TokenCloseImage
+        +dijit-background-image("tundra", "tabCloseHover.png")
+
+        .dj_ie6 &
+          +dijit-background-image("tundra", "tabCloseHover.gif")
+
+    .TokenLabel
+      :min-height = !close_image_height
+      :display inline-block
+
+  .TokenInner
+    +dijit-background(!background, "tundra", "tabEnabled.png", "repeat-x", "left -7px")
+    :color = !text
+    :border = "1px" "solid" !border
+    +border-radius(!border_radius)
+    :padding = !border_radius / 2
+    :line-height normal
+
+  .TokenHover
+    .TokenInner
+      +dijit-background-image("tundra", "tabHover.gif")
+      :color = !hover_text
+      :border-color = !hover_border
+
+  .TokenFocused
+    .TokenInner
+      :background-color = !focused_background
+      :background-image none

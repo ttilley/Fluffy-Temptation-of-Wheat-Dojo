@@ -1,6 +1,8 @@
+@import config
+
 .TokenizedTextBox
-  :width 15em
-  :border solid black 1px
+  :width = !default_dijit_textbox_width
+  :border 1px solid black
   :overflow hidden
   :vertical-align middle
   :cursor text
@@ -9,11 +11,10 @@
     :vertical-align auto
 
   input
-    :font-size inherit
-    :font-family inherit
+    +reset-font
 
 .TokenizedTextBoxFocused
-  :outline 5px auto -webkit-focus-ring-color
+  +webkit-outline
 
 .TokenizedTextBoxReadOnly, .TokenizedTextBoxDisabled
   :color #EEE
@@ -21,16 +22,15 @@
 .tundra
 
   .TokenizedTextBox
-    :background #FFFFFF url(../images/validationInputBg.png) repeat-x scroll left top
+    +dijit-background("#FFF", "tundra", "validationInputBg.png", "repeat-x", "top left")
     :border 1px solid #B3B3B3
     :margin 0 0.1em
-    :background #FFF url("../../../dijit/themes/tundra/images/validationInputBg.png") repeat-x top left
     :line-height normal
     :font-size 100%
     :font-family sans-serif
 
     .dj_ie6 &
-      :background #FFF url("../../../dijit/themes/tundra/images/validationInputBg.gif") repeat-x top left
+      +dijit-background-image("tundra", "validationInputBg.gif")
 
   .TokenizedTextBoxFocused
     :border-color #406b9b

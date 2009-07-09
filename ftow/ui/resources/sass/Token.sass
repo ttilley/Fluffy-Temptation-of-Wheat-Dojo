@@ -1,13 +1,15 @@
+@import config
+
 !backgroundColor = "white"
 !textColor = "black"
 
 .Token
+  +reset-focus
+  +nowrap
   :color = !textColor
   :position relative
   :display inline-block
-  :white-space nowrap
   :padding 1px
-  :outline-style none
   :text-decoration none
   :cursor text
   :vertical-align middle
@@ -21,9 +23,7 @@
     :display none
 
   .TokenInner
-    :margin 0
-    :padding 0
-    :border 0
+    +reset-box-model
     :width auto
     :height auto
 
@@ -45,9 +45,9 @@
       :color = !backgroundColor
 
   .TokenContent
+    +nowrap
     :display block
-    :white-space nowrap
 
-@import TokenTundra.sass
-@import TokenNihilo.sass
-@import TokenSoria.sass
+@import TokenTundra
+@import TokenNihilo
+@import TokenSoria

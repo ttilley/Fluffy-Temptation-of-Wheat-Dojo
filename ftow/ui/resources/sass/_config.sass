@@ -1,0 +1,25 @@
+@import compass/utilities
+
+!default_dijit_textbox_width = 15em
+
+!dijit_path = "../../../dijit"
+
+=dijit-background-image(!theme, !path)
+  :background-image = stylesheet_url("#{!dijit_path}/themes/#{!theme}/images/#{!path}")
+
+=dijit-background(!color, !theme = false, !image = false, !repeat = false, !position = false)
+  :background-color = !color
+  @if !image
+    +dijit-background-image(!theme, !image)
+  @if !repeat
+    :background-repeat = !repeat
+  @if !position
+    :background-position = !position
+
+=webkit-outline
+  :outline 5px auto -webkit-focus-ring-color
+
+=border-radius(!radius)
+  :-moz-border-radius = !radius
+  :-webkit-border-radius = !radius
+  :border-radius = !radius

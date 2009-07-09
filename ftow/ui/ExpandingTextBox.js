@@ -5,7 +5,7 @@ dojo.require('dijit._Contained');
 
 dojo.declare('ftow.ui.ExpandingTextBox', [dijit._Contained, dijit.form.TextBox], {
 	templateString: null,
-	templatePath: dojo.moduleUrl('ftow.ui.resources', 'ExpandingTextBox.html'),
+	templatePath: dojo.moduleUrl('ftow.ui.resources.templates', 'ExpandingTextBox.html'),
 	
 	baseClass: 'ExpandingTextBox',
 	type: 'text',
