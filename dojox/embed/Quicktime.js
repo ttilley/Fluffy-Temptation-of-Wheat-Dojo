@@ -211,7 +211,9 @@ dojo.provide("dojox.embed.Quicktime");
 	if(!d.isIE){
 		var id = "-qt-version-test",
 			o = qtMarkup({ testing:true , width:4, height:4 }),
-			c = 10; // counter to prevent infinite looping
+			c = 10, // counter to prevent infinite looping
+			top = "-1000px",
+			widthHeight = "1px";
 
 		function getVer(){
 			setTimeout(function(){
@@ -224,8 +226,6 @@ dojo.provide("dojox.embed.Quicktime");
 						dojox.embed.Quicktime.version = { major: parseInt(v[0]||0), minor: parseInt(v[1]||0), rev: parseInt(v[2]||0) };
 						if(dojox.embed.Quicktime.supported = v[0]){
 							dojox.embed.Quicktime.onInitialize();
-						}else{
-							console.log("quicktime is not installed.");
 						}
 						c = 0;
 					} catch(e){
@@ -244,14 +244,14 @@ dojo.provide("dojox.embed.Quicktime");
 			d.create("div", {
 				innerHTML: o.markup,
 				id: id,
-				style: { top:0, left:0, width:"1px", height:"1px", overflow:"hidden", position:"absolute" }
+				style: { top:top, left:0, width:widthHeight, height:widthHeight, overflow:"hidden", position:"absolute" }
 			}, d.body());
 		}else{
 			// body isn't loaded yet, so we need to document.write the QuickTime markup
-			var s = '<div style="top:0;left:0;width:1px;height:1px;overflow:hidden;position:absolute" id="' + id + '">'
-					+ o.markup
-					+ '</div>';
-			document.write(s);
+			document.write(
+				'<div style="top:'+top+';left:0;width:'+widthHeight+';height:'+widthHeight+';overflow:hidden;position:absolute" id="' + id + '">'
+				+ o.markup
+				+ '</div>');
 		}
 		getVer();
 	}else if(d.isIE && installed){
