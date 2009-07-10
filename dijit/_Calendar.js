@@ -237,16 +237,23 @@ dojo.declare(
 				this._setText(label, dayNames[(i + dayOffset) % 7]);
 			}, this);
 
-			// Fill in spacer element with all the month names (invisible) so that the maximum width will affect layout
+			// Fill in spacer/month dropdown element with all the month names (invisible) so that the maximum width will affect layout
 			var monthNames = this.dateLocaleModule.getNames('months', 'wide', 'standAlone', this.lang);
-			dojo.forEach(monthNames, function(name){
-				var monthSpacer = dojo.create("div", null, this.monthLabelSpacer);
-				this._setText(monthSpacer, name);
+			cloneClass(".dijitCalendarMonthLabelTemplate", monthNames.length-1);
+			dojo.query(".dijitCalendarMonthLabelTemplate", this.domNode).forEach(function(node, i){
+				dojo.attr(node, "month", i);
+				this._setText(node, monthNames[i]);
+				dojo.place(node.cloneNode(true), this.monthLabelSpacer);
 			}, this);
 
 			var value = this.value;
 			this.value = null;
 			this.attr('value', new this.dateClassObj(value));
+		},
+
+		_onMenuHover: function(e){
+			dojo.stopEvent(e);
+			dojo.toggleClass(e.target, "dijitMenuItemHover");
 		},
 
 		_adjustDisplay: function(/*String*/ part, /*int*/ amount){
@@ -259,6 +266,41 @@ dojo.declare(
 			// tags:
 			//      private
 			this.displayMonth = this.dateFuncObj.add(this.displayMonth, part, amount);
+			this._populateGrid();
+		},
+
+		_onMonthToggle: function(/*Event*/ evt){
+			// summary:
+			//      Handler for when user triggers or dismisses the month list
+			// tags:
+			//      protected
+			dojo.stopEvent(evt);
+
+			if(evt.type == "mousedown"){
+				var coords = dojo.coords(this.monthLabelNode, true);
+				// Size the dropdown's width to match the label in the widget
+				// so that they are horizontally aligned
+				dojo.style(this.monthDropDown, {
+					width: coords.w + "px",
+					top: (coords.y - this.displayMonth.getMonth() * coords.h) + "px"
+				});
+				this._popupHandler = this.connect(document, "onmouseup", "_onMonthToggle");
+			}else{
+				this.disconnect(this._popupHandler);
+				delete this._popupHandler;
+			}
+
+			dojo.toggleClass(this.monthDropDown, "dijitHidden");
+			dojo.toggleClass(this.monthLabelNode, "dijitVisible");
+		},
+
+		_onMonthSelect: function(/*Event*/ evt){
+			// summary:
+			//      Handler for when user selects a month from a list
+			// tags:
+			//      protected
+			this._onMonthToggle(evt);
+			this.displayMonth.setMonth(dojo.attr(evt.target, "month"));
 			this._populateGrid();
 		},
 
