@@ -3,26 +3,21 @@
   border: 1px solid black;
   overflow: hidden;
   vertical-align: middle;
-  cursor: text;
-}
-.dj_ie6 .TokenizedTextBox {
-  vertical-align: auto;
-}
-.TokenizedTextBox input {
-  font-weight: inherit;
-  font-style: inherit;
-  font-size: 100%;
-  font-family: inherit;
-  vertical-align: baseline;
-}
+  cursor: text; }
+  .dj_ie6 .TokenizedTextBox {
+    vertical-align: auto; }
+  .TokenizedTextBox input {
+    font-weight: inherit;
+    font-style: inherit;
+    font-size: 100%;
+    font-family: inherit;
+    vertical-align: baseline; }
 
 .TokenizedTextBoxFocused {
-  outline: 5px auto -webkit-focus-ring-color;
-}
+  outline: 5px auto -webkit-focus-ring-color; }
 
 .TokenizedTextBoxReadOnly, .TokenizedTextBoxDisabled {
-  color: #EEE;
-}
+  color: #EEE; }
 
 .tundra .TokenizedTextBox {
   background-color: #FFF;
@@ -33,11 +28,8 @@
   margin: 0 0.1em;
   line-height: normal;
   font-size: 100%;
-  font-family: sans-serif;
-}
-.dj_ie6 .tundra .TokenizedTextBox {
-  background-image: url('../../../dijit/themes/tundra/images/validationInputBg.gif');
-}
+  font-family: sans-serif; }
+  .dj_ie6 .tundra .TokenizedTextBox {
+    background-image: url('../../../dijit/themes/tundra/images/validationInputBg.gif'); }
 .tundra .TokenizedTextBoxFocused {
-  border-color: #406b9b;
-}
+  border-color: #406b9b; }

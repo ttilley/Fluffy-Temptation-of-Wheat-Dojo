@@ -1,0 +1,22 @@
+@import reset.sass
+@import hide.sass
+@import inline_block.sass
+
+
+=dijitReset
+  +reset-box-model
+  :line-height normal
+  :font inherit
+  :color inherit
+
+=dijitInline
+  +inline-block
+  :border 0
+  :padding 0
+
+=dijitHidden
+  +hide("display", true)
+
+=dijitVisible
+  +show("block", true)
+  :position relative

@@ -1,0 +1,40 @@
+// there are three main methods of hiding an element. you can set display to
+// none, you can set visibility to hidden, or you can position something off
+// of the page.
+
+// elements set to display:none do not effect the flow of the page. elements
+// set to visibility:hidden will effect the flow of the page. hidden elements
+// will not receive events.
+
+// screen readers will neither discover nor speak content that's hidden by
+// display:none or visibility:hidden. screen readers will, however, find and
+// speak content that's positioned off of the page. 
+
+
+=hide(!technique="display", !force=false)
+  !postfix = ""
+  @if !force
+    !postfix = "!important"
+  @if !technique == "display"
+    :display none "#{!postfix}"
+  @else if !technique == "visibility"
+    :visibility hidden "#{!postfix}"
+  @else if !technique == "offset"
+    :position absolute "#{!postfix}"
+    :top -9999px "#{!postfix}"
+
+=show(!technique="display", !force=false)
+  !postfix = ""
+  @if !force
+    !postfix = "!important"
+  @if !technique == "block"
+    :display block "#{!postfix}"
+  @else if !technique == "display"
+    :display block "#{!postfix}"
+  @else if !technique == "inline"
+    :display inline "#{!postfix}"
+  @else if !technique == "visibility"
+    :visibility visible "#{!postfix}"
+  @else if !technique == "offset"
+    :position relative "#{!postfix}"
+    :top 0 "#{!postfix}"

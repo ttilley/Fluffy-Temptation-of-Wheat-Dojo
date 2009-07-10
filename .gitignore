@@ -1,4 +1,5 @@
 .DS_Store
 .project
-/nbproject
 .sass-cache
+.sass_cache
+/nbproject

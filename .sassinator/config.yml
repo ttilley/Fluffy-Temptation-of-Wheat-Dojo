@@ -1,0 +1,7 @@
+--- 
+:style: :nested
+:cache_path: .sassinator/.sass_cache
+:imports: 
+- .sassinator/frameworks/dijit/stylesheets/
+:pathmap: 
+  ftow/ui/resources/sass: ftow/ui/resources

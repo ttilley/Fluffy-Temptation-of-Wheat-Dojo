@@ -1,0 +1,22 @@
+// In IE6+7, setting display to inline-block simply has the effect of
+// triggering IE's internal 'hasLayout' attribute for that element. When used
+// on an inline element, this results in normal inline-block behavior. Block
+// level elements with hasLayout do not behave like inline-block elements. The
+// solution to inline-block behavior in IE6+7 is to make something display
+// inline, and then trigger hasLayout (by setting zoom or what have you).
+
+// FF2 supports something similar to inline-block behavior via XUL using the
+// -moz-inline-box display setting. Setting -moz-box-orient to vertical fixes
+// an additional display issue with unknown width elements.
+
+// inline-block is properly supported by webkit, FF3+, and IE8.
+
+=inline-block
+  :display -moz-inline-box
+  :-moz-box-orient vertical
+  :display inline-block
+  :vertical-align middle
+  :#zoom 1
+  :#display inline
+  // fixes alignment against native input/button on IE6
+  :#vertical-align auto

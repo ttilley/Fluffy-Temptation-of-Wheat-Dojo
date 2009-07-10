@@ -7,68 +7,53 @@
   padding: 1px;
   text-decoration: none;
   cursor: text;
-  vertical-align: middle;
-}
-.Token * {
-  cursor: text;
-  vertical-align: middle;
-}
-.Token .TokenTopLeft, .Token .TokenTopRight, .Token .TokenBottomLeft, .Token .TokenBottomRight,
-.Token .TokenTop, .Token .TokenBottom {
-  display: none;
-}
-.Token .TokenInner {
-  margin: 0;
-  padding: 0;
-  border: 0;
-  outline: 0;
-  width: auto;
-  height: auto;
-}
-.Token .TokenLeft, .Token .TokenRight, .Token .TokenInner {
-  position: relative;
-}
-.Token .TokenTopLeft, .Token .TokenTopRight, .Token .TokenBottomLeft, .Token .TokenBottomRight,
-.Token .TokenTop, .Token .TokenBottom, .Token .TokenRight, .Token .TokenLeft {
-  background-color: transparent;
-}
-.Token .TokenCloseImage {
-  cursor: pointer;
-  display: inline-block;
-}
-.Token .TokenInner {
-  display: block;
-  background-color: white;
-}
-.Token .TokenContent {
-  white-space: nowrap;
-  display: block;
-}
+  vertical-align: middle; }
+  .Token * {
+    cursor: text;
+    vertical-align: middle; }
+  .Token .TokenTopLeft, .Token .TokenTopRight, .Token .TokenBottomLeft, .Token .TokenBottomRight,
+  .Token .TokenTop, .Token .TokenBottom {
+    display: none; }
+  .Token .TokenInner {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    outline: 0;
+    width: auto;
+    height: auto; }
+  .Token .TokenLeft, .Token .TokenRight, .Token .TokenInner {
+    position: relative; }
+  .Token .TokenTopLeft, .Token .TokenTopRight, .Token .TokenBottomLeft, .Token .TokenBottomRight,
+  .Token .TokenTop, .Token .TokenBottom, .Token .TokenRight, .Token .TokenLeft {
+    background-color: transparent; }
+  .Token .TokenCloseImage {
+    cursor: pointer;
+    display: inline-block; }
+  .Token .TokenInner {
+    display: block;
+    background-color: white; }
+  .Token .TokenContent {
+    white-space: nowrap;
+    display: block; }
 
 .tundra .Token .TokenCloseButton {
-  margin-left: 0.5em;
-}
+  margin-left: 0.5em; }
 .tundra .Token .TokenCloseImage {
   background-color: transparent;
   background-image: url('../../../dijit/themes/tundra/images/tabClose.png');
   background-repeat: no-repeat;
   background-position: right top;
   width: 12px;
-  height: 12px;
-}
-.dj_ie6 .tundra .Token .TokenCloseImage {
-  background-image: url('../../../dijit/themes/tundra/images/tabClose.gif');
-}
+  height: 12px; }
+  .dj_ie6 .tundra .Token .TokenCloseImage {
+    background-image: url('../../../dijit/themes/tundra/images/tabClose.gif'); }
 .tundra .Token .TokenCloseButtonHover .TokenCloseImage {
-  background-image: url('../../../dijit/themes/tundra/images/tabCloseHover.png');
-}
-.dj_ie6 .tundra .Token .TokenCloseButtonHover .TokenCloseImage {
-  background-image: url('../../../dijit/themes/tundra/images/tabCloseHover.gif');
-}
+  background-image: url('../../../dijit/themes/tundra/images/tabCloseHover.png'); }
+  .dj_ie6 .tundra .Token .TokenCloseButtonHover .TokenCloseImage {
+    background-image: url('../../../dijit/themes/tundra/images/tabCloseHover.gif'); }
 .tundra .Token .TokenLabel {
   min-height: 12px;
-  display: inline-block;
-}
+  display: inline-block; }
 .tundra .TokenInner {
   background-color: #e2e2e2;
   background-image: url('../../../dijit/themes/tundra/images/tabEnabled.png');
@@ -80,14 +65,11 @@
   -webkit-border-radius: 4px;
   border-radius: 4px;
   padding: 2px;
-  line-height: normal;
-}
+  line-height: normal; }
 .tundra .TokenHover .TokenInner {
   background-image: url('../../../dijit/themes/tundra/images/tabHover.gif');
   color: #243c5f;
-  border-color: #92a0b3;
-}
+  border-color: #92a0b3; }
 .tundra .TokenFocused .TokenInner {
   background-color: white;
-  background-image: none;
-}
+  background-image: none; }

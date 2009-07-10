@@ -1,11 +1,11 @@
-@import compass/utilities
+@import dijit/patterns.sass
 
 !default_dijit_textbox_width = 15em
 
-!dijit_path = "../../../dijit"
+!dijit_path = "/dijit"
 
 =dijit-background-image(!theme, !path)
-  :background-image = stylesheet_url("#{!dijit_path}/themes/#{!theme}/images/#{!path}")
+  :background-image = relative_url("#{!dijit_path}/themes/#{!theme}/images/#{!path}")
 
 =dijit-background(!color, !theme = false, !image = false, !repeat = false, !position = false)
   :background-color = !color
