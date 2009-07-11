@@ -1,7 +1,15 @@
 .ExpandingTextBox {
+  display: -moz-inline-box;
+  -moz-box-orient: vertical;
+  display: inline-block;
+  vertical-align: middle;
+  #zoom: 1;
+  #display: inline;
+  #vertical-align: auto;
+  border: 0;
+  padding: 0;
   overflow: hidden;
   line-height: normal;
-  vertical-align: middle;
   cursor: text; }
   .ExpandingTextBox * {
     cursor: text; }

@@ -19,27 +19,20 @@
   .Token
 
     .TokenCloseButton
-      :margin-left 0.5em
-
-    .TokenCloseImage
-      +dijit-background("transparent", "tundra", "tabClose.png", "no-repeat", "right top")
+      +dijit-background("transparent", "tundra", "tabClose.png", "no-repeat", "right 50%")
       :width = !close_image_width
-      :height = !close_image_height
 
       .dj_ie6 &
         +dijit-background-image("tundra", "tabClose.gif")
 
     .TokenCloseButtonHover
+      +dijit-background-image("tundra", "tabCloseHover.png")
 
-      .TokenCloseImage
-        +dijit-background-image("tundra", "tabCloseHover.png")
-
-        .dj_ie6 &
-          +dijit-background-image("tundra", "tabCloseHover.gif")
+      .dj_ie6 &
+        +dijit-background-image("tundra", "tabCloseHover.gif")
 
     .TokenLabel
       :min-height = !close_image_height
-      :display inline-block
 
   .TokenInner
     +dijit-background(!background, "tundra", "tabEnabled.png", "repeat-x", "left -7px")
@@ -47,7 +40,6 @@
     :border = "1px" "solid" !border
     +border-radius(!border_radius)
     :padding = !border_radius / 2
-    :line-height normal
 
   .TokenHover
     .TokenInner

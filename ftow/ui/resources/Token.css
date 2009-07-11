@@ -1,16 +1,20 @@
 .Token {
   outline: 0;
-  white-space: nowrap;
-  color: black;
-  position: relative;
+  display: -moz-inline-box;
+  -moz-box-orient: vertical;
   display: inline-block;
+  vertical-align: middle;
+  #zoom: 1;
+  #display: inline;
+  #vertical-align: auto;
+  color: black;
+  white-space: pre;
+  position: relative;
   padding: 1px;
   text-decoration: none;
-  cursor: text;
-  vertical-align: middle; }
+  cursor: text; }
   .Token * {
-    cursor: text;
-    vertical-align: middle; }
+    cursor: text; }
   .Token .TokenTopLeft, .Token .TokenTopRight, .Token .TokenBottomLeft, .Token .TokenBottomRight,
   .Token .TokenTop, .Token .TokenBottom {
     display: none; }
@@ -19,41 +23,45 @@
     padding: 0;
     border: 0;
     outline: 0;
-    width: auto;
-    height: auto; }
+    background-color: white; }
   .Token .TokenLeft, .Token .TokenRight, .Token .TokenInner {
+    display: block;
     position: relative; }
   .Token .TokenTopLeft, .Token .TokenTopRight, .Token .TokenBottomLeft, .Token .TokenBottomRight,
   .Token .TokenTop, .Token .TokenBottom, .Token .TokenRight, .Token .TokenLeft {
     background-color: transparent; }
-  .Token .TokenCloseImage {
+  .Token .TokenCloseButton {
     cursor: pointer;
-    display: inline-block; }
-  .Token .TokenInner {
-    display: block;
-    background-color: white; }
+    margin-left: 0.5em;
+    height: 100%; }
   .Token .TokenContent {
-    white-space: nowrap;
-    display: block; }
+    white-space: pre;
+    height: 1.2em; }
+  .Token .TokenContent, .Token .TokenCloseButton, .Token .TokenIcon, .Token .TokenLabel {
+    display: -moz-inline-box;
+    -moz-box-orient: vertical;
+    display: inline-block;
+    vertical-align: middle;
+    #zoom: 1;
+    #display: inline;
+    #vertical-align: auto; }
+  .dj_webkit .Token .TokenContent, .dj_webkit .Token .TokenCloseButton, .dj_webkit .Token .TokenIcon, .dj_webkit .Token .TokenLabel {
+    vertical-align: text-top; }
 
 .tundra .Token .TokenCloseButton {
-  margin-left: 0.5em; }
-.tundra .Token .TokenCloseImage {
   background-color: transparent;
   background-image: url('../../../dijit/themes/tundra/images/tabClose.png');
   background-repeat: no-repeat;
-  background-position: right top;
-  width: 12px;
-  height: 12px; }
-  .dj_ie6 .tundra .Token .TokenCloseImage {
+  background-position: right 50%;
+  width: 12px; }
+  .dj_ie6 .tundra .Token .TokenCloseButton {
     background-image: url('../../../dijit/themes/tundra/images/tabClose.gif'); }
-.tundra .Token .TokenCloseButtonHover .TokenCloseImage {
+.tundra .Token .TokenCloseButtonHover {
   background-image: url('../../../dijit/themes/tundra/images/tabCloseHover.png'); }
-  .dj_ie6 .tundra .Token .TokenCloseButtonHover .TokenCloseImage {
+  .dj_ie6 .tundra .Token .TokenCloseButtonHover {
     background-image: url('../../../dijit/themes/tundra/images/tabCloseHover.gif'); }
 .tundra .Token .TokenLabel {
-  min-height: 12px;
-  display: inline-block; }
+  min-height: 12px; }
 .tundra .TokenInner {
   background-color: #e2e2e2;
   background-image: url('../../../dijit/themes/tundra/images/tabEnabled.png');
@@ -64,8 +72,7 @@
   -moz-border-radius: 4px;
   -webkit-border-radius: 4px;
   border-radius: 4px;
-  padding: 2px;
-  line-height: normal; }
+  padding: 2px; }
 .tundra .TokenHover .TokenInner {
   background-image: url('../../../dijit/themes/tundra/images/tabHover.gif');
   color: #243c5f;

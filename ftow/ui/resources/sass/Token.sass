@@ -5,18 +5,16 @@
 
 .Token
   +reset-focus
-  :white-space nowrap
+  +inline-block
   :color = !textColor
+  :white-space pre
   :position relative
-  :display inline-block
   :padding 1px
   :text-decoration none
   :cursor text
-  :vertical-align middle
 
   *
     :cursor text
-    :vertical-align middle
 
   .TokenTopLeft, .TokenTopRight, .TokenBottomLeft, .TokenBottomRight,
   .TokenTop, .TokenBottom
@@ -24,10 +22,11 @@
 
   .TokenInner
     +reset-box-model
-    :width auto
-    :height auto
+    :background
+      :color = !backgroundColor
 
   .TokenLeft, .TokenRight, .TokenInner
+    :display block
     :position relative
 
   .TokenTopLeft, .TokenTopRight, .TokenBottomLeft, .TokenBottomRight,
@@ -35,18 +34,22 @@
     :background
       :color transparent
 
-  .TokenCloseImage
+  .TokenCloseButton
     :cursor pointer
-    :display inline-block
-
-  .TokenInner
-    :display block
-    :background
-      :color = !backgroundColor
+    :margin-left 0.5em
+    :height 100%
 
   .TokenContent
-    :white-space nowrap
-    :display block
+    :white-space pre
+    :height 1.2em
+
+  .TokenContent, .TokenCloseButton, .TokenIcon, .TokenLabel
+    +inline-block
+
+  .dj_webkit &
+    .TokenContent, .TokenCloseButton, .TokenIcon, .TokenLabel
+      :vertical-align text-top
+
 
 @import TokenTundra
 @import TokenNihilo
