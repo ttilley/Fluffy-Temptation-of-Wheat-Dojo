@@ -462,7 +462,7 @@ dojo.require("dojo.dnd.Manager");
 					}else if(style == "scroll"){
 						this._hasHScroll = true;
 					}else{
-						this._hasHScroll = (this.scrollboxNode.offsetWidth < this.contentNode.offsetWidth);
+						this._hasHScroll = (this.scrollboxNode.offsetWidth - this.getScrollbarWidth() < this.contentNode.offsetWidth );
 					}
 				}
 			}
@@ -484,7 +484,7 @@ dojo.require("dojo.dnd.Manager");
 					}else if(style == "scroll"){
 						this._hasVScroll = true;
 					}else{
-						this._hasVScroll = (this.scrollboxNode.offsetHeight < this.contentNode.offsetHeight);
+						this._hasVScroll = (this.scrollboxNode.scrollHeight > this.scrollboxNode.clientHeight);
 					}
 				}
 			}
@@ -528,7 +528,18 @@ dojo.require("dojo.dnd.Manager");
 		adaptHeight: function(minusScroll){
 			if(!this.grid._autoHeight){
 				var h = this.domNode.clientHeight;
-				if(minusScroll){
+				var self = this;
+				var checkOtherViewScrollers = function(){
+					var v;
+					for(var i in self.grid.views.views){
+						v = self.grid.views.views[i];
+						if(v !== self && v.hasHScrollbar()){
+							return true;
+						}
+					}
+					return false;
+				};
+				if(minusScroll || (this.noscroll && checkOtherViewScrollers())){
 					h -= dojox.html.metrics.getScrollbar().h;
 				}
 				dojox.grid.util.setStyleHeightPx(this.scrollboxNode, h);
