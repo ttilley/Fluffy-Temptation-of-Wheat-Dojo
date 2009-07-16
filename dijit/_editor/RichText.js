@@ -450,12 +450,17 @@ dojo.declare("dijit._editor.RichText", dijit._Widget, {
 		//		private
 		var _cs = dojo.getComputedStyle(this.domNode);
 
-		// The contents inside of <body>.  Usually this is blank (set later via a call
-		// to setValue(), but for some reason we need an extra <div> on IE (TODOC)
+		// The contents inside of <body>.  The real contents are set later via a call to setValue().
 		var html = "";
 		if(dojo.isIE || (!this.height && !dojo.isMoz)){
-			html="<div>"+html+"</div>";
+			// For some reason we need an extra <div> on IE (TODOC)
+			html = "<div></div>";
+		}else if(dojo.isMoz){
+			// workaround bug where can't select then delete text (until user types something
+			// into the editor)
+			html = "&nbsp;";
 		}
+
 		var font = [ _cs.fontWeight, _cs.fontSize, _cs.fontFamily ].join(" ");
 		
 		// line height is tricky - applying a units value will mess things up.
@@ -554,16 +559,18 @@ dojo.declare("dijit._editor.RichText", dijit._Widget, {
 		}
 
 		this.editingAreaStyleSheets.push(url);
-		if(this.document.createStyleSheet){ //IE
-			this.document.createStyleSheet(url);
-		}else{ //other browser
-			var head = this.document.getElementsByTagName("head")[0];
-			var stylesheet = this.document.createElement("link");
-			stylesheet.rel="stylesheet";
-			stylesheet.type="text/css";
-			stylesheet.href=url;
-			head.appendChild(stylesheet);
-		}
+        this.onLoadDeferred.addCallback(dojo.hitch(function(){
+    		if(this.document.createStyleSheet){ //IE
+    			this.document.createStyleSheet(url);
+    		}else{ //other browser
+    			var head = this.document.getElementsByTagName("head")[0];
+    			var stylesheet = this.document.createElement("link");
+    			stylesheet.rel="stylesheet";
+    			stylesheet.type="text/css";
+    			stylesheet.href=url;
+    			head.appendChild(stylesheet);
+    		}
+        }));
 	},
 
 	removeStyleSheet: function(/*dojo._Url*/ uri){
@@ -781,9 +788,6 @@ dojo.declare("dijit._editor.RichText", dijit._Widget, {
 		//      Registers that attr("value", foo) should call setValue(foo)
 		this.setValue(value);
 	},
-	_getDisableSpellCheckAttr: function(){
-		return !dojo.attr(this.document.body, "spellcheck");
-	},
 	_setDisableSpellCheckAttr: function(/*Boolean*/ disabled){
 		if(this.document){
 			dojo.attr(this.document.body, "spellcheck", !disabled);
@@ -793,6 +797,7 @@ dojo.declare("dijit._editor.RichText", dijit._Widget, {
 				dojo.attr(this.document.body, "spellcheck", !disabled);
 			}));
 		}
+		this.disableSpellCheck = disabled;
 	},
 
 	onKeyPress: function(e){
