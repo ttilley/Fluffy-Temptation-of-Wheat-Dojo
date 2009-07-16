@@ -1,7 +1,10 @@
 --- 
-:style: :nested
-:cache_path: .sassinator/.sass_cache
-:imports: 
-- .sassinator/frameworks/dijit/stylesheets/
-:pathmap: 
+:output_style: :nested
+:sass_map: 
   ftow/ui/resources/sass: ftow/ui/resources
+:imports: []
+:cache_path: .sass_cache
+:trace: true
+:frameworks_path: frameworks
+:log_severity: :debug
+:strategy: :fsevents
