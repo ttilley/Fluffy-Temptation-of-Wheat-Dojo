@@ -10,8 +10,8 @@
 		<style type="text/css">
 			@import "../../resources/dojo.css";
 		</style>
-		<script type="text/javascript" 
-			src="../../dojo.js" 
+		<script type="text/javascript"
+			src="../../dojo.js"
 			djConfig="isDebug: true"></script>
 		<script type="text/javascript">
 			dojo.require("doh.runner");
@@ -30,12 +30,12 @@
 			}
 
 			dojo.addOnLoad(function(){
-				doh.register("t", 
+				doh.register("t",
 					[
 						"doh.is(null, dojo.byId('nonExistantId'));",
 						"doh.is(null, dojo.byId(null));",
 						"doh.is(null, dojo.byId(''));",
-						"doh.is(undefined, dojo.byId(undefined));", 
+						"doh.is(undefined, dojo.byId(undefined));",
 
 						"doh.is(100, dojo.marginBox('sq100').w);",
 						"doh.is(100, dojo.marginBox('sq100').h);",
@@ -75,9 +75,9 @@
 						"doh.is(100, dojo.contentBox('sq100border10margin10pad10').h);",
 
 						// FIXME: the 'correct' w is not 100 on Safari WebKit (2.0.4 [419.3]), the right-margin extends to the document edge
-						// "doh.is(100, dojo.marginBox('sq100nopos').w);", 
+						// "doh.is(100, dojo.marginBox('sq100nopos').w);",
 						"doh.is(100, dojo.marginBox('sq100nopos').h);",
-						
+
 						"doh.is(10, dojo._getPadExtents(dojo.byId('sq100ltpad10rbmargin10')).l);",
 						"doh.is(10, dojo._getPadExtents(dojo.byId('sq100ltpad10rbmargin10')).t);",
 						"doh.is(10, dojo._getPadExtents(dojo.byId('sq100ltpad10rbmargin10')).w);",
@@ -139,7 +139,7 @@
 								position = 'absolute';
 								overflow = 'scroll';
 								border = "10px solid black";
-							}	
+							}
 							dojo._setMarginBox(s, x, y, 100, 100);
 							dojo._setMarginBox(c, 0, 0, 500, 500);
 							s.scrollTop = 200;
@@ -211,6 +211,27 @@
 							t.assertFalse(dojo.hasClass(node, "b"), "class is blank, test for b");
 							dojo.removeClass(node, "c");
 							t.assertTrue(!node.className, "no class");
+						},
+						function testAddRemoveClassMultiple(t){
+							var node = dojo.byId("sq100");
+							dojo.addClass(node, "a");
+							t.is("a", node.className, "class is a");
+							dojo.addClass(node, "a b");
+							t.is("a b", node.className, "class is a b");
+							dojo.addClass(node, "b a");
+							t.is("a b", node.className, "class is still a b");
+							dojo.addClass(node, ["a", "c"]);
+							t.is("a b c", node.className, "class is a b c");
+							dojo.removeClass(node, "c a");
+							t.is("b", node.className, "class is b");
+							dojo.removeClass(node);
+							t.is("", node.className, "empty class");
+							dojo.addClass(node, "  c   b   a ");
+							t.is("c b a", node.className, "class is c b a");
+							dojo.removeClass(node, " c b ");
+							t.is("a", node.className, "class is a");
+							dojo.removeClass(node, ["a", "c"]);
+							t.is("", node.className, "empty class");
 						},
 						function getTypeInput(t){
 							doh.f(dojo.hasAttr(dojo.byId("input-no-type"), "type"));
@@ -439,7 +460,7 @@
 							doh.t(dojo.hasAttr(labelWithFor, "htmlFor"));
 							// when markup include for attrib make sure can retrieve using for or htmlFor
 							doh.is("input-with-label", dojo.attr(labelWithFor, "for"));
-							doh.is("input-with-label", dojo.attr(labelWithFor, "htmlFor"));						
+							doh.is("input-with-label", dojo.attr(labelWithFor, "htmlFor"));
 						},
 						function attrInnerHtmlDiv(t){
 							var n = dojo.create("div", {
