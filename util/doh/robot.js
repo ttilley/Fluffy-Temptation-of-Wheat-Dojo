@@ -65,7 +65,7 @@ if(!doh.robot["_robotLoaded"]){
 	killRobot: function(){
 		if(doh.robot._robotLoaded){
 			doh.robot._robotLoaded = false;
-			document.documentElement.className = document.documentElement.className.replace(/ ?dohRobot/);
+			document.documentElement.className = document.documentElement.className.replace(/ ?dohRobot/, "");
 			doh.robot._killApplet();
 		}
 	},
@@ -111,7 +111,7 @@ if(!doh.robot["_robotLoaded"]){
 		doh._initRobotCalled = true;
 
 		// add dohRobot class to HTML element so tests can use that in CSS rules if desired
-		document.documentElement.className = document.documentElement.className.replace(/\S$/, "& ") + "dohRobot";
+		document.documentElement.className += " dohRobot";
 		window.scrollTo(0, 0);
 //		document.documentElement.scrollTop = document.documentElement.scrollLeft = 0;
 		_robot = r;
@@ -220,12 +220,14 @@ if(!doh.robot["_robotLoaded"]){
 		//
 		// duration:
 		//		Time, in milliseconds, to spend pressing all of the keys.
+		//		The default is (string length)*50 ms.
 		//
 
 		this._assertRobot();
 		this.sequence(function(){
-			duration=duration||0;
-			if(typeof(chars) == Number){
+			var isNum = typeof(chars) == Number;
+			duration=duration||(isNum?50:chars.length*50);
+			if(isNum){
 				_keyPress(chars, chars, false, false, false, false, delay);
 			}else if(chars.length){
 				for(var i = 0; i<chars.length; i++){
@@ -259,6 +261,7 @@ if(!doh.robot["_robotLoaded"]){
 		//			- shift
 		//			- alt
 		//			- ctrl
+		//			- meta
 		//
 		// asynchronous:
 		//		If true, the delay happens asynchronously and immediately, outside of the browser's JavaScript thread and any previous calls.
