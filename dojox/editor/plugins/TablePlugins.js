@@ -311,7 +311,7 @@ dojo.declare("dojox.editor.plugins.GlobalTableHandler", dijit._editor._Plugin,{
 			// type is a number/ms
 			this.availableCurrentlySet = true;
 			setTimeout(dojo.hitch(this, function(){
-				this.availableCurrentlySet = false;											 
+				this.availableCurrentlySet = false;
 			}), type);
 		}
 		
