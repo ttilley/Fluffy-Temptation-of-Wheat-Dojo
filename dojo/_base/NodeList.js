@@ -151,7 +151,7 @@ dojo.require("dojo._base.array");
 		//		|	// property that is both readable and writable and
 		//		|	// push/pop/shift/unshift methods
 		//		|	console.log(l.length);
-		//		|	l.push(dojo.create("<span>howdy!</span>"));
+		//		|	l.push(dojo.create("span"));
 		//		|
 		//		|	// dojo's normalized array methods work too:
 		//		|	console.log( l.indexOf(dojo.byId("foo")) );
@@ -576,10 +576,20 @@ dojo.require("dojo._base.array");
 		/*=====
 		coords: function(){
 			//	summary:
-			// 		Returns the box objects all elements in a node list as
-			// 		an Array (*not* a NodeList)
+			//		Returns the box objects of all elements in a node list as
+			//		an Array (*not* a NodeList). Acts like `dojo.coords`, though assumes
+			//		the node passed is each node in this list.
 
 			return d.map(this, d.coords); // Array
+		},
+
+		position: function(){
+			//	summary:
+			//		Returns border-box objects (x/y/w/h) of all elements in a node list
+			//		as an Array (*not* a NodeList). Acts like `dojo.position`, though
+			//		assumes the node passed is each node in this list. 
+
+			return d.map(this, d.position); // Array
 		},
 
 		attr: function(property, value){
@@ -682,6 +692,7 @@ dojo.require("dojo._base.array");
 
 		// useful html methods
 		coords:	adaptAsMap(d.coords),
+		position: adaptAsMap(d.position),
 
 		// FIXME: connectPublisher()? connectRunOnce()?
 

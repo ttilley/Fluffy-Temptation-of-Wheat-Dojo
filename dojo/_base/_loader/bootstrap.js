@@ -247,32 +247,40 @@ dojo.global = {
 	}
 	//>>excludeEnd("webkitMobile");
 
-	var tobj = {};
-	dojo._mixin = function(/*Object*/ obj, /*Object*/ props){
+	var empty = {}, extraNames;
+	for(var i in {toString: 1}){ extraNames = []; break; }
+	dojo._extraNames = extraNames = extraNames || ["hasOwnProperty", "valueOf", "isPrototypeOf",
+		"propertyIsEnumerable", "toLocaleString", "toString"];
+	
+	dojo._mixin = function(/*Object*/ target, /*Object*/ source){
 		// summary:
-		//		Adds all properties and methods of props to obj. This addition
+		//		Adds all properties and methods of source to target. This addition
 		//		is "prototype extension safe", so that instances of objects
 		//		will not pass along prototype defaults.
-		for(var x in props){
-			// the "tobj" condition avoid copying properties in "props"
-			// inherited from Object.prototype.  For example, if obj has a custom
+		var name, s, i = 0, l = extraNames.length;
+		for(name in source){
+			// the "tobj" condition avoid copying properties in "source"
+			// inherited from Object.prototype.  For example, if target has a custom
 			// toString() method, don't overwrite it with the toString() method
-			// that props inherited from Object.prototype
-			if(tobj[x] === undefined || tobj[x] != props[x]){
-				obj[x] = props[x];
+			// that source inherited from Object.prototype
+			s = source[name];
+			if(s !== empty[name] && s !== target[name]){
+				target[name] = s;
 			}
 		}
 		//>>excludeStart("webkitMobile", kwArgs.webkitMobile);
-		// IE doesn't recognize custom toStrings in for..in
-		if(d.isIE && props){
-			var p = props.toString;
-			if(typeof p == "function" && p != obj.toString && p != tobj.toString &&
-				p != "\nfunction toString() {\n    [native code]\n}\n"){
-					obj.toString = props.toString;
+		// IE doesn't recognize some custom functions in for..in
+		if(l && source){
+			for(; i < l; ++i){
+				name = extraNames[i];
+				s = source[name];
+				if(s !== empty[name] && s !== target[name]){
+					target[name] = s;
+				}
 			}
 		}
 		//>>excludeEnd("webkitMobile");
-		return obj; // Object
+		return target; // Object
 	}
 
 	dojo.mixin = function(/*Object*/obj, /*Object...*/props){
@@ -338,8 +346,8 @@ dojo.global = {
 	dojo._getProp = function(/*Array*/parts, /*Boolean*/create, /*Object*/context){
 		var obj=context || d.global;
 		for(var i=0, p; obj && (p=parts[i]); i++){
-			if(i == 0 && this._scopeMap[p]){
-				p = this._scopeMap[p];
+			if(i == 0 && d._scopeMap[p]){
+				p = d._scopeMap[p];
 			}
 			obj = (p in obj ? obj[p] : (create ? obj[p]={} : undefined));
 		}

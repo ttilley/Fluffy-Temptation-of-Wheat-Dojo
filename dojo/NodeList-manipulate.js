@@ -50,6 +50,9 @@ dojo["NodeList-manipulate"] = {
 				//DocumentFragment cannot handle cloneNode, so choose first child.
 				html = html.childNodes[0];
 			}
+		}else if(html.nodeType == 1 && html.parentNode){
+			//This element is already in the DOM clone it, but not its children.
+			html = html.cloneNode(false);
 		}
 		return html; /*DOMNode*/
 	}
@@ -83,10 +86,13 @@ dojo["NodeList-manipulate"] = {
 				}
 			}
 
-			//Add the toAdd items to the current NodeList.
-			toAdd.unshift(this.length - 1);
-			toAdd.unshift(0);
-			Array.prototype.splice.apply(this, toAdd);
+			if(toAdd.length){
+				//Add the toAdd items to the current NodeList. Build up list of args
+				//to pass to splice.
+				toAdd.unshift(0);
+				toAdd.unshift(this.length - 1);
+				Array.prototype.splice.apply(this, toAdd);
+			}
 
 			return this; //dojo.NodeList
 		},
@@ -107,6 +113,9 @@ dojo["NodeList-manipulate"] = {
 			// 		The nodes represented by the value argument will be cloned if more than one
 			// 		node is in this NodeList. The nodes in this NodeList are returned in the "set"
 			// 		usage of this method, not the HTML that was inserted.
+			//	returns:
+			//		if no value is passed, the result is String, the innerHTML of the first node.
+			//		If a value is passed, the return is this dojo.NodeList
 			//	example:
 			//		assume a DOM created by this markup:
 			//	|	<div id="foo"></div>
@@ -141,8 +150,8 @@ dojo["NodeList-manipulate"] = {
 			//		optional. The HTML fragment to use as innerHTML. If value is not passed, then the innerHTML
 			// 		of the first element in this NodeList is returned.
 			//	returns:
-			//		if no value is passed, the result is String
-			//		If a value is passed, the return is this NodeList
+			//		if no value is passed, the result is String, the innerHTML of the first node.
+			//		If a value is passed, the return is this dojo.NodeList
 			return; // dojo.NodeList
 			return; // String
 		},
@@ -165,6 +174,9 @@ dojo["NodeList-manipulate"] = {
 			//	|	<div id="bar"><p>Hello World</p></div>
 			//		This code returns "Hello Mars today":
 			//	|	var message = dojo.query("div").text();
+			//	returns:
+			//		if no value is passed, the result is String, the text value of the first node.
+			//		If a value is passed, the return is this dojo.NodeList
 			if(arguments.length){
 				for(var i = 0, node; node = this[i]; i++){
 					if(node.nodeType == 1){
@@ -188,6 +200,10 @@ dojo["NodeList-manipulate"] = {
 			// 		NodeList, or properly selecting/checking the right value for radio/checkbox/select
 			// 		elements. If no value is passed, the value of the first node in this NodeList
 			// 		is returned.
+			//	returns:
+			//		if no value is passed, the result is String or an Array, for the value of the
+			//		first node.
+			//		If a value is passed, the return is this dojo.NodeList
 			//	example:
 			//		assume a DOM created by this markup:
 			//	|	<input type="text" value="foo">
@@ -261,8 +277,10 @@ dojo["NodeList-manipulate"] = {
 			// description:
 			// 		The content will be cloned if the length of NodeList
 			// 		is greater than 1. Only the DOM nodes are cloned, not
-			// 		any attached event handlers. The nodes currently in
-			// 		this NodeList will be returned, not the appended content.
+			// 		any attached event handlers.
+			// returns:
+			//		dojo.NodeList, the nodes currently in this NodeList will be returned,
+			//		not the appended content.
 			//	example:
 			//		assume a DOM created by this markup:
 			//	|	<div id="foo"><p>Hello Mars</p></div>
@@ -282,9 +300,10 @@ dojo["NodeList-manipulate"] = {
 			// description:
 			// 		The nodes in this NodeList will be cloned if the query
 			// 		matches more than one element. Only the DOM nodes are cloned, not
-			// 		any attached event handlers. The nodes currently in
-			// 		this NodeList will be returned, not the matched nodes
-			// 		from the query.
+			// 		any attached event handlers.
+			// returns:
+			//		dojo.NodeList, the nodes currently in this NodeList will be returned,
+			//		not the matched nodes from the query.
 			//	example:
 			//		assume a DOM created by this markup:
 			//	|	<span>append</span>
@@ -304,9 +323,10 @@ dojo["NodeList-manipulate"] = {
 			// description:
 			// 		The content will be cloned if the length of NodeList
 			// 		is greater than 1. Only the DOM nodes are cloned, not
-			// 		any attached event handlers. The nodes currently in
-			// 		this NodeList will be returned, not the prepended content.
-			//	example:
+			// 		any attached event handlers.
+			// returns:
+			//		dojo.NodeList, the nodes currently in this NodeList will be returned,
+			//		not the appended content.
 			//		assume a DOM created by this markup:
 			//	|	<div id="foo"><p>Hello Mars</p></div>
 			//	|	<div id="bar"><p>Hello World</p></div>
@@ -325,9 +345,10 @@ dojo["NodeList-manipulate"] = {
 			// description:
 			// 		The nodes in this NodeList will be cloned if the query
 			// 		matches more than one element. Only the DOM nodes are cloned, not
-			// 		any attached event handlers. The nodes currently in
-			// 		this NodeList will be returned, not the matched nodes
-			// 		from the query.
+			// 		any attached event handlers.
+			// returns:
+			//		dojo.NodeList, the nodes currently in this NodeList will be returned,
+			//		not the matched nodes from the query.
 			//	example:
 			//		assume a DOM created by this markup:
 			//	|	<span>prepend</span>
@@ -347,8 +368,10 @@ dojo["NodeList-manipulate"] = {
 			// description:
 			// 		The content will be cloned if the length of NodeList
 			// 		is greater than 1. Only the DOM nodes are cloned, not
-			// 		any attached event handlers. The nodes currently in
-			// 		this NodeList will be returned, not the content.
+			// 		any attached event handlers.
+			// returns:
+			//		dojo.NodeList, the nodes currently in this NodeList will be returned,
+			//		not the appended content.
 			//	example:
 			//		assume a DOM created by this markup:
 			//	|	<div id="foo"><p>Hello Mars</p></div>
@@ -368,9 +391,10 @@ dojo["NodeList-manipulate"] = {
 			// description:
 			// 		The nodes in this NodeList will be cloned if the query
 			// 		matches more than one element. Only the DOM nodes are cloned, not
-			// 		any attached event handlers. The nodes currently in
-			// 		this NodeList will be returned, not the matched nodes
-			// 		from the query.
+			// 		any attached event handlers.
+			// returns:
+			//		dojo.NodeList, the nodes currently in this NodeList will be returned,
+			//		not the matched nodes from the query.
 			//	example:
 			//		assume a DOM created by this markup:
 			//	|	<span>after</span>
@@ -390,8 +414,10 @@ dojo["NodeList-manipulate"] = {
 			// description:
 			// 		The content will be cloned if the length of NodeList
 			// 		is greater than 1. Only the DOM nodes are cloned, not
-			// 		any attached event handlers. The nodes currently in this NodeList
-			// 		will be returned, not the content.
+			// 		any attached event handlers.
+			// returns:
+			//		dojo.NodeList, the nodes currently in this NodeList will be returned,
+			//		not the appended content.
 			//	example:
 			//		assume a DOM created by this markup:
 			//	|	<div id="foo"><p>Hello Mars</p></div>
@@ -411,9 +437,10 @@ dojo["NodeList-manipulate"] = {
 			// description:
 			// 		The nodes in this NodeList will be cloned if the query
 			// 		matches more than one element. Only the DOM nodes are cloned, not
-			// 		any attached event handlers. The nodes currently in
-			// 		this NodeList will be returned, not the matched nodes
-			// 		from the query.
+			// 		any attached event handlers.
+			// returns:
+			//		dojo.NodeList, the nodes currently in this NodeList will be returned,
+			//		not the matched nodes from the query.
 			//	example:
 			//		assume a DOM created by this markup:
 			//	|	<span>before</span>
@@ -451,8 +478,10 @@ dojo["NodeList-manipulate"] = {
 			// description:
 			// 		html will be cloned if the NodeList has more than one
 			// 		element. Only DOM nodes are cloned, not any attached
-			// 		event handlers. The nodes in the current NodeList will
-			// 		be returned, not the nodes from html.
+			// 		event handlers.
+			// returns:
+			//		dojo.NodeList, the nodes in the current NodeList will be returned,
+			//		not the nodes from html argument.
 			//	example:
 			//		assume a DOM created by this markup:
 			//	|	<b>one</b>
@@ -486,8 +515,9 @@ dojo["NodeList-manipulate"] = {
 			// summary:
 			// 		Insert html where the first node in this NodeList lives, then place all
 			// 		nodes in this NodeList as the child of the html.
-			// description:
-			// 		The nodes in the current NodeList will be returned, not the nodes from html.
+			// returns:
+			//		dojo.NodeList, the nodes in the current NodeList will be returned,
+			//		not the nodes from html argument.
 			//	example:
 			//		assume a DOM created by this markup:
 			//	|	<div class="container">
@@ -529,8 +559,10 @@ dojo["NodeList-manipulate"] = {
 			// description:
 			// 		html will be cloned if the NodeList has more than one
 			// 		element. Only DOM nodes are cloned, not any attached
-			// 		event handlers. The nodes in the current NodeList will
-			// 		be returned, not the nodes from html.
+			// 		event handlers.
+			// returns:
+			//		dojo.NodeList, the nodes in the current NodeList will be returned,
+			//		not the nodes from html argument.
 			//	example:
 			//		assume a DOM created by this markup:
 			//	|	<div class="container">
@@ -570,9 +602,10 @@ dojo["NodeList-manipulate"] = {
 			// description:
 			// 		The content will be cloned if the length of NodeList
 			// 		is greater than 1. Only the DOM nodes are cloned, not
-			// 		any attached event handlers. The nodes currently in
-			// 		this NodeList will be returned, not the replacing content.
-			// 		Note that the returned nodes have been removed from the DOM.
+			// 		any attached event handlers.
+			// returns:
+			//		The nodes currently in this NodeList will be returned, not the replacing content.
+			//		Note that the returned nodes have been removed from the DOM.
 			//	example:
 			//		assume a DOM created by this markup:
 			//	|	<div class="container">
@@ -605,10 +638,11 @@ dojo["NodeList-manipulate"] = {
 			// description:
 			// 		The nodes in this NodeList will be cloned if the query
 			// 		matches more than one element. Only the DOM nodes are cloned, not
-			// 		any attached event handlers. The nodes currently in
-			// 		this NodeList will be returned, not the matched nodes
-			// 		from the query. The nodes currently in this NodeLIst could have
-			// 		been cloned, so the returned NodeList will include the cloned nodes.
+			// 		any attached event handlers.
+			// returns:
+			//		The nodes currently in this NodeList will be returned, not the matched nodes
+			//		from the query. The nodes currently in this NodeLIst could have
+			//		been cloned, so the returned NodeList will include the cloned nodes.
 			//	example:
 			//		assume a DOM created by this markup:
 			//	|	<div class="container">
@@ -648,6 +682,8 @@ dojo["NodeList-manipulate"] = {
 			// 		Clones all the nodes in this NodeList and returns them as a new NodeList.
 			// description:
 			// 		Only the DOM nodes are cloned, not any attached event handlers.
+			// returns:
+			//		dojo.NodeList, a cloned set of the original nodes.
 			//	example:
 			//		assume a DOM created by this markup:
 			//	|	<div class="container">
