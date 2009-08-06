@@ -277,16 +277,16 @@ dojo.declare(
 			dojo.stopEvent(evt);
 
 			if(evt.type == "mousedown"){
-				var coords = dojo.coords(this.monthLabelNode, true);
-//				coords.y -= dojo.coords(this.domNode, true).y;
+				var coords = dojo.position(this.monthLabelNode);
+//				coords.y -= dojo.position(this.domNode, true).y;
 				// Size the dropdown's width to match the label in the widget
 				// so that they are horizontally aligned
 				var dim = {
 					width: coords.w + "px",
 					top: -this.displayMonth.getMonth() * coords.h + "px"
 				};
-				if(dojo.isIE < 8 || dojo.isQuirks){
-					dim.left = (dojo.isQuirks ? -coords.w/2 : 0) + "px";
+				if((dojo.isIE && dojo.isQuirks) || dojo.isIE < 7){
+					dim.left = -coords.w/2 + "px";
 				}
 				dojo.style(this.monthDropDown, dim);
 				this._popupHandler = this.connect(document, "onmouseup", "_onMonthToggle");

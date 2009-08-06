@@ -140,6 +140,7 @@ dojo.declare(
 			if(isValid){ this._maskValidSubsetError = true; }
 			var isValidSubset = !isValid && isFocused && this._isValidSubset();
 			var isEmpty = this._isEmpty(this.textbox.value);
+			if(isEmpty){ this._maskValidSubsetError = true; }
 			this.state = (isValid || (!this._hasBeenBlurred && isEmpty) || isValidSubset) ? "" : "Error";
 			if(this.state == "Error"){ this._maskValidSubsetError = false; }
 			this._setStateClass();
@@ -316,7 +317,7 @@ dojo.declare(
 			// (as opposed to the displayed value).
 			// Passing in name as markup rather than calling dojo.create() with an attrs argument
 			// to make dojo.query(input[name=...]) work on IE. (see #8660)
-			this.valueNode = dojo.place("<input type='hidden' name='" + this.name + "'>", this.textbox, "after");
+			this.valueNode = dojo.place("<input type='hidden'" + (this.name ? " name='" + this.name + "'" : "") + ">", this.textbox, "after");
 		},
 
 		_setDisabledAttr: function(/*Boolean*/ value){
@@ -365,13 +366,8 @@ dojo.declare(
 			//		Overridable function used to validate the range of the numeric input value.
 			// tags:
 			//		protected
-			var isMin = "min" in constraints;
-			var isMax = "max" in constraints;
-			if(isMin || isMax){
-				return (!isMin || this.compare(primitive,constraints.min) >= 0) &&
-					(!isMax || this.compare(primitive,constraints.max) <= 0);
-			}
-			return true; // Boolean
+			return	("min" in constraints? (this.compare(primitive,constraints.min) >= 0) : true) &&
+				("max" in constraints? (this.compare(primitive,constraints.max) <= 0) : true); // Boolean
 		},
 
 		isInRange: function(/*Boolean*/ isFocused){
@@ -391,13 +387,13 @@ dojo.declare(
 			var isTooMuch = false;
 			if("min" in this.constraints){
 				var min = this.constraints.min;
-				val = this.compare(val, ((typeof min == "number") && min >= 0 && val !=0)? 0 : min);
-				isTooLittle = (typeof val == "number") && val < 0;
+				min = this.compare(val, ((typeof min == "number") && min >= 0 && val !=0)? 0 : min);
+				isTooLittle = (typeof min == "number") && min < 0;
 			}
 			if("max" in this.constraints){
 				var max = this.constraints.max;
-				val = this.compare(val, ((typeof max != "number") || max > 0)? max : 0);
-				isTooMuch = (typeof val == "number") && val > 0;
+				max = this.compare(val, ((typeof max != "number") || max > 0)? max : 0);
+				isTooMuch = (typeof max == "number") && max > 0;
 			}
 			return isTooLittle || isTooMuch;
 		},

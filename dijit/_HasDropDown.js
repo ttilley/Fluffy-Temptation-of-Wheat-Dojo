@@ -1,5 +1,6 @@
 dojo.provide("dijit._HasDropDown");
 
+dojo.require("dijit._base.place");
 dojo.require("dijit._Widget");
 
 dojo.declare("dijit._HasDropDown",
@@ -13,6 +14,13 @@ dojo.declare("dijit._HasDropDown",
 		//		Can be set via a dojoAttachPoint assignment.  
 		//		If missing, then either focusNode or domNode (if focusNode is also missing) will be used.
 		_buttonNode: null,
+		
+		//	_arrowWrapperNode: [protected] DomNode
+		//		Will set CSS class dijitUpArrow, dijitDownArrow, dijitRightArrow etc. on this node depending
+		//		on where the drop down is set to be positioned.
+		//		Can be set via a dojoAttachPoint assignment.  
+		//		If missing, then _buttonNode will be used.
+		_arrowWrapperNode: null,
 		
 		//	_popupStateNode: [protected] DomNode
 		//		The node to set the popupActive class on.
@@ -46,6 +54,22 @@ dojo.declare("dijit._HasDropDown",
 		//		The max height for our dropdown.  Set to 0 for no max height.
 		//		any dropdown taller than this will have scrollbars
 		maxHeight: 0,
+		
+		// dropDownPosition: [const] String[]
+		//		This variable controls the position of the drop down.
+		//		It's an array of strings with the following values:
+		//
+		//			* before: places drop down to the left of the target node/widget, or to the right in
+		//			  the case of RTL scripts like Hebrew and Arabic
+		//			* after: places drop down to the right of the target node/widget, or to the left in
+		//			  the case of RTL scripts like Hebrew and Arabic
+		//			* above: drop down goes above target node
+		//			* below: drop down goes below target node
+		//
+		//		The list is positions is tried, in order, until a position is found where the drop down fits
+		//		within the viewport.
+		//
+		dropDownPosition: ["below","above"],
 		
 		//	_stopClickEvents: Boolean
 		//		When set to false, the click events will not be stopped, in
@@ -104,9 +128,9 @@ dojo.declare("dijit._HasDropDown",
 				// because it's so large.  In that case mouse-up shouldn't select a value from the menu.
 				// Find out if our target is somewhere in our dropdown widget,
 				// but not over our _buttonNode (the clickable node)
-				var c = dojo.coords(this._buttonNode)
-				if(!(e.pageX >= c.l && e.pageX <= c.l + c.w) || 
-					!(e.pageY >= c.t && e.pageY <= c.t + c.h)){
+				var c = dojo.position(this._buttonNode, true);
+				if(!(e.pageX >= c.x && e.pageX <= c.x + c.w) || 
+					!(e.pageY >= c.y && e.pageY <= c.y + c.h)){
 					var t = e.target;
 					while(t && !overMenu){
 						if(dojo.hasClass(t, "dijitPopup")){
@@ -159,19 +183,31 @@ dojo.declare("dijit._HasDropDown",
 				this.connect(this, "openDropDown", "_setStateClass");
 				this.connect(this, "closeDropDown", "_setStateClass");
 			}
+
+			// Add a class to the "dijitDownArrowButton" type class to _buttonNode so theme can set direction of arrow
+			// based on where drop down will normally appear
+			var defaultPos = {
+					"after" : this.isLeftToRight() ? "Right" : "Left",
+					"before" : this.isLeftToRight() ? "Left" : "Right",
+					"above" : "Up",
+					"below" : "Down",
+					"left" : "Left",
+					"right" : "Right"
+			}[this.dropDownPosition[0]] || this.dropDownPosition[0]||"Down";
+			dojo.addClass(this._arrowWrapperNode||this._buttonNode, "dijit" + defaultPos + "ArrowButton");			
 		},
 		
 		postCreate: function(){
 			this._setupDropdown();
-			this.inherited("postCreate", arguments);
+			this.inherited(arguments);
 		},
-		
+
 		destroyDescendants: function(){
 			if(this.dropDown){
 				this.dropDown.destroyRecursive();
 				delete this.dropDown;
 			}
-			this.inherited("destroyDescendants", arguments);
+			this.inherited(arguments);
 		},
 
 		_onDropDownKeydown: function(/*Event*/ e){
@@ -204,7 +240,7 @@ dojo.declare("dijit._HasDropDown",
 				this.toggleDropDown();
 				return;
 			}
-			if(e.keyCode == dojo.keys.DOWN_ARROW){
+			if(e.keyCode == dojo.keys.DOWN_ARROW || e.keyCode == dojo.keys.ENTER || e.charOrCode == " "){
 				this._onDropDownMouse(e);
 			}
 		},
@@ -215,7 +251,7 @@ dojo.declare("dijit._HasDropDown",
 
 			this.closeDropDown();
 			// don't focus on button.  the user has explicitly focused on something else.
-			this.inherited("_onBlur", arguments);
+			this.inherited(arguments);
 		},
 		
 		isLoaded: function(){
@@ -291,11 +327,19 @@ dojo.declare("dijit._HasDropDown",
 					mb.w = this.domNode.offsetWidth;
 				}else if(this.autoWidth){
 					mb.w = Math.max(mb.w, this.domNode.offsetWidth);
+				}else{
+					delete mb.w;
 				}
 				if(overHeight){
 					mb.h = this.maxHeight;
-					mb.w += 16;
+					if("w" in mb){
+						mb.w += 16;
+					}
+				}else{
+					delete mb.h;
 				}
+				delete mb.t;
+				delete mb.l;
 				if(dojo.isFunction(dropDown.resize)){
 					dropDown.resize(mb);
 				}else{
@@ -306,10 +350,7 @@ dojo.declare("dijit._HasDropDown",
 				parent: this,
 				popup: dropDown,
 				around: this._aroundNode,
-				orient:
-					// TODO: add user-defined positioning option, like in Tooltip.js
-					this.isLeftToRight() ? {'BL':'TL', 'BR':'TR', 'TL':'BL', 'TR':'BR'}
-					: {'BR':'TR', 'BL':'TL', 'TR':'BR', 'TL':'BL'},
+				orient: dijit.getPopupAroundAlignment((this.dropDownPosition && this.dropDownPosition.length) ? this.dropDownPosition : ["below"],this.isLeftToRight()),
 				onExecute: function(){
 					self.closeDropDown(true);
 				},
