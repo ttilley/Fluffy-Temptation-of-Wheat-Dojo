@@ -2,10 +2,12 @@
 	"http://www.w3.org/TR/html4/strict.dtd">
 <html>
 	<head>
-		<title>Testing dojo.fx</title>
+		<title>Testing dojo.trigger / NodeList.trigger / Node.trigger</title>
+		
 		<script type="text/javascript" src="../../dojo/dojo.js" djConfig="isDebug: true"></script>
 		<script type="text/javascript" src="../node.js"></script>
 		<script type="text/javascript" src="../trigger.js"></script>
+
 		<script type="text/javascript">
 			dojo.require("doh.runner");
 
@@ -110,6 +112,146 @@
 							}).trigger("onclick");
 							
 							return d;
+						},
+						
+						function triggerRandom(t){
+							var d = new doh.Deferred();
+							var n = dojo.byId("nodetest");
+							var x = 0;
+							
+							dojo.connect(n, "onrandom", function(){
+								x++;
+								if(x == 2){
+									d.callback(true);
+								}
+							});
+							
+							dojo.trigger('nodetest', "onrandom");
+							dojo.trigger('nodetest', "random");
+							
+							return d;
+							
+						},
+						
+						function triggerBubbles(t){
+							var d = new doh.Deferred();
+							
+							var x = 0;
+							var n = dojo.byId("nodetest2");
+							var hand = dojo.connect(n, "onclick", function(){
+								x++;
+								if(x == 2){
+									dojo.disconnect(hand);
+									d.callback(true);
+								}
+							});
+							
+							dojo.query("#nodetest2 a").trigger("click");
+							
+							return d;
+						},
+
+						function triggerKeyDown(t){
+							var d = new doh.Deferred();
+							var x = 0;
+							dojo.query("#myinput").connect("onkeydown", function(){
+								x++;
+								if(x == 2){
+									d.callback(true);
+								}
+							});
+							
+							dojo.trigger("myinput", "keydown");
+							dojo.trigger("myinput", "onkeydown");
+							
+							return d;
+							
+						},
+						
+						function triggerKeyPress(t){
+							var d = new doh.Deferred();
+							var x = 0;
+							var n = dojo.byId("myinput");
+							var h = dojo.connect(n, "keypress", function(){
+								x++;
+								if(x == 2){
+									dojo.disconnect(h);
+									d.callback(true);
+								}
+							});
+							
+							dojo.trigger("myinput", "keypress");
+							dojo.trigger("myinput", "onkeypress");
+							
+							return d;
+							
+						},
+						
+						function triggerOver(t){
+							var d = new doh.Deferred();
+							
+							var n = dojo.byId("entered");
+							
+							var h = dojo.connect(n, "onmouseover", function(){
+								dojo.disconnect(h);
+								d.callback(true);
+							});
+							
+							dojo.trigger(n, "mouseover");
+							
+							return d;
+						},
+
+						function triggerEnter(t){
+							var d = new doh.Deferred();
+							
+							var n = dojo.byId("entered2");
+							var x = 0;
+							
+							var h = dojo.connect(n, "onmouseenter", function(){
+								x++;
+								if(x == 2){ 
+									dojo.disconnect(h);
+									d.callback(true);
+								}
+							});
+							
+							dojo.trigger(n, "mouseenter");
+							dojo.trigger(n, "onmouseenter");
+							
+							return d;
+						},
+						
+						function triggerUnconnectedCustom(t){
+							
+							var d = new doh.Deferred();
+							
+							try{
+								dojo.trigger("unconnected", "customEventNameWhichWouldNeverAppearOrBeConnectedTo");
+							}catch(e){
+								d.errback("whoops");
+								return d;
+							}finally{
+								d.callback(true);
+							}
+							
+							return d;
+						},
+						
+						function customBubbles(t){
+							
+							var d = new doh.Deferred();
+							
+							var trap = dojo.byId("custombubbles");
+							dojo.connect(trap, "onCustom", function(e){
+								console.dir(e);
+								d.callback(true);
+							});
+							
+							dojo.trigger("bubbletrigger", "onCustom");
+							
+							return d;
+							
 						}
 					
 					]
@@ -144,5 +286,20 @@
 		</ul>
 		
 		<p id="nodetest">hi</p>
+		<p id="nodetest2">
+			<a href="#">one</a><a href="#">two</a>
+		</p>
+		
+		<input id="myinput" type="text" size="4">
+		
+		<div id="entered" style="height:200px; width:200px; border:2px solid #000"></div>
+		<div id="entered2" style="height:200px; width:200px; border:2px solid #000"></div>
+		
+		<p id="unconnected"></p>
+		
+		<div id="custombubbles">
+			<p id="bubbletrigger"></p>
+		</div>
+		
 	</body>
 </html>
