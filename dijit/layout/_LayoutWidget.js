@@ -43,10 +43,9 @@ dojo.declare("dijit.layout._LayoutWidget",
 
 			if(this._started){ return; }
 
-			// TODO: seems like this code should be in _Container.startup().
-			// Then things that don't extend LayoutContainer (like GridContainer)
-			// would get the behavior for free.
-			dojo.forEach(this.getChildren(), function(child){ child.startup(); });
+			// Need to call inherited first - so that child widgets get started
+			// up correctly
+			this.inherited(arguments);
 
 			// If I am a not being controlled by a parent layout widget...
 			var parent = this.getParent && this.getParent()
@@ -65,8 +64,6 @@ dojo.declare("dijit.layout._LayoutWidget",
 					this.resize();
 				});
 			}
-			
-			this.inherited(arguments);
 		},
 
 		resize: function(changeSize, resultSize){

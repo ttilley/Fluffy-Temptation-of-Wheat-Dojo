@@ -39,6 +39,12 @@ dojo.declare("dijit.form._DropDownSelectMenu", dijit.Menu, {
 			var w = dojo.contentBox(this.domNode).w;
 			if(dojo.isFF && this.domNode.scrollHeight > this.domNode.clientHeight){
 				w--;
+			}else if(dojo.isIE < 8 || (dojo.isIE && dojo.isQuirks)){
+				// IE < 8 and IE8 in quirks mode doesn't need this additional
+				// width of the scrollbar...it causes a horizontal scroll bar
+				// (as well as continually expanding the dropdown each time
+				// it is opened)
+				w -= 16;
 			}
 			dojo.marginBox(this.menuTableNode, {w: w});
 		}
@@ -87,7 +93,7 @@ dojo.declare("dijit.form.DropDownSelect", [dijit.form._FormSelectWidget, dijit._
 		// summary:  
 		//		Set the value to be the first, or the selected index
 		this.inherited(arguments);
-		if(this.options.length && !this.value){
+		if(this.options.length && !this.value && this.srcNodeRef){
 			var si = this.srcNodeRef.selectedIndex;
 			this.value = this.options[si != -1 ? si : 0].value;
 		}
@@ -121,10 +127,17 @@ dojo.declare("dijit.form.DropDownSelect", [dijit.form._FormSelectWidget, dijit._
 		//		For the given option, add a option to our dropdown
 		//		If the option doesn't have a value, then a separator is added 
 		//		in that place.
-		this.dropDown.addChild(this._getMenuItemForOption(option));
+		if(this.dropDown){
+			this.dropDown.addChild(this._getMenuItemForOption(option));
+		}
 	},
 
-	_getChildren: function(){ return this.dropDown.getChildren(); },
+	_getChildren: function(){ 
+		if(!this.dropDown){
+			return [];
+		}
+		return this.dropDown.getChildren();
+	},
 	
 	_loadChildren: function(/* boolean */ loadMenuItems){
 		// summary: 
@@ -138,8 +151,9 @@ dojo.declare("dijit.form.DropDownSelect", [dijit.form._FormSelectWidget, dijit._
 			// this.inherited destroys this.dropDown's child widgets (MenuItems).
 			// Avoid this.dropDown (Menu widget) having a pointer to a destroyed widget (which will cause
 			// issues later in _setSelected).
-			delete this.dropDown.focusedChild;
-
+			if(this.dropDown){
+				delete this.dropDown.focusedChild;
+			}
 			this.inherited(arguments);
 		}else{
 			this._updateSelection();
@@ -220,7 +234,7 @@ dojo.declare("dijit.form.DropDownSelect", [dijit.form._FormSelectWidget, dijit._
 	
 	postCreate: function(){
 		this.inherited(arguments);
-		if(dojo.attr(this.srcNodeRef, "disabled")){
+		if(this.srcNodeRef && dojo.attr(this.srcNodeRef, "disabled")){
 			this.attr("disabled", true);
 		}
 		if(this.tableNode.style.width){

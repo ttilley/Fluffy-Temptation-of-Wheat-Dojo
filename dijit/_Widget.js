@@ -548,7 +548,7 @@ dojo.declare("dijit._Widget", null, {
 
 		// destroy widgets created as part of template, etc.
 		dfe(this._supportingWidgets||[], function(w){ 
-			if(w.destroyRecursive){
+			if(w.isContainer && w.destroyRecursive){
 				w.destroyRecursive();
 			}else if(w.destroy){
 				w.destroy();
@@ -813,10 +813,11 @@ dojo.declare("dijit._Widget", null, {
 			return this;
 		}
 		var names = this._getAttrNames(name);
-		if(args == 2){ // setter
+		if(args >= 2){ // setter
 			if(this[names.s]){
 				// use the explicit setter
-				return this[names.s](value) || this;
+				args = dojo._toArray(arguments, 1);
+				return this[names.s].apply(this, args) || this;
 			}else{
 				// if param is specified as DOM node attribute, copy it
 				if(name in this.attributeMap){
