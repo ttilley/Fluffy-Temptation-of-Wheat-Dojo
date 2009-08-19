@@ -59,6 +59,12 @@ dojo.declare("dojox.data.CsvStore", null, {
 		}else{
 			this._idMap = {};
 		}
+		if("separator" in keywordParameters){
+			this.separator = keywordParameters.separator;
+		}
+		if("urlPreventCache" in keywordParameters){
+			this.urlPreventCache = keywordParameters.urlPreventCache?true:false;
+		}
 	},
 
 	url: "", //Declarative hook for setting Csv source url.
@@ -66,6 +72,12 @@ dojo.declare("dojox.data.CsvStore", null, {
 	label: "", //Declarative hook for setting the label attribute. 
 
 	identifier: "", //Declarative hook for setting the identifier.
+
+	separator: ",", //Declatative and programmatic hook for defining the separator character used in the Csv style file. 
+
+	//Parameter to allow specifying if preventCache should be passed to the xhrGet call or not when loading data from a url.
+	//Note this does not mean the store calls the server on each fetch, only that the data load has preventCache set as an option.
+	urlPreventCache: false,
 
 	_assertIsItem: function(/* item */ item){
 		//	summary:
@@ -102,7 +114,7 @@ dojo.declare("dojox.data.CsvStore", null, {
 		this._assertIsItem(item);
 		var itemValue = defaultValue;
 		if(typeof attribute === "string"){
-			ai = this._attributeIndexes[attribute];
+			var ai = this._attributeIndexes[attribute];
 			if(ai != null){
 				var itemData = this._dataArray[this._getIndex(item)];
 				itemValue = itemData[ai] || defaultValue;
@@ -330,7 +342,8 @@ dojo.declare("dojox.data.CsvStore", null, {
 					this._loadInProgress = true;
 					var getArgs = {
 							url: self.url, 
-							handleAs: "text"
+							handleAs: "text",
+							preventCache: self.urlPreventCache
 						};
 					var getHandler = dojo.xhrGet(getArgs);
 					getHandler.addCallback(function(data){
@@ -350,6 +363,24 @@ dojo.declare("dojox.data.CsvStore", null, {
 							throw error;
 						}
 					});
+					//Wire up the cancel to abort of the request
+					//This call cancel on the deferred if it hasn't been called
+					//yet and then will chain to the simple abort of the
+					//simpleFetch keywordArgs
+					var oldAbort = null;
+					if(keywordArgs.abort){
+						oldAbort = keywordArgs.abort;
+					}
+					keywordArgs.abort = function(){
+						var df = getHandler;
+						if (df && df.fired === -1){
+							df.cancel();
+							df = null;
+						}
+						if(oldAbort){
+							oldAbort.call(keywordArgs);
+						}
+					};
 				}
 			}else if(this._csvData){
 				try{
@@ -403,7 +434,6 @@ dojo.declare("dojox.data.CsvStore", null, {
 		 *     { "Title":0, "Year":1, "Producer":2 }
 		 */
 		if(dojo.isString(csvFileContents)){
-			var lineEndingCharacters = new RegExp("\r\n|\n|\r");
 			var leadingWhiteSpaceCharacters = new RegExp("^\\s+",'g');
 			var trailingWhiteSpaceCharacters = new RegExp("\\s+$",'g');
 			var doubleQuotes = new RegExp('""','g');
@@ -414,7 +444,7 @@ dojo.declare("dojox.data.CsvStore", null, {
 			for(i = 0; i < arrayOfInputLines.length; ++i){
 				var singleLine = arrayOfInputLines[i];
 				if(singleLine.length > 0){
-					var listOfFields = singleLine.split(',');
+					var listOfFields = singleLine.split(this.separator);
 					var j = 0;
 					while(j < listOfFields.length){
 						var space_field_space = listOfFields[j];
@@ -434,7 +464,7 @@ dojo.declare("dojox.data.CsvStore", null, {
 								return; //null
 							}
 							var nextField = listOfFields[j+1];
-							listOfFields[j] = field_space + ',' + nextField;
+							listOfFields[j] = field_space + this.separator + nextField;
 							listOfFields.splice(j+1, 1); // delete element [j+1] from the list
 						}else{
 							if((firstChar == '"') && (lastChar == '"')){

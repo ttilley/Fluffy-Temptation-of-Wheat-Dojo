@@ -72,6 +72,33 @@ dojox.data.tests.stores.CsvStore.getDatasource = function(filepath){
 				csvData += "7, \n";
 				csvData += "5, 123abc\n";
 				break;
+			case "stores/semicolonSeparator.csv":
+				csvData += "article;price\n";
+				csvData += "1008;4,59\n";
+				csvData += "1010;10,09\n";
+				csvData += "1011;5,13\n";
+				csvData += "1016;16,68\n";
+				csvData += "1019;15,5\n";
+				csvData += "1022;10,36\n";
+				break;
+			case "stores/pipeSeparator.csv":
+				csvData += "article|price\n";
+				csvData += "1008|4,59\n";
+				csvData += "1010|10,09\n";
+				csvData += "1011|5,13\n";
+				csvData += "1016|16,68\n";
+				csvData += "1019|15,5\n";
+				csvData += "1022|10,36\n";
+				break;
+			case "stores/pipeSeparatorInData.csv":
+				csvData += "article|price\n";
+				csvData += "1008|\"4,59|4,54\"\n";
+				csvData += "1010|10,09\n";
+				csvData += "1011|5,13\n";
+				csvData += "1016|16,68\n";
+				csvData += "1019|15,5\n";
+				csvData += "1022|10,36\n";
+				break;
 		}
 		dataSource.data = csvData;
 	}
@@ -114,6 +141,64 @@ doh.register("dojox.data.tests.stores.CsvStore",
 			var d = new doh.Deferred();
 			function completedAll(items){
 				t.assertTrue((items.length === 7));
+				d.callback(true);
+			}
+
+			//Get everything...
+			csvStore.fetch({ onComplete: completedAll, onError: dojo.partial(dojox.data.tests.stores.CsvStore.error, t, d)});
+			return d; //Object
+		},
+		function testReadAPI_fetch_all_semicolon(t){
+			//	summary: 
+			//		Simple test of a basic fetch on CsvStore with separator defined as |.
+			//	description:
+			//		Simple test of a basic fetch on CsvStore with separator defined as |.
+			
+			var args = dojox.data.tests.stores.CsvStore.getDatasource("stores/semicolonSeparator.csv");
+			args.separator = ";";
+			var csvStore = new dojox.data.CsvStore(args);
+			
+			var d = new doh.Deferred();
+			function completedAll(items){
+				t.assertEqual(6, items.length);
+				d.callback(true);
+			}
+
+			//Get everything...
+			csvStore.fetch({ onComplete: completedAll, onError: dojo.partial(dojox.data.tests.stores.CsvStore.error, t, d)});
+			return d; //Object
+		},
+		function testReadAPI_fetch_all_pipe(t){
+			//	summary: 
+			//		Simple test of a basic fetch on CsvStore with separator defined as |.
+			//	description:
+			//		Simple test of a basic fetch on CsvStore with separator defined as |
+			var args = dojox.data.tests.stores.CsvStore.getDatasource("stores/pipeSeparator.csv");
+			args.separator = "|";
+			var csvStore = new dojox.data.CsvStore(args);
+			
+			var d = new doh.Deferred();
+			function completedAll(items){
+				t.assertEqual(6, items.length);
+				d.callback(true);
+			}
+
+			//Get everything...
+			csvStore.fetch({ onComplete: completedAll, onError: dojo.partial(dojox.data.tests.stores.CsvStore.error, t, d)});
+			return d; //Object
+		},
+		function testReadAPI_fetch_all_pipe_indata(t){
+			//	summary: 
+			//		Simple test of a basic fetch on CsvStore with separator defined as |.
+			//	description:
+			//		Simple test of a basic fetch on CsvStore with separator defined as |
+			var args = dojox.data.tests.stores.CsvStore.getDatasource("stores/pipeSeparatorInData.csv");
+			args.separator = "|";
+			var csvStore = new dojox.data.CsvStore(args);
+			
+			var d = new doh.Deferred();
+			function completedAll(items){
+				t.assertEqual(6, items.length);
 				d.callback(true);
 			}
 
@@ -166,6 +251,27 @@ doh.register("dojox.data.tests.stores.CsvStore",
 			//		Simple test of a basic fetch on CsvStore of a single item.
 
 			var args = dojox.data.tests.stores.CsvStore.getDatasource("stores/movies.csv");
+			var csvStore = new dojox.data.CsvStore(args);
+			
+			var d = new doh.Deferred();
+			function onComplete(items, request){
+				t.is(1, items.length);
+				d.callback(true);
+			}
+			csvStore.fetch({ 	query: {Title: "*Sequel*"}, 
+								onComplete: onComplete, 
+								onError: dojo.partial(dojox.data.tests.stores.CsvStore.error, t, d)
+							});
+			return d; //Object
+		},
+		function testReadAPI_fetch_one_preventcache(t){
+			//	summary: 
+			//		Simple test of a basic fetch on CsvStore of a single item.
+			//	description:
+			//		Simple test of a basic fetch on CsvStore of a single item.
+
+			var args = dojox.data.tests.stores.CsvStore.getDatasource("stores/movies.csv");
+			args.urlPreventCache = true;
 			var csvStore = new dojox.data.CsvStore(args);
 			
 			var d = new doh.Deferred();
@@ -1180,6 +1286,49 @@ doh.register("dojox.data.tests.stores.CsvStore",
 			csvStore.fetch({sort: sortAttributes, onComplete: completed, onError: dojo.partial(dojox.data.tests.stores.CsvStore.error, t, d)});
 			return d; //Object
 		},
+
+		{
+			name: "testReadAPI_fetch_abort",
+			runTest: function(t){
+				//	summary: 
+				//		Simple test of a basic fetch abort on CsvStore.
+				//	description:
+				//		Simple test of a basic fetch abort on CsvStore.
+				//Can only async abort in a browser, so disable this test from rhino
+				if(dojo.isBrowser){                                            
+					var args = dojox.data.tests.stores.CsvStore.getDatasource("stores/movies.csv");
+					var store = new dojox.data.CsvStore(args);
+				
+					var d = new doh.Deferred();
+					var abortCalled = false;
+					var completedAll = function(items, request){
+						t.is(7, items.length);
+						if(abortCalled){
+							console.log("Made it to complete callback and abort was called.  Problem.");
+							d.errback(new Error("Should not be here."));
+						}else{
+							//We beat out calling abort, so this is okay.  Timing.
+							console.log("in onComplete and abort has not been called.  Timing.  This is okay.");
+							d.callback(true);
+						}
+					};
+					var error = function(errData, request){
+						//An abort should throw a cancel error, so we should
+						//reach this.
+						t.assertTrue(true);
+						d.callback(true);
+					};
+	
+					//Get everything...
+					var req = store.fetch({ onComplete: completedAll, onError: error});
+					abortCalled=true;
+					console.log("Calling abort.");
+					req.abort();
+					return d;
+				}
+			}
+		},
+
 		function testReadAPI_functionConformance(t){
 			//	summary: 
 			//		Simple test read API conformance.  Checks to see all declared functions are actual functions on the instances.
