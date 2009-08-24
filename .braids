@@ -1,8 +1,8 @@
 --- 
 dojox: 
   squashed: false
-  url: git://github.com/dojo/dojox.git
   type: git
+  url: git://github.com/dojo/dojox.git
   revision: 3f2d6cbc2f763838105a12e9032c35461b1b039a
   branch: master
   remote: braid/dojox
@@ -10,26 +10,26 @@ util:
   squashed: false
   url: git://github.com/dojo/util.git
   type: git
-  revision: 398d0b68cd58ff878304fa485581e8a1495c47ae
+  revision: 47943b8c1c3fd3e536f8fac075189f75125f7757
   branch: master
   remote: braid/util
 plugd: 
   squashed: false
-  url: http://plugd.googlecode.com/svn/trunk
   type: svn
+  url: http://plugd.googlecode.com/svn/trunk
   revision: 131
   remote: braid/plugd
 dojo: 
   squashed: false
-  type: git
   url: git://github.com/dojo/dojo.git
+  type: git
   revision: 1cdf84ecba21905207559dd38d44d2f01267e4e8
   branch: master
   remote: braid/dojo
 dijit: 
   squashed: false
-  type: git
   url: git://github.com/dojo/dijit.git
+  type: git
   revision: 6c86af174ad203fc8830cfebc15592ee7af34545
   branch: master
   remote: braid/dijit
