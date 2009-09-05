@@ -73,6 +73,9 @@ dojo.declare("dojo.data.ItemFileReadStore", null,{
 		if(keywordParameters.clearOnClose){
 			this.clearOnClose = true;
 		}
+		if("failOk" in keywordParameters){
+			this.failOk = keywordParameters.failOk?true:false;
+		}
 	},
 	
 	url: "",	// use "" rather than undefined for the benefit of the parser (#3539)
@@ -95,6 +98,9 @@ dojo.declare("dojo.data.ItemFileReadStore", null,{
 	//Note this does not mean the store calls the server on each fetch, only that the data load has preventCache set as an option.
 	//Added for tracker: #6072
 	urlPreventCache: false,  
+	
+	//Parameter for specifying that it is OK for the xhrGet call to fail silently.
+	failOk: false,
 
 	//Parameter to indicate to process data from the url as hierarchical 
 	//(data items can contain other data items in js form).  Default is true 
@@ -350,7 +356,8 @@ dojo.declare("dojo.data.ItemFileReadStore", null,{
 					var getArgs = {
 							url: self._jsonFileUrl, 
 							handleAs: "json-comment-optional",
-							preventCache: this.urlPreventCache
+							preventCache: this.urlPreventCache,
+							failOk: this.failOk
 						};
 					var getHandler = dojo.xhrGet(getArgs);
 					getHandler.addCallback(function(data){
@@ -775,7 +782,8 @@ dojo.declare("dojo.data.ItemFileReadStore", null,{
 					var getArgs = {
 							url: self._jsonFileUrl, 
 							handleAs: "json-comment-optional",
-							preventCache: this.urlPreventCache
+							preventCache: this.urlPreventCache,
+							failOk: this.failOk
 					};
 					var getHandler = dojo.xhrGet(getArgs);
 					getHandler.addCallback(function(data){
@@ -890,6 +898,7 @@ dojo.declare("dojo.data.ItemFileReadStore", null,{
 					url: this._jsonFileUrl, 
 					handleAs: "json-comment-optional",
 					preventCache: this.urlPreventCache,
+					failOk: this.failOk,
 					sync: true
 				};
 			var getHandler = dojo.xhrGet(getArgs);

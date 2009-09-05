@@ -247,34 +247,35 @@ dojo.global = {
 	}
 	//>>excludeEnd("webkitMobile");
 
-	var extraNames;
+	var extraNames, extraLen, empty = {};
 	for(var i in {toString: 1}){ extraNames = []; break; }
 	dojo._extraNames = extraNames = extraNames || ["hasOwnProperty", "valueOf", "isPrototypeOf",
 		"propertyIsEnumerable", "toLocaleString", "toString"];
+	extraLen = extraNames.length;
 	
 	dojo._mixin = function(/*Object*/ target, /*Object*/ source){
 		// summary:
 		//		Adds all properties and methods of source to target. This addition
 		//		is "prototype extension safe", so that instances of objects
 		//		will not pass along prototype defaults.
-		var name, s, i = 0, l = extraNames.length;
+		var name, s, i;
 		for(name in source){
 			// the "tobj" condition avoid copying properties in "source"
 			// inherited from Object.prototype.  For example, if target has a custom
 			// toString() method, don't overwrite it with the toString() method
 			// that source inherited from Object.prototype
 			s = source[name];
-			if(!(name in target) || target[name] !== s){
+			if(!(name in target) || (target[name] !== s && (!(name in empty) || empty[name] !== s))){
 				target[name] = s;
 			}
 		}
 		//>>excludeStart("webkitMobile", kwArgs.webkitMobile);
 		// IE doesn't recognize some custom functions in for..in
-		if(l && source){
-			for(; i < l; ++i){
+		if(extraLen && source){
+			for(i = 0; i < extraLen; ++i){
 				name = extraNames[i];
 				s = source[name];
-				if(!(name in target) || target[name] !== s){
+				if(!(name in target) || (target[name] !== s && (!(name in empty) || empty[name] !== s))){
 					target[name] = s;
 				}
 			}
