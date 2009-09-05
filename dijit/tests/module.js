@@ -12,6 +12,7 @@ try{
 
 	// _base tests
 	doh.registerUrl("dijit.tests._base.manager", dojo.moduleUrl("dijit", "tests/_base/manager.html"));
+	doh.registerUrl("dijit.tests._base.tabindex", dojo.moduleUrl("dijit", "tests/_base/tabindex.html"));
 	doh.registerUrl("dijit.tests._base.sniffQuirks", dojo.moduleUrl("dijit", "tests/_base/sniffQuirks.html"));
 	doh.registerUrl("dijit.tests._base.sniffStandards", dojo.moduleUrl("dijit", "tests/_base/sniffStandards.html"));
 	doh.registerUrl("dijit.tests._base.viewport", dojo.moduleUrl("dijit", "tests/_base/viewport.html"));
@@ -57,6 +58,7 @@ try{
 
 	// tree tests
 	doh.registerUrl("dijit.tests.Tree", dojo.moduleUrl("dijit", "tests/Tree.html"));
+	doh.registerUrl("dijit.tests.Tree_with_JRS", dojo.moduleUrl("dijit", "tests/Tree_with_JRS.html"));
 	if(test_robot){
 		doh.registerUrl("dijit.tests.robot.Tree_DnD", dojo.moduleUrl("dijit","tests/robot/Tree_dnd.html"+userArgs), 99999999);
 		doh.registerUrl("dijit.tests.robot.Tree_DnD_multiParent", dojo.moduleUrl("dijit","tests/robot/Tree_dnd_multiParent.html"+userArgs), 99999999);
@@ -101,6 +103,7 @@ try{
 
 	// layout tests
 	doh.registerUrl("dijit.tests.layout.ContentPane", dojo.moduleUrl("dijit", "tests/layout/ContentPane.html"), 30000);
+	doh.registerUrl("dijit.tests.layout.ContentPaneLayout", dojo.moduleUrl("dijit", "tests/layout/ContentPaneLayout.html"), 30000);
 	doh.registerUrl("dijit.tests.layout.AccordionContainer", dojo.moduleUrl("dijit", "tests/layout/AccordionContainer.html"), 30000);
 	doh.registerUrl("dijit.tests.layout.StackContainer", dojo.moduleUrl("dijit", "tests/layout/nestedStack.html"));
 }catch(e){

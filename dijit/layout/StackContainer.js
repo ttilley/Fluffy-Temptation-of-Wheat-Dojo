@@ -75,15 +75,18 @@ dojo.declare(
 		// TabContainer, this._contentBox doesn't include the space for the tab labels.
 		dojo.publish(this.id+"-startup", [{children: children, selected: selected}]);
 
-		// Show the initially selected child (do this before this.inherited() call,
-		// because child can't size correctly if it's hidden).
-		// TODO: this will call onShow() on the child widget before startup() which is weird.
+		// Startup each child widget, and do initial layout like setting this._contentBox,
+		// then calls this.resize() which does the initial sizing on the selected child.
+		this.inherited(arguments);
+	},
+
+	resize: function(){
+		// Resize is called when we are first made visible (it's called from startup()
+		// if we are initially visible)
+		var selected = this.selectedChildWidget;
 		if(selected){
 			this._showChild(selected);
 		}
-
-		// Startup each child widget, and do initial layout like setting this._contentBox,
-		// then calls this.resize() which does the initial sizing on the selected child.
 		this.inherited(arguments);
 	},
 
@@ -127,15 +130,18 @@ dojo.declare(
 
 		this.inherited(arguments);
 
+		if (this._started) {
+			// this will notify any tablists to remove a button; do this first because it may affect sizing
+			dojo.publish(this.id + "-removeChild", [page]);
+		}
+
 		// If we are being destroyed than don't run the code below (to select another page), because we are deleting
 		// every page one by one
 		if(this._beingDestroyed){ return; }
 
 		if(this._started){
-			// this will notify any tablists to remove a button; do this first because it may affect sizing
-			dojo.publish(this.id+"-removeChild", [page]);
-
 			// in case the tab titles now take up one line instead of two lines
+			// TODO: this is overkill in most cases since ScrollingTabController never changes size (for >= 1 tab)
 			this.layout();
 		}
 
@@ -182,8 +188,14 @@ dojo.declare(
 		// Size the new widget, in case this is the first time it's being shown,
 		// or I have been resized since the last time it was shown.
 		// Note that page must be visible for resizing to work. 
-		if(this.doLayout && newWidget.resize){
-			newWidget.resize(this._containerContentBox || this._contentBox);
+		if(newWidget.resize){
+			if (this.doLayout) {
+				newWidget.resize(this._containerContentBox || this._contentBox);
+			}else{
+				// the child should pick it's own size but we still need to call resize()
+				// (with no arguments) to let the widget lay itself out
+				newWidget.resize();
+			}
 		}
 	},
 
@@ -259,9 +271,11 @@ dojo.declare(
 		}
 	},
 
-	destroy: function(){
-		this._beingDestroyed = true;
-		this.inherited(arguments);
+	destroyDescendants: function(/*Boolean*/preserveDom){
+		dojo.forEach(this.getChildren(), function(child){
+			this.removeChild(child);
+			child.destroyRecursive(preserveDom);
+		}, this);
 	}
 });
 

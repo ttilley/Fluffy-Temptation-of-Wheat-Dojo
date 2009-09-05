@@ -45,7 +45,7 @@ dojo.declare(
 	//		then after dojo.data query it becomes "LOADING" and, finally "LOADED"	
 	state: "UNCHECKED",
 	
-	templatePath: dojo.moduleUrl("dijit", "templates/TreeNode.html"),
+	templateString: dojo.cache("dijit", "templates/TreeNode.html"),
 
 	postCreate: function(){
 		// set label, escaping special characters
@@ -448,7 +448,7 @@ dojo.declare(
 	//		If true, double-clicking a folder node's label will open it, rather than calling onDblClick()
 	openOnDblClick: false,
 
-	templatePath: dojo.moduleUrl("dijit", "templates/Tree.html"),
+	templateString: dojo.cache("dijit", "templates/Tree.html"),
 
 	// persist: Boolean
 	//		Enables/disables use of cookies for state saving.
@@ -543,7 +543,7 @@ dojo.declare(
 	
 	// dragThreshold: Integer
 	//		Number of pixels mouse moves before it's considered the start of a drag operation
-	dragThreshold: 0,
+	dragThreshold: 5,
 	
 	// betweenThreshold: Integer
 	//		Set to a positive value to allow drag and drop "between" nodes.
@@ -706,16 +706,10 @@ dojo.declare(
 		var identity = (!item || dojo.isString(item)) ? item : this.model.getIdentity(item);
 		if(identity == oldValue ? this.model.getIdentity(oldValue) : null){ return; }
 		var nodes = this._itemNodesMap[identity];
-		if(nodes){
-			// Try first matching tree node and if not selectable try next
-			for(var i = 0; i < nodes.length; i++){
-				if(nodes[i].isSelectable){
-					this.focusNode(nodes[i]);
-					return;
-				}
-			}
-		}
-		if(this.lastFocused){
+		if(nodes && nodes.length){
+			//select the first item
+			this.focusNode(nodes[0]);
+		}else if(this.lastFocused){
 			// Select none so deselect current
 			this.lastFocused.setSelected(false);
 			this.lastFocused = null;
@@ -1263,7 +1257,7 @@ dojo.declare(
 		//		protected
 
 		// set focus so that the label will be voiced using screen readers
-		node.labelNode.focus();
+		dijit.focus(node.labelNode);
 	},
 
 	_onNodeFocus: function(/*Widget*/ node){
@@ -1275,7 +1269,7 @@ dojo.declare(
 		//		selected node no longer is.
 
 		if (node){
-			if(node != this.lastFocused){
+			if(node != this.lastFocused && this.lastFocused){
 				// mark that the previously selected node is no longer the selected one
 				this.lastFocused.setSelected(false);
 			}

@@ -14,8 +14,7 @@ dojo.declare("dijit.layout.ScrollingTabController",
 	// tags:
 	//		private
 
-	templateString: null,
-	templatePath: dojo.moduleUrl("dijit.layout", "templates/ScrollingTabController.html"),
+	templateString: dojo.cache("dijit.layout", "templates/ScrollingTabController.html"),
 
 	// useMenu:[const] Boolean
 	//		True if a menu should be used to select tabs when they are too
@@ -228,35 +227,35 @@ dojo.declare("dijit.layout.ScrollingTabController",
 		}
 	},
 
-	onSelectChild: function(page){
+	onSelectChild: function(/*Widget*/ page){
 		// summary: 
 		//		Smoothly scrolls to a tab when it is selected.
-		if(!this.nested && this.scrollNode){
-			var tab = this.pane2button[page];
-			if(!tab || !page){return;}
 		
-			var node = tab.domNode;
-			if(node != this._selectedTab){
-				this._selectedTab = node;
+		var tab = this.pane2button[page.id];
+		if(!tab || !page){return;}
+	
+		var node = tab.domNode;
+		if(node != this._selectedTab){
+			this._selectedTab = node;
 
-				var sl = this._getScroll();
+			var sl = this._getScroll();
 
-				if(sl > node.offsetLeft ||
-					sl + dojo.style(this.scrollNode, "width") <
-					node.offsetLeft + dojo.style(node, "width")){
+			if(sl > node.offsetLeft ||
+				sl + dojo.style(this.scrollNode, "width") <
+				node.offsetLeft + dojo.style(node, "width")){
 
-					var anim = this.createSmoothScroll();
-					// use dojo.connect() rather than this.connect() because the animation will soon be
-					// garbage collected and there's no reason to leave a reference to the connection in this._connects[]
-					dojo.connect(anim, "onEnd", function(){
-						tab.onClick(null);
-					});
-					anim.play();
-				}else{
+				var anim = this.createSmoothScroll();
+				// use dojo.connect() rather than this.connect() because the animation will soon be
+				// garbage collected and there's no reason to leave a reference to the connection in this._connects[]
+				dojo.connect(anim, "onEnd", function(){
 					tab.onClick(null);
-				}
+				});
+				anim.play();
+			}else{
+				tab.onClick(null);
 			}
 		}
+
 		this.inherited(arguments);
 	},
 
@@ -432,6 +431,6 @@ dojo.declare("dijit.layout._ScrollingTabControllerButton",
 		
 		tabPosition: "top",
 		
-		templatePath: dojo.moduleUrl("dijit.layout","templates/_ScrollingTabControllerButton.html")
+		templateString: dojo.cache("dijit.layout","templates/_ScrollingTabControllerButton.html")
 	}
 );

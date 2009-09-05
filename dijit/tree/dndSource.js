@@ -45,8 +45,8 @@ dojo.declare("dijit.tree.dndSource", dijit.tree._dndSelector, {
 	copyOnly: false,
 
 	// dragThreshold: Number
-	//		The move delay in pixels before detecting a drag; 0 by default
-	dragThreshold: 0,
+	//		The move delay in pixels before detecting a drag; 5 by default
+	dragThreshold: 5,
 
 	// betweenThreshold: Integer
 	//		Distance from upper/lower edge of node to allow drop to reorder nodes
@@ -95,11 +95,6 @@ dojo.declare("dijit.tree.dndSource", dijit.tree._dndSelector, {
 			dojo.subscribe("/dnd/drop",   this, "onDndDrop"),
 			dojo.subscribe("/dnd/cancel", this, "onDndCancel")
 		];
-		this.events.push(
-			// monitor mouse movements to tell when drag starts etc.
-			dojo.connect(this.node, "onmousemove", this, "onMouseMove")
-		);
-
 	},
 
 	// methods
@@ -196,6 +191,7 @@ dojo.declare("dijit.tree.dndSource", dijit.tree._dndSelector, {
 		// tags:
 		//		private
 		if(this.isDragging && this.targetState == "Disabled"){ return; }
+		this.inherited(arguments);
 		var m = dojo.dnd.manager();
 		if(this.isDragging){
 			if(this.betweenThreshold > 0){
@@ -319,7 +315,7 @@ dojo.declare("dijit.tree.dndSource", dijit.tree._dndSelector, {
 
 		this._changeState("Target", accepted ? "" : "Disabled");
 
-		if(accepted){
+		if(this == source){
 			dojo.dnd.manager().overSource(this);
 		}
 
@@ -431,21 +427,14 @@ dojo.declare("dijit.tree.dndSource", dijit.tree._dndSelector, {
 					// (maybe we should only do this branch if the source is a tree?)
 					model.pasteItem(childItem, oldParentItem, newParentItem, copy, insertIndex);
 				}else{
-					model.fetchItemByIdentity({identity: node.id, scope: this, onItem: function(item){
-						if(item){
-							// There's already a matching item in model, use it
-							model.pasteItem(item, null, newParentItem, true, insertIndex);
-						}else{
-							// Get the hash to pass to model.newItem().  A single call to
-							// itemCreator() returns an array of hashes, one for each drag source node.
-							if(!newItemsParams){
-								newItemsParams = this.itemCreator(nodes, target, source);
-							}
+					// Get the hash to pass to model.newItem().  A single call to
+					// itemCreator() returns an array of hashes, one for each drag source node.
+					if(!newItemsParams){
+						newItemsParams = this.itemCreator(nodes, target, source);
+					}
 
-							// Create new item in the tree, based on the drag source.
-							model.newItem(newItemsParams[idx], newParentItem, insertIndex);
-						}
-					}});
+					// Create new item in the tree, based on the drag source.
+					model.newItem(newItemsParams[idx], newParentItem, insertIndex);
 				}
 			}, this);
 

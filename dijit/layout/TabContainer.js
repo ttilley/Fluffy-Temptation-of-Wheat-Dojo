@@ -46,8 +46,7 @@ dojo.declare("dijit.layout.TabContainer",
 	//		wide to fit the TabContainer, false otherwise.
 	useSlider: true,
 
-	templateString: null,	// override setting in StackContainer
-	templatePath: dojo.moduleUrl("dijit.layout", "templates/TabContainer.html"),
+	templateString: dojo.cache("dijit.layout", "templates/TabContainer.html"),
 
 	// _controllerWidget: String
 	//		An optional parameter to overrider the default TabContainer controller used.
@@ -119,27 +118,33 @@ dojo.declare("dijit.layout.TabContainer",
 		// Overrides StackContainer.layout().
 		// Configure the content pane to take up all the space except for where the tabs are
 		if(!this._contentBox || typeof(this._contentBox.l) == "undefined"){return;}
-		if(!this.doLayout){return;}
 
-		// position and size the titles and the container node
-		var titleAlign = this.tabPosition.replace(/-h/, "");
-		this.tablist.layoutAlign = titleAlign;
-		var children = [this.tablist, {
-			domNode: this.tablistSpacer,
-			layoutAlign: titleAlign
-		}, {
-			domNode: this.containerNode,
-			layoutAlign: "client"
-		}];
-		dijit.layout.layoutChildren(this.domNode, this._contentBox, children);
-
-		// Compute size to make each of my children.
-		// children[2] is the margin-box size of this.containerNode, set by layoutChildren() call above
-		this._containerContentBox = dijit.layout.marginBox2contentBox(this.containerNode, children[2]);
-
-		if(this.selectedChildWidget){
-			if(this.selectedChildWidget.resize){
-				this.selectedChildWidget.resize(this._containerContentBox);
+		if (this.doLayout) {
+			// position and size the titles and the container node
+			var titleAlign = this.tabPosition.replace(/-h/, "");
+			this.tablist.layoutAlign = titleAlign;
+			var children = [this.tablist, {
+				domNode: this.tablistSpacer,
+				layoutAlign: titleAlign
+			}, {
+				domNode: this.containerNode,
+				layoutAlign: "client"
+			}];
+			dijit.layout.layoutChildren(this.domNode, this._contentBox, children);
+			
+			// Compute size to make each of my children.
+			// children[2] is the margin-box size of this.containerNode, set by layoutChildren() call above
+			this._containerContentBox = dijit.layout.marginBox2contentBox(this.containerNode, children[2]);
+			
+			if (this.selectedChildWidget) {
+				if (this.selectedChildWidget.resize) {
+					this.selectedChildWidget.resize(this._containerContentBox);
+				}
+			}
+		}else{
+			// just layout the tab controller, so it can position left/right buttons etc.
+			if(this.tablist.resize){
+				this.tablist.resize({w: dojo.contentBox(this.domNode).w});
 			}
 		}
 	},

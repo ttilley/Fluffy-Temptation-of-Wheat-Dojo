@@ -17,6 +17,16 @@ dojo.declare(
 		//		One or more attribute names (attributes in the dojo.data item) that specify that item's children
 		childrenAttrs: ["children"],
 
+		// newItemIdAttr: String
+		//		Name of attribute in the Object passed to newItem() that specifies the id.
+		//
+		//		If newItemIdAttr is set then it's used when newItem() is called to see if an
+		//		item with the same id already exists, and if so just links to the old item
+		//		(so that the old item ends up with two parents).
+		//
+		//		Setting this to null or "" will make every drop create a new item.
+		newItemIdAttr: "id",
+
 		// labelAttr: String
 		//		If specified, get label for tree node from this attribute, rather
 		//		than by calling store.getLabel()
@@ -34,6 +44,15 @@ dojo.declare(
 		//	|	{id:'ROOT'}
 		query: null,
 
+		// deferItemLoadingUntilExpand: Boolean
+		//		Setting this to true will cause the TreeStoreModel to defer calling loadItem on nodes 
+		// 		until they are expanded. This allows for lazying loading where only one
+		//		loadItem (and generally one network call, consequently) per expansion
+		// 		(rather than one for each child).
+		// 		This relies on partial loading of the children items; each children item of a 
+		// 		fully loaded item should contain the label and info about having children.  
+		deferItemLoadingUntilExpand: false,
+		
 		constructor: function(/* Object */ args){
 			// summary:
 			//		Passed the arguments listed above (store, etc)
@@ -105,7 +124,20 @@ dojo.declare(
 			// 		Calls onComplete() with array of child items of given parent item, all loaded.
 
 			var store = this.store;
-
+			if(!store.isItemLoaded(parentItem)){
+				// The parent is not loaded yet, we must be in deferItemLoadingUntilExpand 
+				// mode, so we will load it and just return the children (without loading each 
+				// child item)
+				var getChildren = dojo.hitch(this, arguments.callee);
+				store.loadItem({
+					item: parentItem,
+					onItem: function(parentItem){
+						getChildren(parentItem, onComplete, onError);
+					},
+					onError: onError
+				});
+				return;
+			}
 			// get children of specified item
 			var childItems = [];
 			for (var i=0; i<this.childrenAttrs.length; i++){
@@ -115,10 +147,12 @@ dojo.declare(
 
 			// count how many items need to be loaded
 			var _waitCount = 0;
-			dojo.forEach(childItems, function(item){ if(!store.isItemLoaded(item)){ _waitCount++; } });
+			if(!this.deferItemLoadingUntilExpand){
+				dojo.forEach(childItems, function(item){ if(!store.isItemLoaded(item)){ _waitCount++; } });
+			}
 
 			if(_waitCount == 0){
-				// all items are already loaded.  proceed...
+				// all items are already loaded (or we aren't loading them).  proceed...
 				onComplete(childItems);
 			}else{
 				// still waiting for some or all of the items to load
@@ -176,8 +210,24 @@ dojo.declare(
 			//		Developers will need to override this method if new items get added
 			//		to parents with multiple children attributes, in order to define which
 			//		children attribute points to the new item.
+
 			var pInfo = {parent: parent, attribute: this.childrenAttrs[0], insertIndex: insertIndex};
-			return this.store.newItem(args, pInfo);
+
+			if(this.newItemIdAttr && args[this.newItemIdAttr]){
+				// Maybe there's already a corresponding item in the store; if so, reuse it.
+				this.fetchItemByIdentity({identity: args[this.newItemIdAttr], scope: this, onItem: function(item){
+					if(item){
+						// There's already a matching item in store, use it
+						this.pasteItem(item, null, parent, true, insertIndex);
+					}else{
+						// Create new item in the tree, based on the drag source.
+						this.store.newItem(args, pInfo);
+					}
+				}});
+			}else{
+				// [as far as we know] there is no id so we must assume this is a new item
+				this.store.newItem(args, pInfo);
+			}
 		},
 
 		pasteItem: function(/*Item*/ childItem, /*Item*/ oldParentItem, /*Item*/ newParentItem, /*Boolean*/ bCopy, /*int?*/ insertIndex){
