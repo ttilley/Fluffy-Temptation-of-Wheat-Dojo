@@ -9,8 +9,7 @@ dojox.drawing.stencil._Base = dojox.drawing.util.oo.declare(
 	//		Most methods and events can be found here.
 	//
 	function(options){
-		
-		//console.log("______Base______")
+		//console.log("______Base", this.type, options)
 		// clone style so changes are reflected in future shapes
 		dojo.mixin(this, options);
 		this.style = options.style || dojox.drawing.defaults.copy();
@@ -26,7 +25,8 @@ dojox.drawing.stencil._Base = dojox.drawing.util.oo.declare(
 		// the global RegExp
 		var lineTypes = /Line|Vector|Axes|Arrow/;
 		var textTypes = /Text/;
-
+		
+		this.shortType = this.util.abbr(this.type);
 		this.isText = textTypes.test(this.type);
 		this.isLine = lineTypes.test(this.type);
 		
@@ -66,8 +66,16 @@ dojox.drawing.stencil._Base = dojox.drawing.util.oo.declare(
 		if(this.isText){
 			this.align = options.align || this.align;
 			this.valign = options.valign || this.valign;
-			this.textSize = parseInt(this.style.text.size, 10);
-			this._lineHeight = this.textSize * 1.4;
+			if(options.data && options.data.makeFit){
+				var textObj = this.makeFit(options.data.text, options.data.width);
+				this.textSize = this.style.text.size = textObj.size;
+				this._lineHeight = textObj.box.h;
+			}else{
+				this.textSize = parseInt(this.style.text.size, 10);	
+				this._lineHeight = this.textSize * 1.4;
+			}
+			
+			
 			// TODO: thinner text selection
 			//this.style.hitSelected.width *= 0.5;
 			//
@@ -75,6 +83,8 @@ dojox.drawing.stencil._Base = dojox.drawing.util.oo.declare(
 			this.deleteEmptyCreate = options.deleteEmptyCreate!==undefined ? options.deleteEmptyCreate : this.style.text.deleteEmptyCreate;
 			this.deleteEmptyModify = options.deleteEmptyModify!==undefined ? options.deleteEmptyModify : this.style.text.deleteEmptyModify;
 		}
+		
+		//this.drawingType
 		
 		this.attr(options.data);
 		
@@ -87,11 +97,18 @@ dojox.drawing.stencil._Base = dojox.drawing.util.oo.declare(
 			return;
 		}
 		
+		//console.log("BASE OPTS:", options)
 		if(options.points){
-			//console.log("__________Base.constr", this.type, "options points")
+			//console.log("__________Base.constr >>>> ", this.type, "points", options.points)
+			if(options.data && options.data.closePath===false){
+				this.closePath = false;
+			}
 			this.setPoints(options.points);
 			this.connect(this, "render", this, "onRender", true);
 			this.baseRender && this.enabled && this.render();
+			options.label && this.setLabel(options.label);
+			options.shadow && this.addShadow(options.shadow);
+			
 		}else if(options.data){
 			//console.log("___________Base.constr", this.type, "options data", options.data)
 			options.data.width = options.data.width ? options.data.width : this.style.text.minWidth;
@@ -99,11 +116,13 @@ dojox.drawing.stencil._Base = dojox.drawing.util.oo.declare(
 			this.setData(options.data);
 			this.connect(this, "render", this, "onRender", true);
 			this.baseRender && this.enabled && this.render(options.data.text);
-			if(options.label){
-				this.setLabel(options.label);
-			}
+			options.label && this.setLabel(options.label);
+			options.shadow && this.addShadow(options.shadow);
+			
 		}else if(this.draws){
 			//console.log("_____________Base.constr", this.type, "draws")
+			this.points = [];
+			this.data = {};
 			this.connectMouse();
 			this._postRenderCon = dojo.connect(this, "render", this, "_onPostRender");
 		}
@@ -118,7 +137,7 @@ dojox.drawing.stencil._Base = dojox.drawing.util.oo.declare(
 			// some things render some don't...
 			this.render(options.data.text);
 		}
-		
+			
 	},
 	{
 /*=====
@@ -138,6 +157,11 @@ StencilArgs: function(options){
 	//		Whether this is a text object or not
 	//		(either stencil.text or tools.TextBlock)
 	isText:false,
+	//
+	// 	shortType: String
+	//		The type of stencil that corresponds with the types and
+	//		constructors used in Drawing.registerTool
+	shortType:""
 	//
 	//	annotation: Boolean
 	//		A Stencil used within a Stencil. An annotation
@@ -197,7 +221,7 @@ StencilArgs: function(options){
 	data:null,
 	//
 	// 	marginZero [readonly] Number
-	// 		How closely shape can get to y:0 or x:0. Less than zero has
+	// 		How closely shape can get to y:0 or x:0. Less than zero has
 	//		bugs in VML. This is set with defaults, and should be equal
 	//		to half the size of an anchor point (5 px)
 	marginZero:0,
@@ -269,7 +293,10 @@ ToolsSetup: {
 		//		Whether the Stencil is enabled or not.
 		enabled:true,
 		
-		points:[],
+		
+		drawingType:"stencil",
+		
+		//points:[],
 		
 		setData: function(/*StencilData*/data){
 			// summary:
@@ -351,7 +378,7 @@ ToolsSetup: {
 				this.container.superClass = this;
 			}
 			this._setNodeAtts(this);
-			//console.warn("ONRENDER", this.type, this._postRenderCon)
+			//console.warn("ONRENDER", this.id, this)
 		},
 		
 		onChangeStyle: function(/*Object*/stencil){ 
@@ -416,6 +443,8 @@ ToolsSetup: {
 			var coords = {
 				x:true,
 				y:true,
+				height:true,
+				r:true,
 				radius:true,
 				angle:true
 			};
@@ -457,7 +486,7 @@ ToolsSetup: {
 					this.setLabel(o.label);
 				}
 			}
-			if(o.borderWidth){
+			if(o.borderWidth!==undefined){
 				n.width = o.borderWidth;
 			}
 			if(this.useSelectedStyle){
@@ -476,11 +505,11 @@ ToolsSetup: {
 				return;
 			}
 			
-			if(o.x!==undefined){
+			if(o.x!==undefined || o.y!==undefined){
 				var box = this.getBounds(true);
 				var mx = { dx:0, dy:0 };	
 				for(nm in o){
-					if(nm=="x" || nm =="y"){
+					if(nm=="x" || nm =="y" || nm =="r"){
 						mx["d"+nm] = o[nm] - box[nm];
 					}
 				}
@@ -521,7 +550,11 @@ ToolsSetup: {
 			var o = dojo.clone(this.style.norm);
 			o.borderWidth = o.width;
 			delete o.width;
-			o = dojo.mixin(o, this.data);
+			if(type=="path"){
+				o.points = this.points;	
+			}else{
+				o = dojo.mixin(o, this.data);
+			}
 			o.type = type;
 			if(this.isText){
 				o.text = this.getText();
@@ -663,7 +696,7 @@ ToolsSetup: {
 		transformPoints: function(mx){
 			// summary:
 			//		Moves object to a new X Y location
-			//		mx is additive. So mx.dx=1 will move the shape
+			//		mx is additive. So mx.dx=1 will move the stencil
 			//		1 pixel to the right from wherever it was.
 			//
 			// An attempt is made to prevent < 0 errors, but
@@ -716,6 +749,15 @@ ToolsSetup: {
 			return this.selected ? this.container.getParent().getTransform() : {dx:0, dy:0}; // Object
 		},
 		
+		addShadow: function(/*Object*/args){
+			args = args===true ? {} : args;
+			args.stencil = this;
+			this.shadow = new dojox.drawing.annotations.BoxShadow(args);	
+		},
+		
+		removeShadow: function(){
+			this.shadow.destroy();
+		},
 		
 		setLabel: function(/*String*/text){
 			// summary:
@@ -841,7 +883,7 @@ ToolsSetup: {
 			// if being modified anchors will prevent less than zero.
 			if(this._isBeingModified){ return; }
 			// FIXME: why is this sometimes empty?
-			if(!this.points.length){ return; }
+			if(!this.points || !this.points.length){ return; }
 			
 			if(this.type=="dojox.drawing.tools.custom.Axes"){
 				// this scenario moves all points if < 0
@@ -911,7 +953,7 @@ ToolsSetup: {
 			//		"onStencilUp". To disable the selectability,
 			//		make the att "", which causes a standard
 			//		mouse event.
-			var att = this.enabled && !this.annotation ? "stencil" : "";
+			var att = this.enabled && !this.annotation ? this.drawingType : "";
 			this.util.attr(shape, "drawingType", att);
 		},
 	

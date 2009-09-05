@@ -30,7 +30,7 @@ dojo.require("dojo.dnd.Manager");
 		// 		Width for the view, in valid css unit
 		viewWidth: "",
 
-		templatePath: dojo.moduleUrl("dojox.grid","resources/View.html"),
+		templateString: dojo.cache("dojox.grid","resources/View.html"),
 		
 		themeable: false,
 		classTag: 'dojoxGrid',
@@ -528,7 +528,7 @@ dojo.require("dojo.dnd.Manager");
 
 		adaptHeight: function(minusScroll){
 			if(!this.grid._autoHeight){
-				var h = this.domNode.clientHeight;
+				var h = (this.domNode.style.height && parseInt(this.domNode.style.height.replace(/px/,''))) || this.domNode.clientHeight;
 				var self = this;
 				var checkOtherViewScrollers = function(){
 					var v;
