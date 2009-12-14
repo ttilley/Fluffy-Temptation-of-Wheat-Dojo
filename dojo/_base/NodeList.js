@@ -241,7 +241,7 @@ dojo.require("dojo._base.array");
 	});
 
 	// add forEach actions
-	d.forEach(["connect", "addClass", "removeClass", "toggleClass", "empty"], function(name){
+	d.forEach(["connect", "addClass", "removeClass", "toggleClass", "empty", "removeAttr"], function(name){
 		nlp[name] = adaptAsForEach(d[name]);
 	});
 
@@ -380,8 +380,7 @@ dojo.require("dojo._base.array");
 			// 		that generated the current dojo.NodeList.
 			// description:
 			// 		Returns the `dojo.NodeList` that generated the current `dojo.NodeList`. If there
-			// 		is no parent dojo.NodeList, then an error is returned to indicate a bad chaining
-			// 		call.
+			// 		is no parent dojo.NodeList, an empty dojo.NodeList is returned.
 			// example:
 			//	|	dojo.query("a")
 			//	|		.filter(".disabled")
@@ -549,7 +548,7 @@ dojo.require("dojo._base.array");
 			var t = d.isArray(this) ? this : aps.call(this, 0),
 				m = d.map(arguments, function(a){
 					return a && !d.isArray(a) &&
-						(a.constructor === NodeList || a.constructor == this._NodeListCtor) ?
+						(typeof NodeList != "undefined" && a.constructor === NodeList || a.constructor === this._NodeListCtor) ?
 							aps.call(a, 0) : a;
 				});
 			return this._wrap(apc.apply(t, m), this);	// dojo.NodeList
@@ -596,7 +595,7 @@ dojo.require("dojo._base.array");
 		attr: function(property, value){
 			//	summary:
 			//		gets or sets the DOM attribute for every element in the
-			//		NodeList
+			//		NodeList. See also `dojo.attr`
 			//	property: String
 			//		the attribute to get/set
 			//	value: String?
@@ -604,6 +603,16 @@ dojo.require("dojo._base.array");
 			//	returns:
 			//		if no value is passed, the result is an array of attribute values
 			//		If a value is passed, the return is this NodeList
+			//	example:
+			//		Make all nodes with a particular class focusabl:
+			//	|	dojo.query(".focusable").attr("tabIndex", -1);
+			//	example:
+			//		Disable a group of buttons:
+			//	|	dojo.query("button.group").attr("disalbed", true);
+			//	example:
+			//		innerHTML can be assigned or retreived as well:
+			//	|	// get the innerHTML (as an array) for each list item
+			//	|	var ih = dojo.query("li.replaceable").attr("innerHTML");
 			return; // dojo.NodeList
 			return; // Array
 		},
@@ -914,7 +923,6 @@ dojo.require("dojo._base.array");
 			//	|	var buttons = dojo.query("button").instantiate("dijit.form.Button", {showLabel: true});
 			var c = d.isFunction(declaredClass) ? declaredClass : d.getObject(declaredClass);
 			properties = properties || {};
-			var self = this;
 			return this.forEach(function(node){
 				new c(properties, node);
 			});	// dojo.NodeList

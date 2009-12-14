@@ -73,7 +73,8 @@ djConfig = {
 	//		Indicates Dojo was added to the page after the page load. In this case
 	//		Dojo will not wait for the page DOMContentLoad/load events and fire
 	//		its dojo.addOnLoad callbacks after making sure all outstanding
-	//		dojo.required modules have loaded.
+	//		dojo.required modules have loaded. Only works with a built dojo.js,
+	//		it does not work the dojo.js directly from source control.
 	afterOnLoad: false,
 	// addOnLoad: Function or Array
 	//		Adds a callback via dojo.addOnLoad. Useful when Dojo is added after
@@ -86,7 +87,7 @@ djConfig = {
 	addOnLoad: null,
 	// require: Array
 	//		An array of module names to be loaded immediately after dojo.js has been included
-	//		in a page. 
+	//		in a page.
 	require: [],
 	// defaultDuration: Array
 	//		Default duration, in milliseconds, for wipe and fade animations within dijits.
@@ -97,23 +98,32 @@ djConfig = {
 	//		dojo.back, and dijit popup support in IE where an iframe is needed to make sure native
 	//		controls do not bleed through the popups. Normally this configuration variable 
 	//		does not need to be set, except when using cross-domain/CDN Dojo builds.
-	//		Save dojo/resources/blank.html to your domain and set `djConfig.dojoBlankHtmlUrl` 
+	//		Save dojo/resources/blank.html to your domain and set `djConfig.dojoBlankHtmlUrl`
 	//		to the path on your domain your copy of blank.html.
 	dojoBlankHtmlUrl: undefined,
 	//	ioPublish: Boolean?
 	//		Set this to true to enable publishing of topics for the different phases of
 	// 		IO operations. Publishing is done via dojo.publish. See dojo.__IoPublish for a list
 	// 		of topics that are published.
-	ioPublish: false
+	ioPublish: false,
 	//  useCustomLogger: Anything?
 	//		If set to a value that evaluates to true such as a string or array and
 	//		isDebug is true and Firebug is not available or running, then it bypasses
 	//		the creation of Firebug Lite allowing you to define your own console object.
-	useCustomLogger: undefined
+	useCustomLogger: undefined,
 	// transparentColor: Array
 	//		Array containing the r, g, b components used as transparent color in dojo.Color;
 	//		if undefined, [255,255,255] (white) will be used.
-	transparentColor: undefined
+	transparentColor: undefined,
+	// skipIeDomLoaded: Boolean
+	//		For IE only, skip the DOMContentLoaded hack used. Sometimes it can cause an Operation
+	//		Aborted error if the rest of the page triggers script defers before the DOM is ready.
+	//		If this is config value is set to true, then dojo.addOnLoad callbacks will not be
+	//		triggered until the page load event, which is after images and iframes load. If you
+	//		want to trigger the callbacks sooner, you can put a script block in the bottom of
+	//		your HTML that calls dojo._loadInit();. If you are using multiversion support, change
+	//		"dojo." to the appropriate scope name for dojo.
+	skipIeDomLoaded: false
 }
 =====*/
 
@@ -132,18 +142,19 @@ djConfig = {
 		var cn = [
 			"assert", "count", "debug", "dir", "dirxml", "error", "group",
 			"groupEnd", "info", "profile", "profileEnd", "time", "timeEnd",
-			"trace", "warn", "log" 
+			"trace", "warn", "log"
 		];
 		var i=0, tn;
 		while((tn=cn[i++])){
 			if(!console[tn]){
 				(function(){
 					var tcn = tn+"";
-					console[tcn] = ('log' in console) ? function(){ 
+					console[tcn] = ('log' in console) ? function(){
 						var a = Array.apply({}, arguments);
 						a.unshift(tcn+":");
 						console["log"](a.join(" "));
 					} : function(){}
+					console[tcn]._fake = true;
 				})();
 			}
 		}
@@ -152,7 +163,7 @@ djConfig = {
 	//TODOC:  HOW TO DOC THIS?
 	// dojo is the root variable of (almost all) our public symbols -- make sure it is defined.
 	if(typeof dojo == "undefined"){
-		this.dojo = {
+		dojo = {
 			_scopeName: "dojo",
 			_scopePrefix: "",
 			_scopePrefixArgs: "",
@@ -166,12 +177,12 @@ djConfig = {
 
 	//Need placeholders for dijit and dojox for scoping code.
 	if(typeof dijit == "undefined"){
-		this.dijit = {_scopeName: "dijit"};
+		dijit = {_scopeName: "dijit"};
 	}
 	if(typeof dojox == "undefined"){
-		this.dojox = {_scopeName: "dojox"};
+		dojox = {_scopeName: "dojox"};
 	}
-	
+
 	if(!d._scopeArgs){
 		d._scopeArgs = [dojo, dijit, dojox];
 	}
@@ -207,11 +218,11 @@ dojo.global = {
 =====*/
 	dojo.locale = d.config.locale;
 
-	var rev = "$Rev$".match(/\d+/); 
+	var rev = "$Rev$".match(/\d+/);
 
 /*=====
 	dojo.version = function(){
-		// summary: 
+		// summary:
 		//		Version number of the Dojo Toolkit
 		// major: Integer
 		//		Major version. If total version is "1.2.0beta1", will be 1
@@ -250,9 +261,9 @@ dojo.global = {
 	var extraNames, extraLen, empty = {};
 	for(var i in {toString: 1}){ extraNames = []; break; }
 	dojo._extraNames = extraNames = extraNames || ["hasOwnProperty", "valueOf", "isPrototypeOf",
-		"propertyIsEnumerable", "toLocaleString", "toString"];
+		"propertyIsEnumerable", "toLocaleString", "toString", "constructor"];
 	extraLen = extraNames.length;
-	
+
 	dojo._mixin = function(/*Object*/ target, /*Object*/ source){
 		// summary:
 		//		Adds all properties and methods of source to target. This addition
@@ -285,12 +296,12 @@ dojo.global = {
 	}
 
 	dojo.mixin = function(/*Object*/obj, /*Object...*/props){
-		// summary:	
+		// summary:
 		//		Adds all properties and methods of props to obj and returns the
 		//		(now modified) obj.
 		//	description:
 		//		`dojo.mixin` can mix multiple source objects into a
-		//		destionation object which is then returned. Unlike regular
+		//		destination object which is then returned. Unlike regular
 		//		`for...in` iteration, `dojo.mixin` is also smart about avoiding
 		//		extensions which other toolkits may unwisely add to the root
 		//		object prototype
@@ -356,14 +367,14 @@ dojo.global = {
 	}
 
 	dojo.setObject = function(/*String*/name, /*Object*/value, /*Object?*/context){
-		// summary: 
+		// summary:
 		//		Set a property from a dot-separated string, such as "A.B.C"
-		//	description: 
+		//	description:
 		//		Useful for longer api chains where you have to test each object in
 		//		the chain, or when you have an object reference in string format.
 		//		Objects are created as needed along `path`. Returns the passed
 		//		value if setting is successful or `undefined` if not.
-		//	name: 	
+		//	name:
 		//		Path to a property, in the form "A.B.C".
 		//	context:
 		//		Optional. Object to use as root of path. Defaults to
@@ -386,14 +397,14 @@ dojo.global = {
 	}
 
 	dojo.getObject = function(/*String*/name, /*Boolean?*/create, /*Object?*/context){
-		// summary: 
+		// summary:
 		//		Get a property from a dot-separated string, such as "A.B.C"
-		//	description: 
+		//	description:
 		//		Useful for longer api chains where you have to test each object in
 		//		the chain, or when you have an object reference in string format.
-		//	name: 	
+		//	name:
 		//		Path to an property, in the form "A.B.C".
-		//	create: 
+		//	create:
 		//		Optional. Defaults to `false`. If `true`, Objects will be
 		//		created at any point along the 'path' that is undefined.
 		//	context:
@@ -403,15 +414,15 @@ dojo.global = {
 	}
 
 	dojo.exists = function(/*String*/name, /*Object?*/obj){
-		//	summary: 
+		//	summary:
 		//		determine if an object supports a given method
-		//	description: 
+		//	description:
 		//		useful for longer api chains where you have to test each object in
 		//		the chain. Useful only for object and method detection.
 		//		Not useful for testing generic properties on an object.
 		//		In particular, dojo.exists("foo.bar") when foo.bar = ""
 		//		will return false. Use ("bar" in foo) to test for those cases.
-		//	name: 	
+		//	name:
 		//		Path to an object, in the form "A.B.C".
 		//	obj:
 		//		Object to use as root of path. Defaults to
@@ -434,10 +445,10 @@ dojo.global = {
 
 
 	dojo["eval"] = function(/*String*/ scriptFragment){
-		//	summary: 
+		//	summary:
 		//		Perform an evaluation in the global scope. Use this rather than
 		//		calling 'eval()' directly.
-		//	description: 
+		//	description:
 		//		Placed in a separate function to minimize size of trapped
 		//		exceptions. Calling eval() directly from some other scope may
 		//		complicate tracebacks on some platforms.
@@ -459,7 +470,7 @@ dojo.global = {
 
 	/*=====
 		dojo.deprecated = function(behaviour, extra, removal){
-			//	summary: 
+			//	summary:
 			//		Log a debug message to indicate that a behavior has been
 			//		deprecated.
 			//	behaviour: String
@@ -478,7 +489,7 @@ dojo.global = {
 
 		dojo.experimental = function(moduleName, extra){
 			//	summary: Marks code as experimental.
-			//	description: 
+			//	description:
 			//	 	This can be used to mark a function, file, or module as
 			//	 	experimental.  Experimental code is not ready to be used, and the
 			//	 	APIs are subject to change without notice.  Experimental code may be

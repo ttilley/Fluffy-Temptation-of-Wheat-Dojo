@@ -22,14 +22,7 @@ dojo.require("dojo._base.connect");
 				var ofp = fp;
 				//oname = name;
 				name = (name == "mouseenter") ? "mouseover" : "mouseout";
-				fp = function(e){		
-					if(dojo.isFF <= 2) {
-						// check tagName to fix a FF2 bug with invalid nodes (hidden child DIV of INPUT)
-						// which causes isDescendant to return false which causes
-						// spurious, and more importantly, incorrect mouse events to fire.
-						// TODO: remove tagName check when Firefox 2 is no longer supported
-						try{ e.relatedTarget.tagName; }catch(e2){ return; }
-					}
+				fp = function(e){
 					if(!dojo.isDescendant(e.relatedTarget, node)){
 						// e.type = oname; // FIXME: doesn't take? SJM: event.type is generally immutable.
 						return ofp.call(this, e); 
@@ -222,7 +215,7 @@ dojo.require("dojo._base.connect");
 		NUM_LOCK: 144,
 		SCROLL_LOCK: 145,
 		// virtual key mapping
-		copyKey: dojo.isMac ? (dojo.isSafari ? 91 : 224 ) : 17
+		copyKey: dojo.isMac && !dojo.isAIR ? (dojo.isSafari ? 91 : 224 ) : 17
 	};
 	
 	var evtCopyKey = dojo.isMac ? "metaKey" : "ctrlKey";
@@ -574,7 +567,7 @@ dojo.require("dojo._base.connect");
 						var k=evt.keyCode;
 						// These are Windows Virtual Key Codes
 						// http://msdn.microsoft.com/library/default.asp?url=/library/en-us/winui/WinUI/WindowsUserInterface/UserInput/VirtualKeyCodes.asp
-						var unprintable = k!=13 && k!=32 && k!=27 && (k<48 || k>90) && (k<96 || k>111) && (k<186 || k>192) && (k<219 || k>222);
+						var unprintable = k!=13 && k!=32 && (k<48 || k>90) && (k<96 || k>111) && (k<186 || k>192) && (k<219 || k>222);
 						// synthesize keypress for most unprintables and CTRL-keys
 						if(unprintable || evt.ctrlKey){
 							var c = unprintable ? 0 : k;

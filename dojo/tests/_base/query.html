@@ -7,7 +7,7 @@
 		<script type="text/javascript" src="../../dojo.js" 
 			djConfig="isDebug: true, debugAtAllCosts: false, popup: false, noFirebugLite: true"></script>
 		<!--
-		<script type="text/javascript" src="../_base/steak.js"></script>
+		<script type="text/javascript" src="../_base/query.js"></script>
 		-->
 		<script type="text/javascript" src="../../../util/doh/runner.js"></script>
 		<script type="text/javascript">
@@ -103,6 +103,7 @@
 						"doh.is('child3', dojo.query('> [qux]', 'container')[1].id);",
 						"doh.is(3, dojo.query('>', 'container').length);",
 						"doh.is(3, dojo.query('> *', 'container').length);",
+						"doh.is(3, dojo.query('>*', 'container').length);",
 						"doh.is('passed', dojo.query('#bug')[0].value);",
 
 						// bug 9071
@@ -123,10 +124,20 @@
 						// sibling selectors
 						"doh.is(1, dojo.query('+', 'container').length);",
 						"doh.is(3, dojo.query('~', 'container').length);",
+						"doh.is(1, (dojo.query('.foo+ span')).length);",
+						"doh.is(1, (dojo.query('.foo+span')).length);",
+						"doh.is(1, (dojo.query('.foo +span')).length);",
 						"doh.is(1, (dojo.query('.foo + span')).length);",
+						"doh.is(4, (dojo.query('.foo~ span')).length);",
+						"doh.is(4, (dojo.query('.foo~span')).length);",
+						"doh.is(4, (dojo.query('.foo ~span')).length);",
 						"doh.is(4, (dojo.query('.foo ~ span')).length);",
+						"doh.is(1, (dojo.query('#foo~ *')).length);",
+						"doh.is(1, (dojo.query('#foo ~*')).length);",
+						"doh.is(1, (dojo.query('#foo ~*')).length);",
 						"doh.is(1, (dojo.query('#foo ~ *')).length);",
 						"doh.is(1, (dojo.query('#foo ~')).length);",
+						"doh.is(1, (dojo.query('#foo~')).length);",
 
 						// sub-selector parsing
 						"doh.is(1, dojo.query('#t span.foo:not(span:first-child)').length);",
@@ -151,13 +162,29 @@
 						"doh.is(6, dojo.query('#t > *:nth-child(2n+2)').length);",
 						"doh.is(5, dojo.query('#t > *:nth-child(2n+4)').length);",
 						"doh.is(5, dojo.query('#t > *:nth-child(2n+4)').length);",
+						"doh.is(5, dojo.query('#t> *:nth-child(2n+4)').length);",
 						"doh.is(12, dojo.query('#t > *:nth-child(n-5)').length);",
+						"doh.is(12, dojo.query('#t >*:nth-child(n-5)').length);",
 						"doh.is(6, dojo.query('#t > *:nth-child(2n-5)').length);",
+						"doh.is(6, dojo.query('#t>*:nth-child(2n-5)').length);",
 						
 						// :checked pseudo-selector
 						"doh.is(2, dojo.query('#t2 > :checked').length);",
 						"doh.is(dojo.byId('checkbox2'), dojo.query('#t2 > input[type=checkbox]:checked')[0]);",
 						"doh.is(dojo.byId('radio2'), dojo.query('#t2 > input[type=radio]:checked')[0]);",
+						"doh.is(2, dojo.query('#t2select option:checked').length);",
+						
+						// check for correct document order
+						function domOrder() {
+							var inputs = dojo.query(".upperclass .lowerclass input");
+							doh.is("notbug", inputs[0].id);
+							doh.is("bug", inputs[1].id);
+							doh.is("checkbox1", inputs[2].id);
+							doh.is("checkbox2", inputs[3].id);
+							doh.is("radio1", inputs[4].id);
+							doh.is("radio2", inputs[5].id);
+							doh.is("radio3", inputs[6].id);
+						},
 
 						// cross-document queries
 						{
@@ -244,9 +271,9 @@
 			});
 		</script>
 	</head>
-	<body>
+	<body class="upperclass">
 		<h1>testing dojo.query()</h1>
-		<div id="t">
+		<div id="t" class="lowerclass">
 			<h3>h3 <span>span</span> endh3 </h3>
 			<!-- comment to throw things off -->
 			<div class="foo bar" id="_foo">
@@ -270,7 +297,7 @@
 			<input id="notbug" name="bug" type="hidden" value="failed"> 
 			<input id="bug" type="hidden" value="passed"> 
 		</div>
-		<div id="t2">
+		<div id="t2" class="lowerclass">
 			<input type="checkbox" name="checkbox1" id="checkbox1" value="foo">
 			<input type="checkbox" name="checkbox2" id="checkbox2" value="bar" checked>
 
@@ -278,6 +305,12 @@
 			<input type="radio" name="radio" id="radio2" value="stuff" checked>
 			<input type="radio" name="radio" id="radio3" value="blah">
 		</div>
+		<select id="t2select" multiple="multiple">
+			<option>0</option>
+			<option selected="selected">1</option>
+			<option selected="selected">2</option>
+		</select>
+		
 		<iframe id="t3" name="t3" src="../../resources/blank.html"></iframe>
 		<div id="t4">
 			<div id="one" class="subDiv">

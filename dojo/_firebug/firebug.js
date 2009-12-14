@@ -87,9 +87,11 @@ dojo.experimental = function(/* String */ moduleName, /* String? */ extra){
 	
 	if(
 		!dojo.isFF &&								// Firefox has Firebug
+		(!dojo.isChrome || dojo.isChrome < 3) &&
 		(!dojo.isSafari || dojo.isSafari < 4) &&	// Safari 4 has a console
 		!isNewIE &&									// Has the new IE console
-		!window.firebug &&							// Testing for mozilla firebug lite 
+		!window.firebug &&							// Testing for mozilla firebug lite
+		(typeof console != "undefined" && !console.firebug) && //A console that is not firebug's
 		!dojo.config.useCustomLogger &&				// Allow custom loggers
 		!dojo.isAIR									// isDebug triggers AIRInsector, not Firebug
 	){
@@ -599,8 +601,7 @@ dojo.experimental = function(/* String */ moduleName, /* String? */ extra){
 		consoleDomInspector.style.top = tHeight + "px";
 		commandLine.style.bottom = 0;
 		
-		// dojo.addOnUnload fires prematurely	
-		dojo.connect(window, "onunload", clearFrame)
+		dojo.addOnWindowUnload(clearFrame)
 	}
 	
 	function logRow(message, className, handler){
@@ -1202,6 +1203,12 @@ dojo.experimental = function(/* String */ moduleName, /* String? */ extra){
 		toggleConsole(true);
 	}
 
+	dojo.addOnWindowUnload(function(){
+		// Erase the globals and event handlers I created, to prevent spurious leak warnings
+		removeEvent(document, dojo.isIE || dojo.isSafari ? "keydown" : "keypress", onKeyDown);
+		window.onFirebugResize = null;
+		window.console = null;
+	});
 }
 
 })();

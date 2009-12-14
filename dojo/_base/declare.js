@@ -1,243 +1,973 @@
 dojo.provide("dojo._base.declare");
+
 dojo.require("dojo._base.lang");
+dojo.require("dojo._base.array");
 
-// this file courtesy of the TurboAjax Group, licensed under a Dojo CLA
+(function(){
+	var d = dojo, mix = d._mixin, op = Object.prototype, opts = op.toString,
+		xtor = new Function, counter = 0, cname = "constructor";
 
-dojo.declare = function(/*String*/ className, /*Function|Function[]*/ superclass, /*Object*/ props){
-	//	summary: 
-	//		Create a feature-rich constructor from compact notation
-	//
-	//	description:
-	//		Create a feature-rich constructor from compact notation
-	//
-	//	className:
-	//		The name of the constructor (loosely, a "class")
-	//		stored in the "declaredClass" property in the created prototype
-	//	superclass:
-	//		May be null, a Function, or an Array of Functions. If an array, 
-	//		the first element is used as the prototypical ancestor and
-	//		any following Functions become mixin ancestors.
-	//	props:
-	//		An object whose properties are copied to the
-	//		created prototype.
-	//		Add an instance-initialization function by making it a property 
-	//		named "constructor".
-	//	description:
-	//		Create a constructor using a compact notation for inheritance and
-	//		prototype extension. 
-	//
-	//		All superclasses (including mixins) must be Functions (not simple Objects).
-	//
-	//		Mixin ancestors provide a type of multiple inheritance. Prototypes of mixin 
-	//		ancestors are copied to the new class: changes to mixin prototypes will
-	//		not affect classes to which they have been mixed in.
-	//
-	//		"className" is cached in "declaredClass" property of the new class.
-	//
-	//	example:
-	//		Declare a class with no ancestors.
-	//	|	dojo.declare("my.ClassyThing", null, {
-	//	|		aProperty:"string",
-	//	|		constructor: function(args){
-	//	|			dojo.mixin(this, args);	
-	//	|		}
-	//	|	});
-	//
-	//	example:
-	//		Declare a class inheriting from my.classed.Foo
-	//	|	dojo.declare("my.classes.Bar", my.classes.Foo, {
-	//	|		// properties to be added to the class prototype
-	//	|		someValue: 2,
-	//	|		// initialization function
-	//	|		constructor: function(){
-	//	|			this.myComplicatedObject = new ReallyComplicatedObject(); 
-	//	|		},
-	//	|		// other functions
-	//	|		someMethod: function(){ 
-	//	|			doStuff(); 
-	//	|		}
-	//	|	);
-	//
-	//	example:
-	//		Declare a class inherting from two mixins, handling multiple constructor args
-	//	|	dojo.declare("my.ComplexMix", [my.BaseClass, my.MixedClass],{
-	//	|		constructor: function(a, b){
-	//	|			// someone called `new my.ComplexMix("something", "maybesomething");`
-	//	|		}
-	//	|	});
+	function err(msg){ throw new Error("declare: " + msg); }
 
-	// process superclass argument
-	var dd = arguments.callee, mixins;
-	if(dojo.isArray(superclass)){
-		mixins = superclass;
-		superclass = mixins.shift();
-	}
-	// construct intermediate classes for mixins
-	if(mixins){
-		dojo.forEach(mixins, function(m, i){
-			if(!m){ throw(className + ": mixin #" + i + " is null"); } // It's likely a required module is not loaded
-			superclass = dd._delegate(superclass, m);
-		});
-	}
-	// create constructor
-	var ctor = dd._delegate(superclass);
-	// extend with "props"
-	props = props || {};
-	ctor.extend(props);
-	// more prototype decoration
-	dojo.extend(ctor, { declaredClass: className, _constructor: props.constructor/*, preamble: null*/ });
-	// special help for IE
-	ctor.prototype.constructor = ctor;
-	// create named reference
-	return dojo.setObject(className, ctor); // Function
-};
+	// C3 Method Resolution Order (see http://www.python.org/download/releases/2.3/mro/)
+	function c3mro(bases){
+		var result = [], roots = [{cls: 0, refs: []}], nameMap = {}, clsCount = 1,
+			l = bases.length, i = 0, j, lin, base, top, proto, rec, name, refs;
 
-dojo.mixin(dojo.declare, {
-	_delegate: function(base, mixin){
-		var bp = (base || 0).prototype, mp = (mixin || 0).prototype, dd = dojo.declare;
-		// fresh constructor, fresh prototype
-		var ctor = dd._makeCtor();
-		// cache ancestry
-		dojo.mixin(ctor, { superclass: bp, mixin: mp, extend: dd._extend });
-		// chain prototypes
-		if(base){ ctor.prototype = dojo._delegate(bp); }
-		// add mixin and core
-		dojo.extend(ctor, dd._core, mp || 0, { _constructor: null, preamble: null });
-		// special help for IE
-		ctor.prototype.constructor = ctor;
-		// name this class for debugging
-		ctor.prototype.declaredClass = (bp || 0).declaredClass + '_' + (mp || 0).declaredClass;
-		return ctor;
-	},
-	_extend: function(props){
-		var i, fn;
-		for(i in props){ if(dojo.isFunction(fn=props[i]) && !0[i]){fn.nom=i;fn.ctor=this;} }
-		dojo.extend(this, props);
-	},
-	_makeCtor: function(){
-		// we have to make a function, but don't want to close over anything
-		return function(){ this._construct(arguments); };
-	},
-	_core: { 
-		_construct: function(args){
-			var c = args.callee, s = c.superclass, ct = s && s.constructor, 
-				m = c.mixin, mct = m && m.constructor, a = args, ii, fn;
-			// side-effect of = used on purpose here, lint may complain, don't try this at home
-			if(a[0]){ 
-				// FIXME: preambles for each mixin should be allowed
-				// FIXME: 
-				//		should we allow the preamble here NOT to modify the
-				//		default args, but instead to act on each mixin
-				//		independently of the class instance being constructed
-				//		(for impedence matching)?
-
-				// allow any first argument w/ a "preamble" property to act as a
-				// class preamble (not exclusive of the prototype preamble)
-				if(/*dojo.isFunction*/((fn = a[0].preamble))){ 
-					a = fn.apply(this, a) || a; 
+		// build a list of bases naming them if needed
+		for(; i < l; ++i){
+			base = bases[i];
+			if(!base){
+				err("mixin #" + i + " is null");
+			}
+			lin = base._meta ? base._meta.bases : [base];
+			top = 0;
+			// add bases to the name map
+			for(j = lin.length - 1; j >= 0; --j){
+				proto = lin[j].prototype;
+				if(!proto.hasOwnProperty("declaredClass")){
+					proto.declaredClass = "uniqName_" + (counter++);
 				}
-			} 
-			// prototype preamble
-			if((fn = c.prototype.preamble)){ a = fn.apply(this, a) || a; }
-			// FIXME: 
-			//		need to provide an optional prototype-settable
-			//		"_explicitSuper" property which disables this
-			// initialize superclass
-			if(ct && ct.apply){ ct.apply(this, a); }
-			// initialize mixin
-			if(mct && mct.apply){ mct.apply(this, a); }
-			// initialize self
-			if((ii = c.prototype._constructor)){ ii.apply(this, args); }
-			// post construction
-			if(this.constructor.prototype == c.prototype && (ct = this.postscript)){ ct.apply(this, args); }
-		},
-		_findMixin: function(mixin){
-			var c = this.constructor, p, m;
-			while(c){
-				p = c.superclass;
-				m = c.mixin;
-				if(m == mixin || (m instanceof mixin.constructor)){ return p; }
-				if(m && m._findMixin && (m = m._findMixin(mixin))){ return m; }
-				c = p && p.constructor;
+				name = proto.declaredClass;
+				if(!nameMap.hasOwnProperty(name)){
+					nameMap[name] = {count: 0, refs: [], cls: lin[j]};
+					++clsCount;
+				}
+				rec = nameMap[name];
+				if(top && top !== rec){
+					rec.refs.push(top);
+					++top.count;
+				}
+				top = rec;
 			}
-		},
-		_findMethod: function(name, method, ptype, has){
-			// consciously trading readability for bytes and speed in this low-level method
-			var p=ptype, c, m, f;
-			do{
-				c = p.constructor;
-				m = c.mixin;
-				// find method by name in our mixin ancestor
-				if(m && (m = this._findMethod(name, method, m, has))){ return m; }
-				// if we found a named method that either exactly-is or exactly-is-not 'method'
-				if((f = p[name]) && (has == (f == method))){ return p; }
-				// ascend chain
-				p = c.superclass;
-			}while(p);
-			// if we couldn't find an ancestor in our primary chain, try a mixin chain
-			return !has && (p = this._findMixin(ptype)) && this._findMethod(name, method, p, has);
-		},
-		inherited: function(name, args, newArgs){
-			// summary: 
-			//		Call an inherited member function of this declared class.
-			//
-			// description:
-			//		Call an inherited member function of this declared class, allowing advanced
-			//		manipulation of passed arguments to inherited functions.
-			//		Explicitly cannot handle the case of intending to pass no `newArgs`, though
-			//		hoping the use in conjuction with `dojo.hitch`. Calling an inherited 
-			//		function directly via hitch() is not supported.
-			//
-			// name: String? 
-			//		The name of the method to call. If omitted, the special `arguments` passed is
-			//		used to determine the inherited function. All subsequent positional arguments
-			//		are shifted left if `name` has been omitted. (eg: args becomes name)
-			//
-			// args: Object
-			//		An `arguments` object to pass along to the inherited function. Can be in the
-			//		`name` position if `name` has been omitted. This is a literal JavaScript `arguments`
-			//		object, and must be passed.
-			//
-			// newArgs: Array?
-			//		An Array of argument values to pass to the inherited function. If omitted, 
-			//		the original arguments are passed (determined from the `args` variable)
-			// 
-			// example:
-			//		Simply call an inherited function with the same signature.
-			//	|	this.inherited(arguments);
-			// example:
-			//		Call an inherited method, replacing the arguments passed with "replacement" and "args"
-			//	|	this.inherited(arguments, [replacement, args]);
-			// example:
-			//		Call an inherited method, passing an explicit name.
-			//	|	this.inherited("method", arguments);
-			// example:
-			//		Call an inherited method by name, replacing the arguments:
-			//	|	this.inherited("method", arguments, [replacement, args]);
-
-			var a = arguments;
-			// some magic crap that alters `arguments` to shift in the case of missing `name`
-			if(typeof a[0] != "string"){ // inline'd type check
-				newArgs = args;
-				args = name;
-				name = args.callee.nom;
-			}
-			a = newArgs || args; // WARNING: hitch()ed functions may pass a newArgs you aren't expecting.
-			var c = args.callee, p = this.constructor.prototype, fn, mp;
-			// if not an instance override
-			if(this[name] != c || p[name] == c){
-				// start from memoized prototype, or
-				// find a prototype that has property 'name' == 'c'
-				mp = (c.ctor || 0).superclass || this._findMethod(name, c, p, true);
-				if(!mp){ throw(this.declaredClass + ': inherited method "' + name + '" mismatch'); }
-				// find a prototype that has property 'name' != 'c'
-				p = this._findMethod(name, c, mp, false);
-			}
-			// we expect 'name' to be in prototype 'p'
-			fn = p && p[name];
-			if(!fn){ throw( mp.declaredClass + ': inherited method "' + name + '" not found'); }
-			// if the function exists, invoke it in our scope
-			return fn.apply(this, a);
+			++top.count;
+			roots[0].refs.push(top);
 		}
+
+		// remove classes without external references recursively
+		while(roots.length){
+			top = roots.pop();
+			result.push(top.cls);
+			--clsCount;
+			// optimization: follow a single-linked chain
+			while(refs = top.refs, refs.length == 1){
+				top = refs[0];
+				if(!top || --top.count){
+					// branch or end of chain => do not end to roots
+					top = 0;
+					break;
+				}
+				result.push(top.cls);
+				--clsCount;
+			}
+			if(top){
+				// branch
+				for(i = 0, l = refs.length; i < l; ++i){
+					top = refs[i];
+					if(!--top.count){
+						roots.push(top);
+					}
+				}
+			}
+		}
+		if(clsCount){
+			err("can't build consistent linearization");
+		}
+
+		// calculate the superclass offset
+		base = bases[0];
+		result[0] = base ?
+			base._meta && base === result[result.length - base._meta.bases.length] ?
+				base._meta.bases.length : 1 : 0;
+
+		return result;
 	}
-});
+
+	function inherited(args, a, f){
+		var name, chains, bases, caller, meta, base, proto, opf, pos,
+			cache = this._inherited = this._inherited || {};
+
+		// crack arguments
+		if(typeof args == "string"){
+			name = args;
+			args = a;
+			a = f;
+		}
+		f = 0;
+
+		caller = args.callee;
+		name = name || caller.nom;
+		if(!name){
+			err("can't deduce a name to call inherited()");
+		}
+
+		meta = this.constructor._meta;
+		bases = meta.bases;
+
+		pos = cache.p;
+		if(name != cname){
+			// method
+			if(cache.c !== caller){
+				// cache bust
+				pos = 0;
+				base = bases[0];
+				meta = base._meta;
+				if(meta.hidden[name] !== caller){
+					// error detection
+					chains = meta.chains;
+					if(chains && typeof chains[name] == "string"){
+						err("calling chained method with inherited: " + name);
+					}
+					// find caller
+					do{
+						meta = base._meta;
+						proto = base.prototype;
+						if(meta && (proto[name] === caller && proto.hasOwnProperty(name) || meta.hidden[name] === caller)){
+							break;
+						}
+					}while(base = bases[++pos]); // intentional assignment
+					pos = base ? pos : -1;
+				}
+			}
+			// find next
+			base = bases[++pos];
+			if(base){
+				proto = base.prototype;
+				if(base._meta && proto.hasOwnProperty(name)){
+					f = proto[name];
+				}else{
+					opf = op[name];
+					do{
+						proto = base.prototype;
+						f = proto[name];
+						if(f && (base._meta ? proto.hasOwnProperty(name) : f !== opf)){
+							break;
+						}
+					}while(base = bases[++pos]); // intentional assignment
+				}
+			}
+			f = base && f || op[name];
+		}else{
+			// constructor
+			if(cache.c !== caller){
+				// cache bust
+				pos = 0;
+				meta = bases[0]._meta;
+				if(meta && meta.ctor !== caller){
+					// error detection
+					chains = meta.chains;
+					if(!chains || chains.constructor !== "manual"){
+						err("calling chained constructor with inherited");
+					}
+					// find caller
+					while(base = bases[++pos]){ // intentional assignment
+						meta = base._meta;
+						if(meta && meta.ctor === caller){
+							break;
+						}
+					};
+					pos = base ? pos : -1;
+				}
+			}
+			// find next
+			while(base = bases[++pos]){	// intentional assignment
+				meta = base._meta;
+				f = meta ? meta.ctor : base;
+				if(f){
+					break;
+				}
+			}
+			f = base && f;
+		}
+
+		// cache the found super method
+		cache.c = f;
+		cache.p = pos;
+
+		// now we have the result
+		if(f){
+			return a === true ? f : f.apply(this, a || args);
+		}
+		// intentionally if a super method was not found
+	}
+
+	function getInherited(name, args){
+		if(typeof name == "string"){
+			return this.inherited(name, args, true);
+		}
+		return this.inherited(name, true);
+	}
+
+	// emulation of "instanceof"
+	function isInstanceOf(cls){
+		var bases = this.constructor._meta.bases;
+		for(var i = 0, l = bases.length; i < l; ++i){
+			if(bases[i] === cls){
+				return true;
+			}
+		}
+		return this instanceof cls;
+	}
+
+	// imlementation of safe mixin function
+	function safeMixin(target, source){
+		var name, t, i = 0, l = d._extraNames.length;
+		// add props adding metadata for incoming functions skipping a constructor
+		for(name in source){
+			t = source[name];
+			if((t !== op[name] || !(name in op)) && name != cname){
+				if(opts.call(t) == "[object Function]"){
+					// non-trivial function method => attach its name
+					t.nom = name;
+				}
+				target[name] = t;
+			}
+		}
+		// process unenumerable methods on IE
+		for(; i < l; ++i){
+			name = d._extraNames[i];
+			t = source[name];
+			if((t !== op[name] || !(name in op)) && name != cname){
+				if(opts.call(t) == "[object Function]"){
+					// non-trivial function method => attach its name
+					t.nom = name;
+				}
+				target[name] = t;
+			}
+		}
+		return target;
+	}
+
+	function extend(source){
+		safeMixin(this.prototype, source);
+		return this;
+	}
+
+	// chained constructor compatible with the legacy dojo.declare()
+	function chainedConstructor(bases, ctorSpecial){
+		return function(){
+			var a = arguments, args = a, a0 = a[0], f, i, m,
+				l = bases.length, preArgs;
+			//this._inherited = {};
+			// perform the shaman's rituals of the original dojo.declare()
+			// 1) call two types of the preamble
+			if(ctorSpecial && (a0 && a0.preamble || this.preamble)){
+				// full blown ritual
+				preArgs = new Array(bases.length);
+				// prepare parameters
+				preArgs[0] = a;
+				for(i = 0;;){
+					// process the preamble of the 1st argument
+					a0 = a[0];
+					if(a0){
+						f = a0.preamble;
+						if(f){
+							a = f.apply(this, a) || a;
+						}
+					}
+					// process the preamble of this class
+					f = bases[i].prototype;
+					f = f.hasOwnProperty("preamble") && f.preamble;
+					if(f){
+						a = f.apply(this, a) || a;
+					}
+					// one pecularity of the preamble:
+					// it is called if it is not needed,
+					// e.g., there is no constructor to call
+					// let's watch for the last constructor
+					// (see ticket #9795)
+					if(++i == l){
+						break;
+					}
+					preArgs[i] = a;
+				}
+			}
+			// 2) call all non-trivial constructors using prepared arguments
+			for(i = l - 1; i >= 0; --i){
+				f = bases[i];
+				m = f._meta;
+				f = m ? m.ctor : f;
+				if(f){
+					f.apply(this, preArgs ? preArgs[i] : a);
+				}
+			}
+			// 3) continue the original ritual: call the postscript
+			f = this.postscript;
+			if(f){
+				f.apply(this, args);
+			}
+		};
+	}
+
+
+	// chained constructor compatible with the legacy dojo.declare()
+	function singleConstructor(ctor, ctorSpecial){
+		return function(){
+			var a = arguments, t = a, a0 = a[0], f;
+			//this._inherited = {};
+			// perform the shaman's rituals of the original dojo.declare()
+			// 1) call two types of the preamble
+			if(ctorSpecial){
+				// full blown ritual
+				if(a0){
+					// process the preamble of the 1st argument
+					f = a0.preamble;
+					if(f){
+						t = f.apply(this, t) || t;
+					}
+				}
+				f = this.preamble;
+				if(f){
+					// process the preamble of this class
+					f.apply(this, t);
+					// one pecularity of the preamble:
+					// it is called even if it is not needed,
+					// e.g., there is no constructor to call
+					// let's watch for the last constructor
+					// (see ticket #9795)
+				}
+			}
+			// 2) call a constructor
+			if(ctor){
+				ctor.apply(this, a);
+			}
+			// 3) continue the original ritual: call the postscript
+			f = this.postscript;
+			if(f){
+				f.apply(this, a);
+			}
+		};
+	}
+
+	// plain vanilla constructor (can use inherited() to call its base constructor)
+	function simpleConstructor(bases){
+		return function(){
+			var a = arguments, i = 0, f;
+			//this._inherited = {};
+			// perform the shaman's rituals of the original dojo.declare()
+			// 1) do not call the preamble
+			// 2) call the top constructor (it can use this.inherited())
+			for(; f = bases[i]; ++i){ // intentional assignment
+				m = f._meta;
+				f = m ? m.ctor : f;
+				if(f){
+					f.apply(this, a);
+					break;
+				}
+			}
+			// 3) call the postscript
+			f = this.postscript;
+			if(f){
+				f.apply(this, a);
+			}
+		};
+	}
+
+	function chain(name, bases, reversed){
+		return function(){
+			var b, m, f, i = 0, step = 1;
+			if(reversed){
+				i = bases.length - 1;
+				step = -1;
+			}
+			for(; b = bases[i]; i += step){ // intentional assignment
+				m = b._meta;
+				f = (m ? m.hidden : b.prototype)[name];
+				if(f){
+					f.apply(this, arguments);
+				}
+			}
+		};
+	}
+
+	d.declare = function(className, superclass, props){
+		var proto, i, t, ctor, name, bases, chains, mixins = 1, parents = superclass;
+
+		// crack parameters
+		if(typeof className != "string"){
+			props = superclass;
+			superclass = className;
+			className = "";
+		}
+		props = props || {};
+
+		// build a prototype
+		if(opts.call(superclass) == "[object Array]"){
+			// C3 MRO
+			bases = c3mro(superclass);
+			t = bases[0];
+			mixins = bases.length - t;
+			superclass = bases[mixins];
+		}else{
+			bases = [0];
+			if(superclass){
+				t = superclass._meta;
+				bases = bases.concat(t ? t.bases : superclass);
+			}
+		}
+		if(superclass){
+			for(i = mixins - 1;; --i){
+				// delegation
+				xtor.prototype = superclass.prototype;
+				proto = new xtor;
+				if(!i){
+					// stop if nothing to add (the last base)
+					break;
+				}
+				// mix in properties
+				t = bases[i];
+				mix(proto, t._meta ? t._meta.hidden : t.prototype);
+				// chain in new constructor
+				ctor = new Function;
+				ctor.superclass = superclass;
+				ctor.prototype = proto;
+				superclass = proto.constructor = ctor;
+			}
+		}else{
+			proto = {};
+		}
+		// add all properties
+		safeMixin(proto, props);
+		// add constructor
+		t = props.constructor;
+		if(t !== op.constructor){
+			t.nom = cname;
+			proto.constructor = t;
+		}
+		xtor.prototype = 0;	// cleanup
+
+		// collect chains and flags
+		for(i = mixins - 1; i; --i){ // intentional assignment
+			t = bases[i]._meta;
+			if(t && t.chains){
+				chains = mix(chains || {}, t.chains);
+			}
+		}
+		if(proto["-chains-"]){
+			chains = mix(chains || {}, proto["-chains-"]);
+		}
+
+		// build ctor
+		t = !chains || !chains.hasOwnProperty(cname);
+		bases[0] = ctor = (chains && chains.constructor === "manual") ? simpleConstructor(bases) :
+			(bases.length == 1 ? singleConstructor(props.constructor, t) : chainedConstructor(bases, t));
+
+		// add meta information to the constructor
+		ctor._meta  = {bases: bases, hidden: props, chains: chains,
+			parents: parents, ctor: props.constructor};
+		ctor.superclass = superclass && superclass.prototype;
+		ctor.extend = extend;
+		ctor.prototype = proto;
+		proto.constructor = ctor;
+
+		// add "standard" methods to the ptototype
+		proto.getInherited = getInherited;
+		proto.inherited = inherited;
+		proto.isInstanceOf = isInstanceOf;
+
+		// add name if specified
+		if(className){
+			proto.declaredClass = className;
+			d.setObject(className, ctor);
+		}
+
+		// build chains and add them to the prototype
+		if(chains){
+			for(name in chains){
+				if(proto[name] && typeof chains[name] == "string" && name != cname){
+					t = proto[name] = chain(name, bases, chains[name] === "after");
+					t.nom = name;
+				}
+			}
+		}
+		// chained methods do not return values
+		// no need to chain "invisible" functions
+
+		return ctor;	// Function
+	};
+
+	d.safeMixin = safeMixin;
+
+	/*=====
+	dojo.declare = function(className, superclass, props){
+		//	summary:
+		//		Create a feature-rich constructor from compact notation.
+		//	className: String?:
+		//		The optional name of the constructor (loosely, a "class")
+		//		stored in the "declaredClass" property in the created prototype.
+		//		It will be used as a global name for a created constructor.
+		//	superclass: Function|Function[]:
+		//		May be null, a Function, or an Array of Functions. This argument
+		//		specifies a list of bases (the left-most one is the most deepest
+		//		base).
+		//	props: Object:
+		//		An object whose properties are copied to the created prototype.
+		//		Add an instance-initialization function by making it a property
+		//		named "constructor".
+		//	returns:
+		//		New constructor function.
+		//	description:
+		//		Create a constructor using a compact notation for inheritance and
+		//		prototype extension.
+		//
+		//		Mixin ancestors provide a type of multiple inheritance.
+		//		Prototypes of mixin ancestors are copied to the new class:
+		//		changes to mixin prototypes will not affect classes to which
+		//		they have been mixed in.
+		//
+		//		Ancestors can be compound classes created by this version of
+		//		dojo.declare. In complex cases all base classes are going to be
+		//		linearized according to C3 MRO algorithm
+		//		(see http://www.python.org/download/releases/2.3/mro/ for more
+		//		details).
+		//
+		//		"className" is cached in "declaredClass" property of the new class,
+		//		if it was supplied. The immediate super class will be cached in
+		//		"superclass" property of the new class.
+		//
+		//		Methods in "props" will be copied and modified: "nom" property
+		//		(the declared name of the method) will be added to all copied
+		//		functions to help identify them for the internal machinery. Be
+		//		very careful, while reusing methods: if you use the same
+		//		function under different names, it can produce errors in some
+		//		cases.
+		//
+		//		It is possible to use constructors created "manually" (without
+		//		dojo.declare) as bases. They will be called as usual during the
+		//		creation of an instance, their methods will be chained, and even
+		//		called by "this.inherited()".
+		//
+		//		Special property "-chains-" governs how to chain methods. It is
+		//		a dictionary, which uses method names as keys, and hint strings
+		//		as values. If a hint string is "after", this method will be
+		//		called after methods of its base classes. If a hint string is
+		//		"before", this method will be called before methods of its base
+		//		classes.
+		//
+		//		If "constructor" is not mentioned in "-chains-" property, it will
+		//		be chained using the legacy mode: using "after" chaining,
+		//		calling preamble() method before each constructor, if available,
+		//		and calling postscript() after all constructors were executed.
+		//		If the hint is "after", it is chained as a regular method, but
+		//		postscript() will be called after the chain of constructors.
+		//		"constructor" cannot be chained "before", but it allows
+		//		a special hint string: "manual", which means that constructors
+		//		are not going to be chained in any way, and programmer will call
+		//		them manually using this.inherited(). In the latter case
+		//		postscript() will be called after the construction.
+		//
+		//		All chaining hints are "inherited" from base classes and
+		//		potentially can be overridden. Be very careful when overriding
+		//		hints! Make sure that all chained methods can work in a proposed
+		//		manner of chaining.
+		//
+		//		Once a method was chained, it is impossible to unchain it. The
+		//		only exception is "constructor". You don't need to define a
+		//		method in order to supply a chaining hint.
+		//
+		//		If a method is chained, it cannot use this.inherited() because
+		//		all other methods in the hierarchy will be called automatically.
+		//
+		//		Usually constructors and initializers of any kind are chained
+		//		using "after" and destructors of any kind are chained as
+		//		"before". Note that chaining assumes that chained methods do not
+		//		return any value: any returned value will be discarded.
+		//
+		//	example:
+		//	|	dojo.declare("my.classes.bar", my.classes.foo, {
+		//	|		// properties to be added to the class prototype
+		//	|		someValue: 2,
+		//	|		// initialization function
+		//	|		constructor: function(){
+		//	|			this.myComplicatedObject = new ReallyComplicatedObject();
+		//	|		},
+		//	|		// other functions
+		//	|		someMethod: function(){
+		//	|			doStuff();
+		//	|		}
+		//	|	});
+		//
+		//	example:
+		//	|	var MyBase = dojo.declare(null, {
+		//	|		// constructor, properties, and methods go here
+		//	|		// ...
+		//	|	});
+		//	|	var MyClass1 = dojo.declare(MyBase, {
+		//	|		// constructor, properties, and methods go here
+		//	|		// ...
+		//	|	});
+		//	|	var MyClass2 = dojo.declare(MyBase, {
+		//	|		// constructor, properties, and methods go here
+		//	|		// ...
+		//	|	});
+		//	|	var MyDiamond = dojo.declare([MyClass1, MyClass2], {
+		//	|		// constructor, properties, and methods go here
+		//	|		// ...
+		//	|	});
+		//
+		//	example:
+		//	|	var F = function(){ console.log("raw constructor"); };
+		//	|	F.prototype.method = function(){
+		//	|		console.log("raw method");
+		//	|	};
+		//	|	var A = dojo.declare(F, {
+		//	|		constructor: function(){
+		//	|			console.log("A.constructor");
+		//	|		},
+		//	|		method: function(){
+		//	|			console.log("before calling F.method...");
+		//	|			this.inherited(arguments);
+		//	|			console.log("...back in A");
+		//	|		}
+		//	|	});
+		//	|	new A().method();
+		//	|	// will print:
+		//	|	// raw constructor
+		//	|	// A.constructor
+		//	|	// before calling F.method...
+		//	|	// raw method
+		//	|	// ...back in A
+		//
+		//	example:
+		//	|	var A = dojo.declare(null, {
+		//	|		"-chains-": {
+		//	|			destroy: "before"
+		//	|		}
+		//	|	});
+		//	|	var B = dojo.declare(A, {
+		//	|		constructor: function(){
+		//	|			console.log("B.constructor");
+		//	|		},
+		//	|		destroy: function(){
+		//	|			console.log("B.destroy");
+		//	|		}
+		//	|	});
+		//	|	var C = dojo.declare(B, {
+		//	|		constructor: function(){
+		//	|			console.log("C.constructor");
+		//	|		},
+		//	|		destroy: function(){
+		//	|			console.log("C.destroy");
+		//	|		}
+		//	|	});
+		//	|	new C().destroy();
+		//	|	// prints:
+		//	|	// B.constructor
+		//	|	// C.constructor
+		//	|	// C.destroy
+		//	|	// B.destroy
+		//
+		//	example:
+		//	|	var A = dojo.declare(null, {
+		//	|		"-chains-": {
+		//	|			constructor: "manual"
+		//	|		}
+		//	|	});
+		//	|	var B = dojo.declare(A, {
+		//	|		constructor: function(){
+		//	|			// ...
+		//	|			// call the base constructor with new parameters
+		//	|			this.inherited(arguments, [1, 2, 3]);
+		//	|			// ...
+		//	|		}
+		//	|	});
+		//
+		//	example:
+		//	|	var A = dojo.declare(null, {
+		//	|		"-chains-": {
+		//	|			m1: "before"
+		//	|		},
+		//	|		m1: function(){
+		//	|			console.log("A.m1");
+		//	|		},
+		//	|		m2: function(){
+		//	|			console.log("A.m2");
+		//	|		}
+		//	|	});
+		//	|	var B = dojo.declare(A, {
+		//	|		"-chains-": {
+		//	|			m2: "after"
+		//	|		},
+		//	|		m1: function(){
+		//	|			console.log("B.m1");
+		//	|		},
+		//	|		m2: function(){
+		//	|			console.log("B.m2");
+		//	|		}
+		//	|	});
+		//	|	var x = new B();
+		//	|	x.m1();
+		//	|	// prints:
+		//	|	// B.m1
+		//	|	// A.m1
+		//	|	x.m2();
+		//	|	// prints:
+		//	|	// A.m2
+		//	|	// B.m2
+		return new Function(); // Function
+	};
+	=====*/
+
+	/*=====
+	dojo.safeMixin = function(target, source){
+		//	summary:
+		//		Mix in properties skipping a constructor and decorating functions
+		//		like it is done by dojo.declare.
+		//	target: Object
+		//		Target object to accept new properties.
+		//	source: Object
+		//		Source object for new properties.
+		//	description:
+		//		This function is used to mix in properties like dojo._mixin does,
+		//		but it skips a constructor property and decorates functions like
+		//		dojo.declare does.
+		//
+		//		It is meant to be used with classes and objects produced with
+		//		dojo.declare. Functions mixed in with dojo.safeMixin can use
+		//		this.inherited() like normal methods.
+		//
+		//		This function is used to implement extend() method of a constructor
+		//		produced with dojo.declare().
+		//
+		//	example:
+		//	|	var A = dojo.declare(null, {
+		//	|		m1: function(){
+		//	|			console.log("A.m1");
+		//	|		},
+		//	|		m2: function(){
+		//	|			console.log("A.m2");
+		//	|		}
+		//	|	});
+		//	|	var B = dojo.declare(A, {
+		//	|		m1: function(){
+		//	|			this.inherited(arguments);
+		//	|			console.log("B.m1");
+		//	|		}
+		//	|	});
+		//	|	B.extend({
+		//	|		m2: function(){
+		//	|			this.inherited(arguments);
+		//	|			console.log("B.m2");
+		//	|		}
+		//	|	});
+		//	|	var x = new B();
+		//	|	dojo.safeMixin(x, {
+		//	|		m1: function(){
+		//	|			this.inherited(arguments);
+		//	|			console.log("X.m1");
+		//	|		},
+		//	|		m2: function(){
+		//	|			this.inherited(arguments);
+		//	|			console.log("X.m2");
+		//	|		}
+		//	|	});
+		//	|	x.m2();
+		//	|	// prints:
+		//	|	// A.m1
+		//	|	// B.m1
+		//	|	// X.m1
+	};
+	=====*/
+
+	/*=====
+	Object.inherited = function(name, args, newArgs){
+		//	summary:
+		//		Calls a super method.
+		//	name: String?
+		//		The optional method name. Should be the same as the caller's
+		//		name. Usually "name" is specified in complex dynamic cases, when
+		//		the calling method was dynamically added, undecorated by
+		//		dojo.declare, and it cannot be determined.
+		//	args: Arguments
+		//		The caller supply this argument, which should be the original
+		//		"arguments".
+		//	newArgs: Object?
+		//		If "true", the found function will be returned without
+		//		executing it.
+		//		If Array, it will be used to call a super method. Otherwise
+		//		"args" will be used.
+		//	returns:
+		//		Whatever is returned by a super method, or a super method itself,
+		//		if "true" was specified as newArgs.
+		//	description:
+		//		This method is used inside method of classes produced with
+		//		dojo.declare to call a super method (next in the chain). It is
+		//		used for manually controlled chaining. Consider using the regular
+		//		chaining, because it is faster. Use "this.inherited()" only in
+		//		complex cases.
+		//
+		//		This method cannot me called from automatically chained
+		//		constructors including the case of a special (legacy)
+		//		constructor chaining. It cannot be called from chained methods.
+		//
+		//		If "this.inherited()" cannot find the next-in-chain method, it
+		//		does nothing and returns "undefined". The last method in chain
+		//		can be a default method implemented in Object, which will be
+		//		called last.
+		//
+		//		If "name" is specified, it is assumed that the method that
+		//		received "args" is the parent method for this call. It is looked
+		//		up in the chain list and if it is found the next-in-chain method
+		//		is called. If it is not found, the first-in-chain method is
+		//		called.
+		//
+		//		If "name" is not specified, it will be derived from the calling
+		//		method (using a methoid property "nom").
+		//
+		//	example:
+		//	|	var B = dojo.declare(A, {
+		//	|		method1: function(a, b, c){
+		//	|			this.inherited(arguments);
+		//	|		},
+		//	|		method2: function(a, b){
+		//	|			return this.inherited(arguments, [a + b]);
+		//	|		}
+		//	|	});
+		//	|	// next method is not in the chain list because it is added
+		//	|	// manually after the class was created.
+		//	|	B.prototype.method3 = function(){
+		//	|		console.log("This is a dynamically-added method.");
+		//	|		this.inherited("method3", arguments);
+		//	|	};
+		//	example:
+		//	|	var B = dojo.declare(A, {
+		//	|		method: function(a, b){
+		//	|			var super = this.inherited(arguments, true);
+		//	|			// ...
+		//	|			if(!super){
+		//	|				console.log("there is no super method");
+		//	|				return 0;
+		//	|			}
+		//	|			return super.apply(this, arguments);
+		//	|		}
+		//	|	});
+		return	{};	// Object
+	}
+	=====*/
+
+	/*=====
+	Object.getInherited = function(name, args){
+		//	summary:
+		//		Returns a super method.
+		//	name: String?
+		//		The optional method name. Should be the same as the caller's
+		//		name. Usually "name" is specified in complex dynamic cases, when
+		//		the calling method was dynamically added, undecorated by
+		//		dojo.declare, and it cannot be determined.
+		//	args: Arguments
+		//		The caller supply this argument, which should be the original
+		//		"arguments".
+		//	returns:
+		//		Returns a super method (Function) or "undefined".
+		//	description:
+		//		This method is a convenience method for "this.inherited()".
+		//		It uses the same algorithm but instead of executing a super
+		//		method, it returns it, or "undefined" if not found.
+		//
+		//	example:
+		//	|	var B = dojo.declare(A, {
+		//	|		method: function(a, b){
+		//	|			var super = this.getInherited(arguments);
+		//	|			// ...
+		//	|			if(!super){
+		//	|				console.log("there is no super method");
+		//	|				return 0;
+		//	|			}
+		//	|			return super.apply(this, arguments);
+		//	|		}
+		//	|	});
+		return	{};	// Object
+	}
+	=====*/
+
+	/*=====
+	Object.isInstanceOf = function(cls){
+		//	summary:
+		//		Checks the inheritance cahin to see if it is inherited from this
+		//		class.
+		//	cls: Function
+		//		Class constructor.
+		//	returns:
+		//		"true", if this object is inherited from this class, "false"
+		//		otherwise.
+		//	description:
+		//		This method is used with instances of classes produced with
+		//		dojo.declare to determine of they support a certain interface or
+		//		not. It models "instanceof" operator.
+		//
+		//	example:
+		//	|	var A = dojo.declare(null, {
+		//	|		// constructor, properties, and methods go here
+		//	|		// ...
+		//	|	});
+		//	|	var B = dojo.declare(null, {
+		//	|		// constructor, properties, and methods go here
+		//	|		// ...
+		//	|	});
+		//	|	var C = dojo.declare([A, B], {
+		//	|		// constructor, properties, and methods go here
+		//	|		// ...
+		//	|	});
+		//	|	var D = dojo.declare(A, {
+		//	|		// constructor, properties, and methods go here
+		//	|		// ...
+		//	|	});
+		//	|
+		//	|	var a = new A(), b = new B(), c = new C(), d = new D();
+		//	|
+		//	|	console.log(a.isInstanceOf(A)); // true
+		//	|	console.log(b.isInstanceOf(A)); // false
+		//	|	console.log(c.isInstanceOf(A)); // true
+		//	|	console.log(d.isInstanceOf(A)); // true
+		//	|
+		//	|	console.log(a.isInstanceOf(B)); // false
+		//	|	console.log(b.isInstanceOf(B)); // true
+		//	|	console.log(c.isInstanceOf(B)); // true
+		//	|	console.log(d.isInstanceOf(B)); // false
+		//	|
+		//	|	console.log(a.isInstanceOf(C)); // false
+		//	|	console.log(b.isInstanceOf(C)); // false
+		//	|	console.log(c.isInstanceOf(C)); // true
+		//	|	console.log(d.isInstanceOf(C)); // false
+		//	|
+		//	|	console.log(a.isInstanceOf(D)); // false
+		//	|	console.log(b.isInstanceOf(D)); // false
+		//	|	console.log(c.isInstanceOf(D)); // false
+		//	|	console.log(d.isInstanceOf(D)); // true
+		return	{};	// Object
+	}
+	=====*/
+
+	/*=====
+	Object.extend = function(source){
+		//	summary:
+		//		Adds all properties and methods of source to constructor's
+		//		prototype, making them available to all instances created with
+		//		constructor. This method is specific to constructors created with
+		//		dojo.declare.
+		//	source: Object
+		//		Source object which properties are going to be copied to the
+		//		constructor's prototype.
+		//	description:
+		//		Adds source properties to the constructor's prototype. It can
+		//		override existing properties.
+		//
+		//		This method is similar to dojo.extend function, but it is specific
+		//		to constructors produced by dojo.declare. It is implemented
+		//		using dojo.safeMixin, and it skips a constructor property,
+		//		and properly decorates copied functions.
+		//
+		//	example:
+		//	|	var A = dojo.declare(null, {
+		//	|		m1: function(){},
+		//	|		s1: "Popokatepetl"
+		//	|	});
+		//	|	A.extend({
+		//	|		m1: function(){},
+		//	|		m2: function(){},
+		//	|		f1: true,
+		//	|		d1: 42
+		//	|	});
+	};
+	=====*/
+})();

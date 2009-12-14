@@ -8,26 +8,6 @@ dojo.parser = new function(){
 	this._attrName = d._scopeName + "Type";
 	this._query = "[" + this._attrName + "]";
 
-	var _anonCtr = 0, _anon = {};
-	var nameAnonFunc = function(/*Function*/anonFuncPtr, /*Object*/thisObj){
-		// summary:
-		//		Creates a reference to anonFuncPtr in thisObj with a completely
-		//		unique name. The new name is returned as a String. 
-		var nso = thisObj || _anon;
-		if(dojo.isIE){
-			var cn = anonFuncPtr["__dojoNameCache"];
-			if(cn && nso[cn] === anonFuncPtr){
-				return cn;
-			}
-		}
-		var name;
-		do{
-			name = "__" + _anonCtr++;
-		}while(name in nso)
-		nso[name] = anonFuncPtr;
-		return name; // String
-	}
-
 	function val2type(/*Object*/ value){
 		// summary:
 		//		Returns name of type of given value.
@@ -63,10 +43,12 @@ dojo.parser = new function(){
 				}
 				try{
 					if(value.search(/[^\w\.]+/i) != -1){
-						// TODO: "this" here won't work
-						value = nameAnonFunc(new Function(value), this);
+						// The user has specified some text for a function like "return x+5"
+						return new Function(value);
+					}else{
+						// The user has specified the name of a function like "myOnClick"
+						return d.getObject(value, false);
 					}
-					return d.getObject(value, false);
 				}catch(e){ return new Function(); }
 			case "array":
 				return value ? value.split(/\s*,\s*/) : [];
@@ -87,7 +69,14 @@ dojo.parser = new function(){
 		// map from fully qualified name (like "dijit.Button") to structure like
 		// { cls: dijit.Button, params: {label: "string", disabled: "boolean"} }
 	};
-	
+
+	// Widgets like BorderContainer add properties to _Widget via dojo.extend().
+	// If BorderContainer is loaded after _Widget's parameter list has been cached,
+	// we need to refresh that parameter list (for _Widget and all widgets that extend _Widget).
+	dojo.connect(dojo, "extend", function(){
+		instanceClasses = {};
+	});
+
 	function getClassInfo(/*String*/ className){
 		// className:
 		//		fully qualified name (like "dijit.form.Button")

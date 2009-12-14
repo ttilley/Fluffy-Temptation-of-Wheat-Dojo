@@ -40,6 +40,9 @@ dojo.declare("dojo.io.iframe.__ioArgs", dojo.__IoArgs, {
 =====*/
 
 dojo.io.iframe = {
+	// summary: 
+	//		Sends an Ajax I/O call using and Iframe (for instance, to upload files)
+	
 	create: function(/*String*/fname, /*String*/onloadstr, /*String?*/uri){
 		//	summary:
 		//		Creates a hidden iframe in the page. Used mostly for IO
@@ -141,20 +144,21 @@ dojo.io.iframe = {
 			(
 				(
 					(iframeNode.name) && (iframeNode.document) && 
-					(document.getElementsByTagName("iframe")[iframeNode.name].contentWindow) &&
-					(document.getElementsByTagName("iframe")[iframeNode.name].contentWindow.document)
+					(dojo.doc.getElementsByTagName("iframe")[iframeNode.name].contentWindow) &&
+					(dojo.doc.getElementsByTagName("iframe")[iframeNode.name].contentWindow.document)
 				)
 			) ||  // IE
 			(
-				(iframeNode.name)&&(document.frames[iframeNode.name])&&
-				(document.frames[iframeNode.name].document)
+				(iframeNode.name)&&(dojo.doc.frames[iframeNode.name])&&
+				(dojo.doc.frames[iframeNode.name].document)
 			) || null;
 		return doc;
 	},
 
 	send: function(/*dojo.io.iframe.__ioArgs*/args){
-		//summary: function that sends the request to the server.
-		//This transport can only process one send() request at a time, so if send() is called
+		//summary: 
+		//		Function that sends the request to the server.
+		//		This transport can only process one send() request at a time, so if send() is called
 		//multiple times, it will queue up the calls and only process one at a time.
 		if(!this["_frame"]){
 			this._frame = this.create(this._iframeName, dojo._scopeName + ".io.iframe._iframeOnload();");
@@ -262,7 +266,17 @@ dojo.io.iframe = {
 		//summary: Internal method used to fire the next request in the bind queue.
 		try{
 			if((this._currentDfd)||(this._dfdQueue.length == 0)){ return; }
-			var dfd = this._currentDfd = this._dfdQueue.shift();
+			//Find next deferred, skip the canceled ones.
+			do{
+				var dfd = this._currentDfd = this._dfdQueue.shift();
+			} while(dfd && dfd.canceled && this._dfdQueue.length);
+
+			//If no more dfds, cancel.
+			if(!dfd || dfd.canceled){
+				this._currentDfd =  null;
+				return;
+			}
+
 			var ioArgs = dfd.ioArgs;
 			var args = ioArgs.args;
 
