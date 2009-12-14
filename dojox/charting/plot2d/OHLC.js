@@ -117,30 +117,35 @@ dojo.require("dojox.lang.functional.reversed");
 					}
 
 					if(width >= 1){
-						//	draw the line and rect, set up as a group and pass that to the events.
 						var hl = { x1: width/2, x2: width/2, y1: y - high, y2: y - low },
-							op = { x1: 0, x2: width/2, y1: y-open, y2: y-open},
-							cl = { x1: width/2, x2: width, y1: y-close, y2: y-close };
+							op = { x1: 0, x2: ((width/2) + ((stroke.width||1)/2)), y1: y-open, y2: y-open},
+							cl = { x1: ((width/2) - ((stroke.width||1)/2)), x2: width, y1: y-close, y2: y-close };
 						shape = s.createGroup();
 						shape.setTransform({dx: x, dy: 0 });
-						shape.createLine(hl).setStroke(stroke);
-						shape.createLine(op).setStroke(stroke);
-						shape.createLine(cl).setStroke(stroke);
+						var inner = shape.createGroup();
+						inner.createLine(hl).setStroke(stroke);
+						inner.createLine(op).setStroke(stroke);
+						inner.createLine(cl).setStroke(stroke);
 
 						//	TODO: double check this.
 						run.dyn.fill   = fill;
 						run.dyn.stroke = stroke;
 						if(events){
 							var o = {
-								element: "ohlc",
+								element: "candlestick",
 								index:   j,
 								run:     run,
 								plot:    this,
 								hAxis:   this.hAxis || null,
 								vAxis:   this.vAxis || null,
-								shape:   shape,
-								x:       v,
-								y:       j + 1.5
+								shape:	 inner,
+								x:       x,
+								y:       y-Math.max(open, close),
+								cx:		 width/2,
+								cy:		 (y-Math.max(open, close)) + (Math.max(open > close ? open-close : close-open, 1)/2),
+								width:	 width,
+								height:  Math.max(open > close ? open-close : close-open, 1),
+								data:	 v
 							};
 							this._connectEvents(shape, o);
 						}

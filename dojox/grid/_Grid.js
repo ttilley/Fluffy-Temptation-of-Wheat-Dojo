@@ -181,7 +181,7 @@ dojo.requireLocalization("dijit", "loading");
 		//	|		structure="structure"
 		//	|		dojoType="dojox.grid._Grid"></div>
 
-		templateString: dojo.cache("dojox.grid","resources/_Grid.html"),
+		templatePath: dojo.moduleUrl("dojox.grid","resources/_Grid.html"),
 
 		// classTag: String
 		// 		CSS class applied to the grid's domNode
@@ -376,6 +376,7 @@ dojo.requireLocalization("dijit", "loading");
 			}
 			// Call this to update our autoheight to start out
 			this._setAutoHeightAttr(this.autoHeight, true);
+			this.lastScrollTop = this.scrollTop = 0;
 		},
 		
 		postCreate: function(){
@@ -383,7 +384,7 @@ dojo.requireLocalization("dijit", "loading");
 			this._setHeaderMenuAttr(this.headerMenu);
 			this._setStructureAttr(this.structure);
 			this._click = [];
-			this.inherited(arguments)
+			this.inherited(arguments);
 			if(this.domNode && this.autoWidth && this.initialWidth){
 				this.domNode.style.width = this.initialWidth;
 			}
@@ -582,7 +583,7 @@ dojo.requireLocalization("dijit", "loading");
 									}
 								}, this);
 							}
-							var checked = dojo.filter(self.layout.cells, function(c){
+							checked = dojo.filter(self.layout.cells, function(c){
 								if(c.menuItems.length > 1){
 									dojo.forEach(c.menuItems, "item.attr('disabled', false);");
 								}else{
@@ -705,6 +706,7 @@ dojo.requireLocalization("dijit", "loading");
 			delete this._pendingChangeSize;
 			delete this._pendingResultSize;
 			// if we have set up everything except the DOM, we cannot resize
+			if(!this.domNode){ return; }
 			var pn = this.domNode.parentNode;
 			if(!pn || pn.nodeType != 1 || !this.hasLayout() || pn.style.visibility == "hidden" || pn.style.display == "none"){
 				return;
@@ -712,12 +714,13 @@ dojo.requireLocalization("dijit", "loading");
 			// useful measurement
 			var padBorder = this._getPadBorder();
 			var hh = undefined;
+			var h;
 			// grid height
 			if(this._autoHeight){
 				this.domNode.style.height = 'auto';
 				this.viewsNode.style.height = '';
 			}else if(typeof this.autoHeight == "number"){
-				var h = hh = this._getHeaderHeight();
+				h = hh = this._getHeaderHeight();
 				h += (this.scroller.averageRowHeight * this.autoHeight);
 				this.domNode.style.height = h + "px";
 			}else if(this.domNode.clientHeight <= padBorder.h){
@@ -738,7 +741,7 @@ dojo.requireLocalization("dijit", "loading");
 				this.height = this.domNode.style.height;
 				delete this.fitTo;
 			}else if(this.fitTo == "parent"){
-				var h = this._parentContentBoxHeight = this._parentContentBoxHeight || dojo._getContentBox(pn).h;
+				h = this._parentContentBoxHeight = this._parentContentBoxHeight || dojo._getContentBox(pn).h;
 				this.domNode.style.height = Math.max(0, h) + "px";
 			}
 			
@@ -913,10 +916,10 @@ dojo.requireLocalization("dijit", "loading");
 				return;
 			}
 			//this.edit.saveState(inRowIndex);
-			var lastScrollTop = this.scrollTop;
+			this.lastScrollTop = this.scrollTop;
 			this.prerender();
 			this.scroller.invalidateNodes();
-			this.setScrollTop(lastScrollTop);
+			this.setScrollTop(this.lastScrollTop);
 			this.postrender();
 			//this.edit.restoreState(inRowIndex);
 		},
@@ -950,12 +953,13 @@ dojo.requireLocalization("dijit", "loading");
 			//		How many rows to update.
 			startIndex = Number(startIndex);
 			howMany = Number(howMany);
+			var i;
 			if(this.updating){
-				for(var i=0; i<howMany; i++){
+				for(i=0; i<howMany; i++){
 					this.invalidated[i+startIndex]=true;
 				}
 			}else{
-				for(var i=0; i<howMany; i++){
+				for(i=0; i<howMany; i++){
 					this.views.updateRow(i+startIndex, this._skipRowRenormalize);
 				}
 				this.scroller.rowHeightChanged(startIndex);
@@ -999,6 +1003,7 @@ dojo.requireLocalization("dijit", "loading");
 					}
 				}
 			}
+			return null;
 		},
 		rowHeightChanged: function(inRowIndex){
 			// summary:
@@ -1164,6 +1169,7 @@ dojo.requireLocalization("dijit", "loading");
 			if(m in this){
 				return this[m](e);
 			}
+			return false;
 		},
 
 		dispatchKeyEvent: function(e){
@@ -1257,7 +1263,11 @@ dojo.requireLocalization("dijit", "loading");
 		removeSelectedRows: function(){
 			// summary:
 			//		Remove the selected rows from the grid.
-			this.updateRowCount(Math.max(0, this.attr('rowCount') - this.selection.getSelected().length));
+			if(this.allItemsSelected){
+				this.updateRowCount(0);
+			}else{
+				this.updateRowCount(Math.max(0, this.attr('rowCount') - this.selection.getSelected().length));
+			}
 			this.selection.clear();
 		}
 
@@ -1268,10 +1278,10 @@ dojo.requireLocalization("dijit", "loading");
 		var widthFromAttr = function(n){
 			var w = d.attr(n, "width")||"auto";
 			if((w != "auto")&&(w.slice(-2) != "em")&&(w.slice(-1) != "%")){
-				w = parseInt(w)+"px";
+				w = parseInt(w, 10)+"px";
 			}
 			return w;
-		}
+		};
 		// if(!props.store){ console.debug("no store!"); }
 		// if a structure isn't referenced, do we have enough
 		// data to try to build one automatically?
@@ -1283,7 +1293,7 @@ dojo.requireLocalization("dijit", "loading");
 				var sv = d.attr(cg, "span");
 				var v = {
 					noscroll: (d.attr(cg, "noscroll") == "true") ? true : false,
-					__span: (!!sv ? parseInt(sv) : 1),
+					__span: (!!sv ? parseInt(sv, 10) : 1),
 					cells: []
 				};
 				if(d.hasAttr(cg, "width")){
@@ -1330,7 +1340,8 @@ dojo.requireLocalization("dijit", "loading");
 					var cell = {
 						name: d.trim(d.attr(th, "name")||th.innerHTML),
 						colSpan: parseInt(d.attr(th, "colspan")||1, 10),
-						type: d.trim(d.attr(th, "cellType")||"")
+						type: d.trim(d.attr(th, "cellType")||""),
+						id: d.trim(d.attr(th,"id")||"")
 					};
 					cellCount += cell.colSpan;
 					var rowSpan = d.attr(th, "rowspan");
@@ -1366,5 +1377,5 @@ dojo.requireLocalization("dijit", "loading");
 		}
 
 		return new ctor(props, node);
-	}
+	};
 })();

@@ -143,7 +143,7 @@ dojo.require("dojo.html");
 		//them up.
 		cont = cont.replace(/<[!][-][-](.|\s){5,}?[-][-]>/g,
 			function(comment){
-				return comment.replace(/<(\/?)script\b([^>]|\s)*\>/ig,"&lt;$1Script$2&gt;");
+				return comment.replace(/<(\/?)script\b/ig,"&lt;$1Script");
 			}
 		);
 
@@ -173,7 +173,7 @@ dojo.require("dojo.html");
 		}
 		
 		// match <script>, <script type="text/..., but not <script type="dojo(/method)...
-		return cont.replace(/<script\s*(?![^>]*type=['"]?dojo)(?:[^>]*?(?:src=(['"]?)([^>]*?)\1[^>]*)?)*>([\s\S]*?)<\/script>/gi,
+		return cont.replace(/<script\s*(?![^>]*type=['"]?(?:dojo\/|text\/html\b))(?:[^>]*?(?:src=(['"]?)([^>]*?)\1[^>]*)?)*>([\s\S]*?)<\/script>/gi,
 			function(ignore, delim, src, code){
 				if(src){
 					download(src);

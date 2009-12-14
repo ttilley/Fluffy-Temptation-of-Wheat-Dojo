@@ -10,7 +10,7 @@ dojo.require("dojox.data.JsonRestStore");
 dojo.declare("dojox.data.CouchDBRestStore",
 	dojox.data.JsonRestStore,
 	{
-		save: function(kwArgs) {
+		save: function(kwArgs){
 			var actions = this.inherited(arguments); // do the default save and then update for version numbers
 			var prefix = this.service.servicePath;
 			for(var i = 0; i < actions.length; i++){
@@ -46,23 +46,17 @@ dojo.declare("dojox.data.CouchDBRestStore",
 				var prefix = this.service.servicePath;
 				var self = this;
 				for(var i = 0; i < rows.length;i++){
-					rows[i] = {
-						__id: prefix + rows[i].id, 
-						_id: rows[i].id,
-						_loadObject: function(callback){
-							self.fetchItemByIdentity({
-								identity: this._id,
-								onItem: callback
-							});
-							delete this._loadObject;
-						}
-					};
+					var realItem = rows[i].value;
+					realItem.__id= prefix + rows[i].id;
+					realItem._id= rows[i].id;
+					realItem._loadObject= dojox.rpc.JsonRest._loader;
+					rows[i] = realItem;
 				}
 				return {totalCount:results.total_rows, items:results.rows};
 			}else{
 				return {items:results};
 			}
-						
+
 		}
 	}
 );

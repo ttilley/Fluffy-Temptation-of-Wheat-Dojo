@@ -31,7 +31,7 @@ dojo.declare("dojox.form._CheckedMultiSelectItem",
 		// summary:
 		//		Set the appropriate _subClass value - based on if we are multi-
 		//		or single-select
-		if(this.parent._multiValue){
+		if(this.parent.multiple){
 			this._type = {type: "checkbox", baseClass: "dijitCheckBox"};
 		}else{
 			this._type = {type: "radio", baseClass: "dijitRadio"};
@@ -54,7 +54,7 @@ dojo.declare("dojox.form._CheckedMultiSelectItem",
 		//		(only on click of the checkbox)  Radio-based calls _setValueAttr
 		//		instead.
 		if(this.attr("disabled") || this.attr("readOnly")){ return; }
-		if(this.parent._multiValue){
+		if(this.parent.multiple){
 			this.option.selected = this.checkBox.attr('value') && true;
 		}else{
 			this.parent.attr('value', this.option.value);
@@ -114,7 +114,6 @@ dojo.declare("dojox.form.CheckedMultiSelect", dijit.form._FormSelectWidget, {
 	// summary:
 	//		Extends the core dijit MultiSelect to provide a "checkbox" selector
 
-	templateString: "",
 	templateString: dojo.cache("dojox.form", "resources/CheckedMultiSelect.html"),
 
 	baseClass: "dojoxMultiSelect",

@@ -2,6 +2,7 @@ dojo.provide("dojox.charting.plot2d.Bars");
 
 dojo.require("dojox.charting.plot2d.common");
 dojo.require("dojox.charting.plot2d.Base");
+dojo.require("dojox.gfx.fx");
 
 dojo.require("dojox.lang.utils");
 dojo.require("dojox.lang.functional");
@@ -17,7 +18,8 @@ dojo.require("dojox.lang.functional.reversed");
 			hAxis: "x",		// use a horizontal axis named "x"
 			vAxis: "y",		// use a vertical axis named "y"
 			gap:	0,		// gap between columns in pixels
-			shadows: null	// draw shadows
+			shadows: null,	// draw shadows
+			animate: null   // animate bars into place
 		},
 		optionalParams: {
 			minBarSize: 1,	// minimal bar size in pixels
@@ -31,6 +33,7 @@ dojo.require("dojox.lang.functional.reversed");
 			this.series = [];
 			this.hAxis = this.opt.hAxis;
 			this.vAxis = this.opt.vAxis;
+			this.animate = this.opt.animate;
 		},
 
 		calculateAxes: function(dim){
@@ -72,16 +75,35 @@ dojo.require("dojox.lang.functional.reversed");
 				stroke = run.stroke ? run.stroke : dc.augmentStroke(t.series.stroke, color);
 				fill = run.fill ? run.fill : dc.augmentFill(t.series.fill, color);
 				for(var j = 0; j < run.data.length; ++j){
-					var v = run.data[j],
+					var value = run.data[j],
+						v = typeof value == "number" ? value : value.y,
 						hv = ht(v),
 						width = hv - baselineWidth,
-						w = Math.abs(width);
+						w = Math.abs(width),
+						specialColor  = color,
+						specialFill   = fill,
+						specialStroke = stroke;
+					if(typeof value != "number"){
+						if(value.color){
+							specialColor = new dojo.Color(value.color);
+						}
+						if("fill" in value){
+							specialFill = value.fill;
+						}else if(value.color){
+							specialFill = dc.augmentFill(t.series.fill, specialColor);
+						}
+						if("stroke" in value){
+							specialStroke = value.stroke;
+						}else if(value.color){
+							specialStroke = dc.augmentStroke(t.series.stroke, specialColor);
+						}
+					}
 					if(w >= 1 && height >= 1){
 						var shape = s.createRect({
 							x: offsets.l + (v < baseline ? hv : baselineWidth),
 							y: dim.height - offsets.b - vt(j + 1.5) + gap,
 							width: w, height: height
-						}).setFill(fill).setStroke(stroke);
+						}).setFill(specialFill).setStroke(specialStroke);
 						run.dyn.fill   = shape.getFill();
 						run.dyn.stroke = shape.getStroke();
 						if(events){
@@ -98,12 +120,26 @@ dojo.require("dojox.lang.functional.reversed");
 							};
 							this._connectEvents(shape, o);
 						}
+						if(this.animate){
+							this._animateBar(shape, offsets.l + baselineWidth, -w);
+						}
 					}
 				}
 				run.dirty = false;
 			}
 			this.dirty = false;
 			return this;
+		},
+		_animateBar: function(shape, hoffset, hsize){
+			dojox.gfx.fx.animateTransform(dojo.delegate({
+				shape: shape,
+				duration: 1200,
+				transform: [
+					{name: "translate", start: [hoffset - (hoffset/hsize), 0], end: [0, 0]},
+					{name: "scale", start: [1/hsize, 1], end: [1, 1]},
+					{name: "original"}
+				]
+			}, this.animate)).play();
 		}
 	});
 })();

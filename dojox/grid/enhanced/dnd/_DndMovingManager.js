@@ -1,6 +1,7 @@
 dojo.provide("dojox.grid.enhanced.dnd._DndMovingManager");
 
 dojo.require("dojox.grid.enhanced.dnd._DndSelectingManager");
+dojo.require("dojox.grid.enhanced.dnd._DndMover");
 dojo.require("dojo.dnd.move");
 
 dojo.declare("dojox.grid.enhanced.dnd._DndMovingManager", dojox.grid.enhanced.dnd._DndSelectingManager, {
@@ -50,12 +51,8 @@ dojo.declare("dojox.grid.enhanced.dnd._DndMovingManager", dojox.grid.enhanced.dn
 		//		get the width of the grid
 		//return: Integer
 		//		the width of the grid
-		var scrollBarWidth = 0;
-		dojo.forEach(this.grid.views.views, function(view, index){
-			scrollBarWidth+= view.getScrollbarWidth();
-		});
-		return (dojo.coords(this.grid.domNode).w - Number(this.grid.views.views[0].getWidth().replace("px","")) - scrollBarWidth);
-	}, 
+		return dojo.contentBox(this.grid.domNode).w - this.grid.views.views[0].getWidth().replace("px","");
+	},
 	
 	isColSelected: function(inColIndex){
 		//summary:
@@ -72,68 +69,70 @@ dojo.declare("dojox.grid.enhanced.dnd._DndMovingManager", dojox.grid.enhanced.dn
 		//		get the horizontal sroll bar height
 		//return: Integer
 		//		 the horizontal sroll bar height
-		if(!this.scrollbarHeight){
-			this.scrollbarHeight = 0;
-			dojo.forEach(this.grid.views.views, function(view, index){
-				if(view.scrollboxNode){
-					var thisbarHeight = view.scrollboxNode.offsetHeight - view.scrollboxNode.clientHeight;
-					this.scrollbarHeight = thisbarHeight > this.scrollbarHeight ? thisbarHeight : this.scrollbarHeight;
-				}
-			}, this);
-		}
+		this.scrollbarHeight = 0;
+		dojo.forEach(this.grid.views.views, function(view, index){
+			if(view.scrollboxNode){
+				var thisbarHeight = view.scrollboxNode.offsetHeight - view.scrollboxNode.clientHeight;
+				this.scrollbarHeight = thisbarHeight > this.scrollbarHeight ? thisbarHeight : this.scrollbarHeight;
+			}
+		}, this);
 		return this.scrollbarHeight;
 	},
 	
-	getExceptColumnOffsetWidth: function(){
+	getExceptionalColOffsetWidth: function(){
 		//summary:
 		//		get the width of all un-movable columns
 		//return: Integer
 		//		the width of all un-movable columns
-		var offsetWidth = 0;
+		if(!this.grid.indirectSelection || !this.grid.rowSelectCell){ return 0; }
+		var offsetWidth = (normalizedOffsetWidth = 0), viewNode = this.grid.rowSelectCell.view.scrollboxNode;
 		dojo.forEach(this.getHeaderNodes(), function(node, index){
 			if(index <= this.exceptColumnsTo){
 				var coord = dojo.coords(node);
 				offsetWidth += coord.w;
 			}
 		}, this);
-		return offsetWidth;
+		normalizedOffsetWidth = offsetWidth - viewNode.scrollLeft * (dojo._isBodyLtr() ? 1 : (dojo.isMoz ? -1 : 1));
+		return normalizedOffsetWidth > 0 ? normalizedOffsetWidth : 0;		
 	},
 	
-	getGridCoords: function(){
+	getGridCoords: function(noCache){
 		//summary:
 		//		get the coords values of the grid
+		// noCache: Boolean
+		//		force a realtime calculation
 		//return: Object
 		//		the coords values of the grid
-		if(!this.gridCoords){
+		if(!this.gridCoords || noCache){
 			this.gridCoords = new Object();
 			if(!this.headerHeight){
 				this.headerHeight = dojo.coords(this.getHeaderNodes()[0]).h;
 			}
-			this.getHScrollBarHeight();
-			
 			var rowBarDomNodeCoords = dojo.coords(this.grid.views.views[0].domNode);
-			
 			var gridDomCoords = dojo.coords(this.grid.domNode);
-			this.gridCoords.h = gridDomCoords.h - this.headerHeight - this.getHScrollBarHeight() ;
+			var gridDomBox = dojo.contentBox(this.grid.domNode);//use contentBox.h/w to exclude any margins
+			this.gridCoords.h = gridDomBox.h - this.headerHeight - this.getHScrollBarHeight();
 			this.gridCoords.t = gridDomCoords.y;
-			this.gridCoords.l = gridDomCoords.x + rowBarDomNodeCoords.w;
-			this.gridCoords.w = gridDomCoords.w - rowBarDomNodeCoords.w
+			this.gridCoords.l = dojo._isBodyLtr() ? (gridDomCoords.x + rowBarDomNodeCoords.w) : gridDomCoords.x;
+			this.gridCoords.w = gridDomBox.w - rowBarDomNodeCoords.w;
 		}
 		return this.gridCoords;
 	},
 	
-	createAvatar: function(width, height, left, top){
-		// Summury:
+	createAvatar: function(width, height, left, top, includeHScroll){
+		// Summary:
 		//		Create a avatar div to DND
-		//width:
+		// width: Integer
 		//		width of avatar
-		//height:
+		// height: Integer
 		//		height of avatar
-		// left:
+		// left: Integer
 		//		left position of avatar
-		// top:
+		// top: Integer
 		// 		top position of avatar
-		// Return:
+		// includeHScroll: Boolean
+		// 		whether to include the H-scroll height	
+		// Return: Dom node
 		//		the avatar DIV node
 		this.gridCoords = null;
 		var getGridCoords = this.getGridCoords();
@@ -151,10 +150,10 @@ dojo.declare("dojox.grid.enhanced.dnd._DndMovingManager", dojox.grid.enhanced.dn
 		var gridBottom = getGridCoords.t + getGridCoords.h + this.headerHeight;
 		
 		var avatarTop = 0;
-		if(top < getGridCoords.t+this.headerHeight){
-			avatarTop = (getGridCoords.t+this.headerHeight) ;
+		if(top < getGridCoords.t + this.headerHeight){
+			avatarTop = (getGridCoords.t + this.headerHeight);
 		}else if(top > gridBottom){
-			//avatar  should not be showed
+			//avatar should not be shown
 			avatarTop = 10000;
 		}else{
 			avatarTop = top ;
@@ -164,7 +163,7 @@ dojo.declare("dojox.grid.enhanced.dnd._DndMovingManager", dojox.grid.enhanced.dn
 		avatar.style.left = (left + _docScroll.x) + "px";
 		
 		var avatarBottom = avatarTop + height - topDelta;
-		if(avatarBottom > gridBottom){
+		if(avatarBottom > gridBottom + (includeHScroll ? this.scrollbarHeight : 0)){
 			avatarBottom = gridBottom;
 		}
 		
@@ -186,7 +185,7 @@ dojo.declare("dojox.grid.enhanced.dnd._DndMovingManager", dojox.grid.enhanced.dn
 	},
 	
 	handleESC: function(e, select){
-		//Summury:
+		//Summary:
 		//		 handle the esc down event, stop DND operation
 		//e: Event
 		//		the keydown event
@@ -205,7 +204,7 @@ dojo.declare("dojox.grid.enhanced.dnd._DndMovingManager", dojox.grid.enhanced.dn
 	}, 
 	
 	cancelDND: function(){
-		//Summury:
+		//Summary:
 		//		Stop the DND operation
 		this.cleanAll();
 		this.clearDrugDivs();
@@ -216,18 +215,19 @@ dojo.declare("dojox.grid.enhanced.dnd._DndMovingManager", dojox.grid.enhanced.dn
 	},
 	
 	createCoverMover: function(width, height, left, top, type){
-		//Summury:
+		//Summary:
 		//		Create the mover according to the avatar, 
 		//		and set the move constraint box to make it move horizontally or vertically
 		
-		var gridCoords = this.getGridCoords();
-		var box = {box: {l: (type=="row"?left: gridCoords.l) + dojo._docScroll().x, 
-						 t: (type=="col"?top: gridCoords.t) + dojo._docScroll().y, 
-						 w: type=="row"?1: gridCoords.w,					// keep the moving horizontally
-						 h: type=="col"?1: gridCoords.h + this.headerHeight // keep the moving vertically
-						 }};
-		return new dojo.dnd.move.boxConstrainedMoveable(this.createAvatar(width, height, left, top), 
-		box);
+		var gridCoords = this.getGridCoords(), includeHScroll = (type == "col" ? true : false);
+		var params = {box: {l: (type == "row" ? left : gridCoords.l) + dojo._docScroll().x, 
+						 t: (type == "col" ? top : gridCoords.t + this.headerHeight) + dojo._docScroll().y, 
+						 w: type == "row" ? 1 : gridCoords.w,					// keep the moving horizontally
+						 h: type == "col" ? 1 : gridCoords.h // keep the moving vertically
+						 }, within:true, movingType: type,
+				   mover: dojox.grid.enhanced.dnd._DndMover};
+		return new dojox.grid.enhanced.dnd._DndBoxConstrainedMoveable(this.createAvatar(width, height, left, top, includeHScroll), 
+		params);
 	},
 	
 	getBorderDiv: function(){
@@ -254,11 +254,7 @@ dojo.declare("dojox.grid.enhanced.dnd._DndMovingManager", dojox.grid.enhanced.dn
 		//top: Integer
 		//		the position and shape of the border DIV		
 		var borderDIV = this.getBorderDiv();
-		//TODO: use dojo.style
-		borderDIV.style.height = height + "px";
-		borderDIV.style.top = top + "px";
-		borderDIV.style.width = width + "px";
-		borderDIV.style.left = left + "px";
+		dojo.style(borderDIV, {"height" : height + "px", "top" : top + "px", "width" : width + "px", "left" : left + "px"});
 		return borderDIV;
 	},
 	
@@ -282,7 +278,7 @@ dojo.declare("dojox.grid.enhanced.dnd._DndMovingManager", dojox.grid.enhanced.dn
 	},
 	
 	addColMovers: function(){
-		// Summury:
+		// Summary:
 		//		Add DND movers for column DND
 		var startSetDiv = -1;
 		dojo.forEach(this.selectedColumns,function(col, index){
@@ -298,130 +294,198 @@ dojo.declare("dojox.grid.enhanced.dnd._DndMovingManager", dojox.grid.enhanced.dn
 		}, this);
 	},
 	
-	addColMover: function(leftBorderIndex, rightBorderIndex){
-		// Summury:
+	addColMover: function(leadingBorderIdx, trailingBorderIdx){
+		// Summary:
 		//		Add DND mover for column DND
-		// from: 
+		// leadingBorderIdx: Integer
 		//		the first column index for mover to cover
-		// to:
+		// trailingBorderIdx: Integer
 		//		the last column index for mover to cover
-		//console.debug("add mover: " + this.lock + "  l=" + leftBorderIndex);
+		//console.debug("add mover: " + this.lock + "  l=" + leadingBorderIdx);
 		if(this.lock){
 			//console.debug("locked");
 			return;
 		}
 		var leftPosition = (rightPosition = 0);
-		var top = null,
-			headerHeight = null;
+		var top = null, headerHeight = null;
 		if(dojo._isBodyLtr()){
 			dojo.forEach(this.getHeaderNodes(), function(node, index){
 				var coord = dojo.coords(node);
-				if(index == leftBorderIndex){
+				if(index == leadingBorderIdx){
 					leftPosition = coord.x;
 					top = coord.y + coord.h;
 					headerHeight = coord.h;
 				}
-				if(index == rightBorderIndex){
+				if(index == trailingBorderIdx){
 					rightPosition = coord.x + coord.w;
 				}
 			});
 		}else{
 			dojo.forEach(this.getHeaderNodes(), function(node, index){
 				var coord = dojo.coords(node);
-				if(index == leftBorderIndex){
+				if(index == leadingBorderIdx){
 					rightPosition = coord.x + coord.w;
 					headerHeight = coord.h;
 				}
-				if(index == rightBorderIndex){
+				if(index == trailingBorderIdx){
 					leftPosition = coord.x;
 					top = coord.y + coord.h;
 				}
 			});
 		}
 		
-		var width = rightPosition - leftPosition;
-		var height = Number(this.grid.views.views[0].domNode.style.height.replace("px", ""));
+		var coords = this.normalizeColMoverCoords(leftPosition, rightPosition, leadingBorderIdx, trailingBorderIdx);
+		var height = coords.h, width = coords.w, leftPosition = coords.l, rightPosition = coords.r;
 		
 		var coverMover = this.createCoverMover(width, height, leftPosition, top, "col");
 		this.movers.push(coverMover);
 		var borderDIV = this.setBorderDiv(3, height, -1000, top + dojo._docScroll().y);
+		dojo.attr(borderDIV, 'colH', coords.colH);
 			
 		dojo.connect(coverMover, "onMoveStart", dojo.hitch(this, function(mover, leftTop){
 			this.mover = mover;
 			this.removeOtherMovers(mover.node.id);
 		}));
-		dojo.connect(coverMover, "onMove", dojo.hitch(this, function(mover, leftTop){
+		dojo.connect(coverMover, "onMove", dojo.hitch(this, function(mover, leftTop, mousePos){
 			if(mover.node == null || mover.node.parentNode == null){
 				return;
 			}
 			this.isMoving = true;
-			this.moveColBorder(mover, leftTop, borderDIV);
+			this.moveColBorder(mover, mousePos, borderDIV);
 		}));
 		dojo.connect(coverMover, "onMoveStop", dojo.hitch(this,function(mover){
+			if(this.drugDestIndex == null || this.isContinuousSelection(this.selectedColumns) 
+			   && (this.drugDestIndex == leadingBorderIdx || this.drugDestIndex == trailingBorderIdx || this.drugDestIndex == (trailingBorderIdx + 1) && this.drugBefore)){ 
+			   this.movingIgnored = true;
+			   if(this.isMoving){
+			   		this.isMoving = false;
+					this.clearDrugDivs();
+			   }
+			   return; 
+			}			
 			this.isMoving = false;
 			this.mover = null;
-			if(this.drugDestIndex == null){
-				return;
-			}
 			this.startMoveCols();
 			this.drugDestIndex = null;
 		}));
 	},
 	
-	moveColBorder: function(mover, leftTop, borderDIV){
-		//Summury:
-		//		Column border identify the dnd dest position. move the border according to avatar move
+	normalizeColMoverCoords: function(leftPosition, rightPosition, leadingBorderIdx, trailingBorderIdx){
+		// Summary:
+		//		Normalize width/height, view column height and left/right x coordinates for column cover div
+		// leftPosition: Integer
+		//		Left side x coordinate of column mover
+		// rightPosition: Integer
+		//		Right side x coordinate of column mover
+		// leadingBorderIdx: Integer
+		//		The leftmost column index for mover to cover
+		// trailingBorderIdx: Integer
+		//		The rightmost column index for mover to cover
+		// return:Object
+		//		Normalized width and coordinates, e.g.{'w': 100, 'h': 200, 'l': 150, 'r': 250, 'colH': 50}
+		var width = rightPosition - leftPosition, views = this.grid.views.views, pluginMgr = this.grid.pluginMgr;
+		var coords = {'w': width, 'h': 0, 'l': leftPosition, 'r': rightPosition, 'colH': 0};
+		var gridWidth = this.getGridWidth() - views[views.length-1].getScrollbarWidth();
 		
-		if(dojo._isBodyLtr()){
-			leftTop.l -= dojo._docScroll().x;
-			dojo.forEach(this.getHeaderNodes(), dojo.hitch(this,function(node, index){
-				if(index > this.exceptColumnsTo){
-					var coord = dojo.coords(node);
-					if(leftTop.l >= coord.x && leftTop.l <= coord.x + coord.w){
-						if(!this.selectedColumns[index] || !this.selectedColumns[index - 1]){
-							borderDIV.style.left = (coord.x +  dojo._docScroll().x) + "px";
-							this.drugDestIndex = index;
-							this.drugBefore = true;
-						}
-					}else if(this.getHeaderNodes()[index + 1] == null && leftTop.l > coord.x + coord.w){
-							borderDIV.style.left = (coord.x + coord.w +  dojo._docScroll().x) + "px";
-							this.drugDestIndex = index;
-							this.drugBefore = false;
-						}
-				}
-			}));
-		}else{
-			leftTop.l -= dojo._docScroll().x;
-			var avaCoord = dojo.coords(mover.node);
-			dojo.forEach(this.getHeaderNodes(), dojo.hitch(this,function(node, index){
-				if(index > this.exceptColumnsTo){
-					var coord = dojo.coords(node);
-					if(leftTop.l + avaCoord.w >= coord.x && leftTop.l + avaCoord.w <= coord.x + coord.w){
-						if(!this.selectedColumns[index] || !this.selectedColumns[index - 1]){
-							borderDIV.style.left = (coord.x + coord.w + dojo._docScroll().x) + "px";
-							this.drugDestIndex = index;
-							this.drugBefore = true;
-						}
-					}else if(this.getHeaderNodes()[index + 1] == null && leftTop.l + avaCoord.w < coord.x){
-							borderDIV.style.left = (coord.x + dojo._docScroll().x) + "px";
-							this.drugDestIndex = index;
-							this.drugBefore = false;
-						}
-				}
-			}));
+		var rtl = !dojo._isBodyLtr();
+		var leftView = pluginMgr.getViewByCellIdx(!rtl ? leadingBorderIdx : trailingBorderIdx); 
+		var rightView = pluginMgr.getViewByCellIdx(!rtl ? trailingBorderIdx : leadingBorderIdx);
+		var inSameView = (leftView == rightView);
+		
+		if(!leftView || !rightView){ return coords;}
+		
+		var leftBoundary = dojo.coords(leftView.scrollboxNode).x + (rtl && dojo.isIE ? leftView.getScrollbarWidth() : 0);
+		var rightViewCoords = dojo.coords(rightView.scrollboxNode);
+		var rightBoundary = rightViewCoords.x + rightViewCoords.w - ((!rtl || !dojo.isIE) ? rightView.getScrollbarWidth() : 0);
+		
+		if(coords.l < leftBoundary){
+			coords.w = coords.r - leftBoundary;
+			coords.l = leftBoundary;
 		}
+		if(coords.r > rightBoundary){
+			coords.w = rightBoundary - coords.l;
+		}
+
+		var i, rowBarView = this.grid.views.views[0], colHeight =  dojo.coords(rowBarView.contentNode).h;;
+		var view = rightView/*use right view as default*/, viewHeight = rightViewCoords.h;
+		coords.colH = colHeight;
+		viewHeight = !inSameView ? viewHeight : (viewHeight - (view.scrollboxNode.offsetHeight - view.scrollboxNode.clientHeight));
+		coords.h = colHeight < viewHeight ? colHeight : viewHeight;
+		return coords;
+	},	
+	
+	moveColBorder: function(mover, mousePos, borderDIV){
+		//Summary:
+		//		Column border identify the dnd dest position. move the border according to avatar move
+		//mover: Object
+		//		the reference to the dnd mover
+		//mousePos: Object
+		//		the current position of the mover - {x:.., Y:..}	
+		//borderDIV:Object
+		//		reference to the borderDIV
+		var docScroll = dojo._docScroll(), rtl = !dojo._isBodyLtr();
+		mousePos.x -= docScroll.x;		
+
+		var views = this.grid.views.views, gridCoords = this.getGridCoords();
+		var leftViewNode = views[!rtl ? 1 : views.length-1].scrollboxNode;
+		var rightViewNode = views[!rtl ? views.length-1 : 1].scrollboxNode;
+			
+		var leftX = (!rtl || !dojo.isIE) ? gridCoords.l : (gridCoords.l + leftViewNode.offsetWidth - leftViewNode.clientWidth);
+		var rightX = (!rtl || dojo.isMoz) ? (gridCoords.l + gridCoords.w - (rightViewNode.offsetWidth - rightViewNode.clientWidth)) : (gridCoords.l + gridCoords.w);
+		
+		dojo.forEach(this.getHeaderNodes(), dojo.hitch(this,function(node, index){
+			if(index > this.exceptColumnsTo){
+				var x, coord = dojo.coords(node);
+				if(mousePos.x >= coord.x && mousePos.x <= coord.x + coord.w){
+					if(!this.selectedColumns[index] || !this.selectedColumns[index - 1]){
+						x = coord.x +  docScroll.x + (rtl ? coord.w : 0);
+						if(mousePos.x < leftX || mousePos.x > rightX || x < leftX || x > rightX){ return; }
+						dojo.style(borderDIV, 'left', x + 'px');
+						this.drugDestIndex = index;
+						this.drugBefore = true;
+						!dojo.isIE && this.normalizeColBorderHeight(borderDIV, index);
+					}
+				}else if(this.getHeaderNodes()[index + 1] == null && (!rtl ? (mousePos.x > coord.x + coord.w) : (mousePos.x < coord.x))){
+						x = mousePos.x < leftX ? leftX : (mousePos.x > rightX ? rightX : (coord.x + docScroll.x + (rtl ? 0 : coord.w)));
+						dojo.style(borderDIV, 'left', x + 'px');
+						this.drugDestIndex = index;
+						this.drugBefore = false;
+						!dojo.isIE && this.normalizeColBorderHeight(borderDIV, index);
+				}
+			}
+		}));
+	},
+	
+	normalizeColBorderHeight: function(borderDiv, colIdx){
+		// Summary:
+		//		Normalize height of mover border div - for column moving
+		// borderDiv: Dom node
+		//		Mover border div dom node
+		// colIdx: Integer
+		//		Column index
+		var view = this.grid.pluginMgr.getViewByCellIdx(colIdx);
+		if(!view){ return; }
+		
+		var node = view.scrollboxNode, colHeight = dojo.attr(borderDiv, 'colH');
+		var viewHeight = dojo.coords(node).h - (node.offsetHeight - node.clientHeight);
+		viewHeight = colHeight > 0 && colHeight < viewHeight ? colHeight : viewHeight;
+		dojo.style(borderDiv, 'height', viewHeight + 'px');
 	},
 	
 	avataDivClick: function(e){
-		//Summury:
+		//Summary:
 		//		handle click on avatar, hide the avatar
+		if(this.movingIgnored){
+			this.movingIgnored = false;
+			return;
+		}
 		this.cleanAll();
 		this.clearDrugDivs();
 	},
 	
 	startMoveCols: function(){
-		// Summury:
-		//		start to move the selected columns to target position		
+		// Summary:
+		//		start to move the selected columns to target position
 		this.changeCursorState("wait");
 		this.srcIndexdelta = 0;
 		deltaColAmount = 0;
@@ -433,10 +497,10 @@ dojo.declare("dojox.grid.enhanced.dnd._DndMovingManager", dojox.grid.enhanced.dn
 				deltaColAmount += 1;
 				var srcViewIndex = this.grid.layout.cells[index].view.idx;
 				var destViewIndex = this.grid.layout.cells[this.drugDestIndex].view.idx;
-				if(index != this.drugDestIndex)
+				if(index != this.drugDestIndex){
 					this.grid.layout.moveColumn(srcViewIndex,destViewIndex,index,this.drugDestIndex,this.drugBefore);
-				
-				if(this.drugDestIndex <= index){
+				}
+				if(this.drugDestIndex <= index && this.drugDestIndex + 1 < this.grid.layout.cells.length){
 					this.drugDestIndex += 1;
 				}				
 			}
@@ -461,7 +525,7 @@ dojo.declare("dojox.grid.enhanced.dnd._DndMovingManager", dojox.grid.enhanced.dn
 	},	
 	
 	addRowMovers: function(){
-		// Summury:
+		// Summary:
 		//		Add DND movers for row DND
 		var startSetDiv = -1;
 		dojo.forEach(this.grid.selection.selected,function(row, index){
@@ -479,15 +543,24 @@ dojo.declare("dojox.grid.enhanced.dnd._DndMovingManager", dojox.grid.enhanced.dn
 	},
 	
 	addRowMover: function(from, to){
-		// Summury:
+		// Summary:
 		//		Add DND mover for row DND
 		// from: 
 		//		the first row index for mover to cover
 		// to:
 		//		the last row index for mover to cover
+
+		// scroll bar width sum, to fix the insufficient width of borderDIV/coverDIV for 2+ views
+		var scrollBarWidthSum = 0, views = this.grid.views.views;
+		dojo.forEach(views, function(view, index){
+			scrollBarWidthSum += view.getScrollbarWidth();
+		});
+		var lastScrollBarWidth = views[views.length-1].getScrollbarWidth();
+		var widthDelta = !dojo._isBodyLtr() ? (dojo.isIE ? scrollBarWidthSum - lastScrollBarWidth : scrollBarWidthSum) : 0;
 		
-		// get the width of grid
-		var gridWidth = this.getGridWidth();
+		// get grid width except the scroll bar width of trailing view
+		//var gridWidth = this.getGridWidth() + scrollBarWidthSum - lastScrollBarWidth;
+		var gridWidth = this.getGridWidth() - lastScrollBarWidth;
 		
 		// use rowBar as row position identifier
 		var rowBarView = this.grid.views.views[0];
@@ -498,49 +571,48 @@ dojo.declare("dojox.grid.enhanced.dnd._DndMovingManager", dojox.grid.enhanced.dn
 		if(!startBarNode || !endBarNode){
 			return; // row not loaded
 		}
-		var	startCoord = dojo.coords(startBarNode);
-		var	endCoord = dojo.coords(endBarNode);
+		var	startCoord = dojo.coords(startBarNode), endCoord = dojo.coords(endBarNode);
+		var exceptionalColOffsetWidth = this.getExceptionalColOffsetWidth(); 
 		
-		var coverMover = this.createCoverMover(gridWidth - this.getExceptColumnOffsetWidth(), // width
+		var coverMover = this.createCoverMover(gridWidth - exceptionalColOffsetWidth, // width
 											   (endCoord.y - startCoord.y + endCoord.h), // height
-												dojo._isBodyLtr()?(startCoord.x + startCoord.w + this.getExceptColumnOffsetWidth()):(startCoord.x - gridWidth), // left, when RTL rowbar is on grid right
+												dojo._isBodyLtr() ? (startCoord.x + startCoord.w + exceptionalColOffsetWidth) : (startCoord.x - gridWidth - widthDelta),
 											    startCoord.y,
 												"row"); // top
 		var borderDIV = this.setBorderDiv(gridWidth, 3,  // width & height
-									(dojo._isBodyLtr()?(endCoord.x + endCoord.w):(endCoord.x - gridWidth)) + dojo._docScroll().x, // left, when RTL rowbar is on grid right
-									 -100); // top
+									(dojo._isBodyLtr() ? (endCoord.x + endCoord.w) : (endCoord.x - gridWidth - widthDelta)) + dojo._docScroll().x, -100); // top
 			
 		var avaMoveStart = dojo.connect(coverMover, "onMoveStart", dojo.hitch(this, function(mover, leftTop){
 			this.mover = mover;
 			this.removeOtherMovers(mover.node.id);
 		}));
 		
-        var avaMove = dojo.connect(coverMover, "onMove", dojo.hitch(this, function(mover, leftTop){
+        var avaMove = dojo.connect(coverMover, "onMove", dojo.hitch(this, function(mover, leftTop, mousePos){
 			if(mover.node == null || mover.node.parentNode == null){
 				return;
 			}
             this.isMoving = true;
-            this.moveRowBorder(mover, leftTop, borderDIV);
+            this.moveRowBorder(mover, leftTop, borderDIV, mousePos);
         }));
 		
 		var avaMoveStop = dojo.connect(coverMover, "onMoveStop", dojo.hitch(this,function(mover){
+			if(this.avaOnRowIndex == null || this.isContinuousSelection(this.grid.selection.selected) && (this.avaOnRowIndex == from || this.avaOnRowIndex == (to + 1))){
+			   	this.movingIgnored = true;
+				if(this.isMoving){
+					this.isMoving = false;
+					this.clearDrugDivs();
+				}
+				return; 
+			}			
 			this.isMoving = false;
 			this.mover = null;
 			this.grid.select.outRangeY = false;
 			this.grid.select.moveOutTop = false;
-			if(this.avaOnRowIndex == null){
-				return;
-			}			
-//			console.debug(this.avaOnRowIndex+" == "+from)
-			if(this.avaOnRowIndex == from){
-				return;
-			}
 			/*fix - blank Grid page when moving rows at bottom page, this only occurs the first time Grid get loaded*/		
 			this.grid.scroller.findScrollTop(this.grid.scroller.page * this.grid.scroller.rowsPerPage);
 			this.startMoveRows();
 			this.avaOnRowIndex = null;
 			delete coverMover;
-			
 		}));
 		
 //		var avaKEY = dojo.connect(coverMover.node, "keydown",  dojo.hitch(this,function(e){
@@ -560,7 +632,7 @@ dojo.declare("dojox.grid.enhanced.dnd._DndMovingManager", dojox.grid.enhanced.dn
 //		}));
 	},
 	
-	moveRowBorder: function(mover, leftTop, borderDIV){
+	moveRowBorder: function(mover, leftTop, borderDIV, mousePos){
 		//summary:
 		//		move the border DIV to specified position when moving row
 		//mover: Object
@@ -569,42 +641,55 @@ dojo.declare("dojox.grid.enhanced.dnd._DndMovingManager", dojox.grid.enhanced.dn
 		//		the leftTop position of the mover
 		//borderDIV:Object
 		//		reference to the borderDIV
-		leftTop.t -= dojo._docScroll().y;
-        if(leftTop.t - dojo.coords(this.grid.domNode).y/*this.grid.domNode.offsetTop*/ - this.grid.domNode.offsetHeight > 0){
-	        if(!this.grid.select.outRangeY){
-	                this.grid.select.outRangeY = true;
-	                this.autoMoveToNextRow();
-	            }
-	        }else if(leftTop.t < this.getGridCoords().t + this.headerHeight){
-				 if(!this.grid.select.moveOutTop){
-	                this.grid.select.moveOutTop = true;
-	                this.autoMoveToPreRow();
-				 }
-			}else{
-	            this.grid.select.outRangeY = false;
-				this.grid.select.moveOutTop = false;
-	            // dojo.forEach(this.getViewRowNodes(this.grid.views.views[0].rowNodes), dojo.hitch(this, function(row, index){
-				for(var index in this.grid.views.views[0].rowNodes){
-					index = parseInt(index);
-					if(isNaN(index)){continue;} 
-					var row = this.grid.views.views[0].rowNodes[index];
-					if(!row){/*row not loaded*/continue;}
-					var coord = dojo.coords(row);
-					if(leftTop.t > coord.y && leftTop.t < coord.y + coord.h - 2){ // 2 is the buffer size of the moving to make it not that sensitive
-						if(!this.grid.selection.selected[index] || !this.grid.selection.selected[index - 1]){
-							this.avaOnRowIndex = index;
-							borderDIV.style.top = (coord.y + dojo._docScroll().y) + "px";
-						}
+		//mousePos: Object
+		//		the current position of the mover - {x:.., Y:..}	
+		var gridCoords = this.getGridCoords(true), docScroll = dojo._docScroll();
+		var gridBottomY = gridCoords.t + this.headerHeight + gridCoords.h
+		leftTop.t -= docScroll.y, mousePos.y -= docScroll.y;
+		if(mousePos.y >= gridBottomY){
+            this.grid.select.outRangeY = true;
+            this.autoMoveToNextRow();
+        }else if(mousePos.y <= gridCoords.t + this.headerHeight){
+        	this.grid.select.moveOutTop = true;
+            this.autoMoveToPreRow();
+		}else{
+            this.grid.select.outRangeY = this.grid.select.moveOutTop = false;
+			var rowBarView = this.grid.views.views[0], rowBarNodes = rowBarView.rowNodes;
+			var colHeight =  dojo.coords(rowBarView.contentNode).h;
+			var rowCount = 0, bottomRowIndex = -1;
+			for(i in rowBarNodes){
+				++rowCount;
+				if(i > bottomRowIndex){ bottomRowIndex = i; }
+			}
+			var bottomRowCoords = dojo.coords(rowBarNodes[bottomRowIndex]);
+			
+			if(colHeight < gridCoords.h && mousePos.y > (bottomRowCoords.y + bottomRowCoords.h)){
+				this.avaOnRowIndex = rowCount;
+				dojo.style(borderDIV, {"top" : bottomRowCoords.y + bottomRowCoords.h + docScroll.y + "px"});
+				return;
+			}
+			
+			var coord, rowBarNode, inView;
+			for(var index in rowBarNodes){
+				index = parseInt(index);
+				if(isNaN(index)){ continue; }
+				rowBarNode = rowBarNodes[index];
+				if(!rowBarNode){ continue; }
+				coord = dojo.coords(rowBarNode), inView = (coord.y <= gridBottomY);
+				if(inView && mousePos.y > coord.y && mousePos.y < coord.y + coord.h){
+					if(!this.grid.selection.selected[index] || !this.grid.selection.selected[index - 1]){
+						this.avaOnRowIndex = index;
+						dojo.style(borderDIV, {"top" : coord.y + docScroll.y + "px"});
 					}
 				}
-				// }));
+			}
         }
 	},
 	
 	autoMoveToPreRow: function(){
 		//summary:
 		//		auto move the mover to the previous row of the current one
-		if(this.grid.select.moveOutTop ){	
+		if(this.grid.select.moveOutTop){	
 			if(this.grid.scroller.firstVisibleRow > 0){
 				this.grid.scrollToRow(this.grid.scroller.firstVisibleRow - 1);
 				this.autoMoveBorderDivPre();
@@ -616,107 +701,120 @@ dojo.declare("dojox.grid.enhanced.dnd._DndMovingManager", dojox.grid.enhanced.dn
 	autoMoveBorderDivPre: function(){
 		//summary:
 		//		auto move the border DIV to the previous row of the current one
-		this.avaOnRowIndex--;
-		var borderDIV = this.getBorderDiv();
-		borderDIV.style.top = dojo.coords(this.grid.views.views[0].rowNodes[this.avaOnRowIndex]).y + "px";
+		var docScroll = dojo._docScroll(), gridCoords = this.getGridCoords();
+		var viewTopY = gridCoords.t + this.headerHeight + docScroll.y;
+		var preRowY, borderDIV = this.getBorderDiv();
+		if(this.avaOnRowIndex - 1 <= 0){
+			this.avaOnRowIndex = 0;
+			preRowY = viewTopY;
+		}else{
+			this.avaOnRowIndex--;
+			preRowY = dojo.coords(this.grid.views.views[0].rowNodes[this.avaOnRowIndex]).y + docScroll.y;
+		}
+		borderDIV.style.top = (preRowY < viewTopY ? viewTopY : preRowY)+ "px";
 	},
 	
 	autoMoveToNextRow: function(){
 		//summary:
 		//		auto move the mover to the next row of the current one
-		if(this.grid.select.outRangeY ){			
-			this.grid.scrollToRow(this.grid.scroller.firstVisibleRow + 1);
-			this.autoMoveBorderDiv();
-			setTimeout(dojo.hitch(this, 'autoMoveToNextRow'), this.autoScrollRate);
+		if(this.grid.select.outRangeY){
+			if(this.avaOnRowIndex + 1 <= this.grid.scroller.rowCount){
+				this.grid.scrollToRow(this.grid.scroller.firstVisibleRow + 1);
+				this.autoMoveBorderDiv();
+				setTimeout(dojo.hitch(this, 'autoMoveToNextRow'), this.autoScrollRate);
+			}
 		}
 	},
 	
 	autoMoveBorderDiv: function(){
-		//Summury:
-		//		auto move the drop indicator to the next row when avatar is moved out of the grid bottom 
-		this.avaOnRowIndex++;
-		var borderDIV = this.getBorderDiv();
-		borderDIV.style.top = dojo.coords(this.grid.views.views[0].rowNodes[this.avaOnRowIndex]).y + "px";
+		//Summary:
+		//		auto move the drop indicator to the next row when avatar is moved out of the grid bottom
+		var docScroll = dojo._docScroll(), gridCoords = this.getGridCoords();
+		var viewBottomY = gridCoords.t + this.headerHeight + gridCoords.h + docScroll.y;
+		var nextRowY, borderDIV = this.getBorderDiv();
+		if(this.avaOnRowIndex + 1 >= this.grid.scroller.rowCount){
+			this.avaOnRowIndex = this.grid.scroller.rowCount;
+			nextRowY = viewBottomY;
+		}else{
+			this.avaOnRowIndex++;
+			nextRowY = dojo.coords(this.grid.views.views[0].rowNodes[this.avaOnRowIndex]).y + docScroll.y;
+		}
+		borderDIV.style.top = (nextRowY > viewBottomY ? viewBottomY : nextRowY) + "px";
 	},
 	
 	startMoveRows: function(){
 		//summary:
 		//		start to move the selected rows to target position
-		var startSetDiv = -1;
-		var deltaRowAmount = 0;
-		dojo.forEach(this.grid.selection.selected,function(row, index){
-			if(row){
-				if(startSetDiv == -1){
-					startSetDiv = index;
-				}
-				if(this.grid.selection.selected[index + 1] == null){
-					deltaRowAmount = this.moveRows(startSetDiv, index, deltaRowAmount);
-					startSetDiv = -1;
+		var start = Math.min(this.avaOnRowIndex, this.getFirstSelected());
+		var end = Math.max(this.avaOnRowIndex - 1, this.getLastSelected());
+		this.moveRows(start, end, this.getPageInfo());
+	},
+	
+	moveRows: function(start, end, pageInfo){
+		//summary:
+		//		Only move visible rows to avoid performance issue especially 
+		//		when there are many disperse selected rows across not-rendered pages
+		//start:Integer
+		//		the first row of the selected area to move
+		//end:Integer
+		//		the first row of the selected area to move deltaRowAmount
+		//pageInfo:Object
+		//		{topPage: xx, bottomPage: xx, invalidPages: [xx,xx,...]}
+		var i, rowMoved = false, selectedRows = (selectedRowsAboveBorderDIV = 0), tempArray = [];//all rows to be updated
+		var scroller = this.grid.scroller, rowsPerPage = scroller.rowsPerPage;
+		var topRow = pageInfo.topPage * rowsPerPage, bottomRow = (pageInfo.bottomPage + 1) * rowsPerPage - 1;
+		
+		var pushUnselectedRows = dojo.hitch(this, function(from, to){
+			for(i = from; i < to; i++){
+				if(!this.grid.selection.selected[i] || !this.grid._by_idx[i]){
+					tempArray.push(this.grid._by_idx[i]);
 				}
 			}
-		}, this);
+		});
+		
+		//push unselected rows above borderDIV to temp array
+		pushUnselectedRows(start, this.avaOnRowIndex);
+		
+		//push selected rows to temp array
+		for(i = start; i <= end; i++){
+			if(this.grid.selection.selected[i] && this.grid._by_idx[i]){
+				tempArray.push(this.grid._by_idx[i]);
+				selectedRows++;
+				if(this.avaOnRowIndex > i){ selectedRowsAboveBorderDIV++; } 
+			}
+		}
+		
+		//push unselected rows below borderDIV to temp array
+		pushUnselectedRows(this.avaOnRowIndex, end + 1);
+		
+		//update changed region
+		for(i = start, j = 0; i <= end; i++){
+			this.grid._by_idx[i] = tempArray[j++];
+			if(i >= topRow && i <= bottomRow){
+				this.grid.updateRow(i);
+				rowMoved = true;
+			}
+		}
+		this.avaOnRowIndex += selectedRows - selectedRowsAboveBorderDIV;
 		try{
-			
 			this.clearDrugDivs();
 			this.cleanAll();
-			this.drugSelectionStart.rowIndex = this.avaOnRowIndex - deltaRowAmount;
-			this.drugSelectRow(this.drugSelectionStart.rowIndex +  deltaRowAmount - 1);
+			this.drugSelectionStart.rowIndex = this.avaOnRowIndex - selectedRows;
+			this.drugSelectRow(this.drugSelectionStart.rowIndex +  selectedRows - 1);
+			if(rowMoved){
+				var stack = scroller.stack;
+				dojo.forEach(pageInfo.invalidPages, function(pageIndex){
+					scroller.destroyPage(pageIndex);
+					i = dojo.indexOf(stack, pageIndex);
+					if(i >= 0){
+						stack.splice(i, 1);
+					}
+				});			
+			}
 			this.publishRowMove();
 		}catch(e){
 			console.debug(e);
 		}
-	},
-	
-	moveRows: function(start, end, deltaRowAmount){
-		//summary:
-		//		move the selected rows to target position
-		//start:
-		//		the first row of the selected area to move
-		// end:
-		//		the first row of the selected area to move deltaRowAmount
-		if(this.avaOnRowIndex > end){
-			start -= deltaRowAmount;
-			end -= deltaRowAmount;
-		}
-		
-		var selecteAmount = end - start + 1;
-		deltaRowAmount += selecteAmount;
-		
-		var tempArray = [];
-		
-		for(var i = 0; i < selecteAmount; i++){
-			tempArray[i] = this.grid._by_idx[start + i];
-			this.grid._by_idx[start + i] = this.grid._by_idx[start + i + selecteAmount];
-		} 
-		
-		if( this.avaOnRowIndex  > end){
-			for(i = end + 1; i < this.avaOnRowIndex - selecteAmount; i++){
-				this.grid._by_idx[i] = this.grid._by_idx[i + selecteAmount];
-			}
-			
-			var insertPoint = this.avaOnRowIndex - selecteAmount;
-			for(i = insertPoint; i < this.avaOnRowIndex; i++){
-				this.grid._by_idx[i] = tempArray[i - insertPoint];
-			}
-			
-			for(i = start; i < this.avaOnRowIndex; i++){
-				this.grid.updateRow(i);
-			}
-		}else if(this.avaOnRowIndex  < end){
-			for(i = end; i > this.avaOnRowIndex + selecteAmount - 1; i--){
-				this.grid._by_idx[i] = this.grid._by_idx[i - selecteAmount];
-			}
-			for(i = this.avaOnRowIndex; i < this.avaOnRowIndex + selecteAmount; i++){
-				this.grid._by_idx[i] = tempArray[i - this.avaOnRowIndex];
-			}
-			for(i = this.avaOnRowIndex; i <= end; i++){
-				this.grid.updateRow(i);
-			}
-		}
-		if(this.avaOnRowIndex <= start){
-			this.avaOnRowIndex += selecteAmount;
-		}
-		return deltaRowAmount;
 	},
 	
 	clearDrugDivs: function(){
@@ -729,19 +827,19 @@ dojo.declare("dojox.grid.enhanced.dnd._DndMovingManager", dojox.grid.enhanced.dn
 			borderDIV.style.left = -100 + "px";
 			
 	        dojo.forEach(this.coverDIVs, function(div){
-//					console.debug("del id=" + div.id);
-					dojo.forEach(div.connections, function(connection){
-						dojo.disconnect(connection);
-					});
-	                dojo.doc.body.removeChild(div);
-					delete div;
+				//console.debug("del id=" + div.id);
+				dojo.forEach(div.connections, function(connection){
+					dojo.disconnect(connection);
+				});
+	            dojo.doc.body.removeChild(div);
+				delete div;
 	        }, this);
 	        this.coverDIVs = [];
 		}
 	},	
 	
 	setDrugCoverDivs: function(inColIndex, inRowIndex){
-		// Summury:
+		// Summary:
 		//		set the cover divs for DND
 		if(!this.isMoving){
 			if(this.isColSelected(inColIndex)){
@@ -754,8 +852,38 @@ dojo.declare("dojox.grid.enhanced.dnd._DndMovingManager", dojox.grid.enhanced.dn
 		}
 	},
 	
+	getPageInfo: function(){
+		//summary:
+		//		Find pages that contain visible rows
+		//return: Object
+		//		{topPage: xx, bottomPage: xx, invalidPages: [xx,xx,...]}
+		var scroller = this.grid.scroller, topPage = (bottomPage = scroller.page);
+		var firstVisibleRow = scroller.firstVisibleRow, lastVisibleRow = scroller.lastVisibleRow;
+		var rowsPerPage = scroller.rowsPerPage, renderedPages = scroller.pageNodes[0];		
+		var topRow, bottomRow, invalidPages = [], matched;
+		
+		dojo.forEach(renderedPages, function(page, pageIndex){
+			if(!page){ return; }
+			matched = false;
+			topRow = pageIndex * rowsPerPage;
+			bottomRow = (pageIndex + 1) * rowsPerPage - 1;
+			if(firstVisibleRow >= topRow && firstVisibleRow <= bottomRow){
+				topPage = pageIndex;
+				matched = true;
+			}
+			if(lastVisibleRow >= topRow && lastVisibleRow <= bottomRow){
+				bottomPage = pageIndex;
+				matched = true;
+			}
+			if(!matched && (topRow > lastVisibleRow || bottomRow < firstVisibleRow)){
+				invalidPages.push(pageIndex);				
+			}
+		});
+		return {topPage: topPage, bottomPage: bottomPage, invalidPages: invalidPages};
+	},
+	
 	resetCellIdx: function(){
-		// Summury:
+		// Summary:
 		//			reset the 'idx' attributes of cells' DOM node and structures
 		var lastMax = 0;
 		var thisMax = -1;
@@ -799,8 +927,11 @@ dojo.declare("dojox.grid.enhanced.dnd._DndMovingManager", dojox.grid.enhanced.dn
 		//		handle keyboard dnd
 		var inColSelection = this.selectedColumns.length > 0;
 		var inRowSelection = dojo.hitch(this.grid.selection, dojox.grid.Selection.prototype['getFirstSelected'])() >= 0;
-		var i, colAmount, dk = dojo.keys;
-		switch (keyEvent.keyCode){
+		var i, colAmount, dk = dojo.keys, keyCode = keyEvent.keyCode;
+		if(!dojo._isBodyLtr()){
+			keyCode = (keyEvent.keyCode == dk.LEFT_ARROW) ? dk.RIGHT_ARROW : (keyEvent.keyCode == dk.RIGHT_ARROW ? dk.LEFT_ARROW : keyCode);
+		}
+		switch(keyCode){
 			case dk.LEFT_ARROW:
 				if(!inColSelection){return;}
 				colAmount = this.getHeaderNodes().length;
@@ -850,7 +981,6 @@ dojo.declare("dojox.grid.enhanced.dnd._DndMovingManager", dojox.grid.enhanced.dn
 				if(this.avaOnRowIndex <= this.grid.rowCount){
 					this.startMoveRows();
 				}
-			break;
 		}
 	}
 });

@@ -31,6 +31,10 @@ dojo.declare("dojox.editor.plugins.PrettyPrint",dijit._editor._Plugin,{
 	//		HTML + cent, pound, yen, ellipsis, copyright, registered trademark.
 	entityMap: null,
 
+	// xhtml: [public] boolean
+	//		Flag to denote that the PrettyPrint plugin try to generate XHTML compliant 
+	//		markup.
+
 	_initButton: function(){
 		// summary:
 		//		Over-ride for creation of the resize button.
@@ -53,8 +57,26 @@ dojo.declare("dojox.editor.plugins.PrettyPrint",dijit._editor._Plugin,{
 			self.editor._prettyprint_getValue = self.editor.getValue;
 			self.editor.getValue = function(){
 				var val = self.editor._prettyprint_getValue(arguments);
-				return dojox.html.format.prettyPrint(val, self.indentBy, self.lineLength, self.entityMap);
+				return dojox.html.format.prettyPrint(val, self.indentBy, self.lineLength, self.entityMap, self.xhtml);
 			};
+
+			// The following are implemented as 'performance' functions.  Don't prettyprint
+			// content on internal state changes, just on calls to actually get values.
+			self.editor._prettyprint_endEditing = self.editor._endEditing;
+			self.editor._prettyprint_onBlur = self.editor._onBlur;
+			self.editor._endEditing = function(ignore_caret){
+				var v = self.editor._prettyprint_getValue(true);
+				self.editor._undoedSteps=[];//clear undoed steps
+				self.editor._steps.push({text: v, bookmark: self.editor._getBookmark()});
+			}
+			self.editor._onBlur = function(e){
+				this.inherited("_onBlur", arguments);
+				var _c=self.editor._prettyprint_getValue(true);
+				if(_c!=self.editor.savedContent){
+					self.editor.onChange(_c);
+					self.editor.savedContent=_c;
+				}
+			}
 		});
 	}
 });
@@ -63,7 +85,7 @@ dojo.declare("dojox.editor.plugins.PrettyPrint",dijit._editor._Plugin,{
 dojo.subscribe(dijit._scopeName + ".Editor.getPlugin",null,function(o){
 	if(o.plugin){ return; }
 	var name = o.args.name.toLowerCase();
-	if(name ===  "prettyprint"){
+	if(name === "prettyprint"){
 		o.plugin = new dojox.editor.plugins.PrettyPrint({
 			indentBy: ("indentBy" in o.args)?o.args.indentBy:-1,
 			lineLength: ("lineLength" in o.args)?o.args.lineLength:-1,
@@ -71,8 +93,8 @@ dojo.subscribe(dijit._scopeName + ".Editor.getPlugin",null,function(o){
 				["\u00A2","cent"],["\u00A3","pound"],["\u20AC","euro"],
 				["\u00A5","yen"],["\u00A9","copy"],["\u00A7","sect"],
 				["\u2026","hellip"],["\u00AE","reg"]
-			])
-
+			]),
+			xhtml: ("xhtml" in o.args)?o.args.xhtml:false
 		});
 	}
 });

@@ -1,7 +1,7 @@
 dojo.provide("dojox.widget.Calendar");
 dojo.experimental("dojox.widget.Calendar");
 
-dojo.require("dijit._Calendar");
+dojo.require("dijit.Calendar");
 dojo.require("dijit._Container");
 
 dojo.declare("dojox.widget._CalendarBase", [dijit._Widget, dijit._Templated, dijit._Container], {
@@ -61,7 +61,7 @@ dojo.declare("dojox.widget._CalendarBase", [dijit._Widget, dijit._Templated, dij
 
 		var mixin = {
 			parent: this,
-			_getValueAttr: dojo.hitch(this, function(){return new Date(this.value);}),
+			_getValueAttr: dojo.hitch(this, function(){return new Date(this._internalValue || this.value);}),
 			_getDisplayMonthAttr: dojo.hitch(this, function(){return new Date(this.displayMonth);}),
 			_getConstraintsAttr: dojo.hitch(this, function(){return this.constraints;}),
 			getLang: dojo.hitch(this, function(){return this.lang;}),
@@ -153,6 +153,7 @@ dojo.declare("dojox.widget._CalendarBase", [dijit._Widget, dijit._Templated, dij
 		if(!this.value || dojo.date.compare(value, this.value)){
 			value = new Date(value);
 			this.displayMonth = new Date(value);
+			this._internalValue = value;
 			if(!this.isDisabledDate(value, this.lang) && this._currentChild == 0){
 				this.value = value;
 				this.onChange(value);
@@ -179,6 +180,7 @@ dojo.declare("dojox.widget._CalendarBase", [dijit._Widget, dijit._Templated, dij
 
 	_onDateSelected: function(date, formattedValue, force){
 		this.displayMonth = date;
+
 		this.attr("value", date)
 		//Only change the selected value if it was chosen from the
 		//first child.
@@ -314,7 +316,7 @@ dojo.declare("dojox.widget._CalendarBase", [dijit._Widget, dijit._Templated, dij
 
 	_adjustDisplay: function(/*String*/part, /*int*/amount, noSlide){
 		// summary:
-		//		This function overrides the base function defined in dijit._Calendar.
+		//		This function overrides the base function defined in dijit.Calendar.
 		//		It changes the displayed years, months and days depending on the inputs.
 		var child = this._children[this._currentChild];
 

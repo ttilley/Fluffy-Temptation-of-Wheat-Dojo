@@ -5,9 +5,10 @@
 	<title>Test dojox.grid.EnhancedGrid</title>
 	<meta http-equiv="Content-Type" content="text/html; charset=utf-8"></meta>
 	<style type="text/css">
-		@import "../../../../dijit/themes/tundra/tundra.css";
 		@import "../../../../dojo/resources/dojo.css";
+		@import "../../../../dijit/themes/tundra/tundra.css";
 		@import "../../enhanced/resources/tundraEnhancedGrid.css";
+		@import "../../enhanced/resources/EnhancedGrid_rtl.css";
 		body {
 			font-size: 0.9em;
 			font-family: Geneva, Arial, Helvetica, sans-serif;
@@ -17,7 +18,7 @@
 			text-align:center;
 		}
 		
- 		#grid1, #grid2 {
+ 		#grid1, #grid2, #grid3 {
 			width: 85.2em;
 			height: 50em;
 		}
@@ -51,7 +52,8 @@
 		];
 
 		var csvStore1 = new dojox.data.CsvStore({id:'csvStore1', url:"support/music-for-demo.part.csv"});
-		/*
+		
+		/* Un-comment this block to see more usages
 		var layout2 = [
 			[
 				{ field: "Genre", width: '10'},
@@ -66,11 +68,11 @@
 		];
 		dojo.addOnLoad(function(){
 			var grid = new dojox.grid.EnhancedGrid({
-				id: "grid2",
+				id: "grid3",
 				store: csvStore1,
 				structure: layout,
 				rowSelector: '20px',
-				plugins : {nestedSorting: true, dnd: true, indirectSelection: true, menus:{headerMenu:"headerMenu", rowMenu:"rowMenu", cellMenu:"cellMenu", selectedRegionMenu:"selectedRegionMenu"}}
+				plugins : {nestedSorting: true, dnd: true, indirectSelection: {name: "Selection", width:"70px", styles:"text-align: center;"}, menus:{headerMenu:"headerMenu", rowMenu:"rowMenu", cellMenu:"cellMenu", selectedRegionMenu:"selectedRegionMenu"}}
 			}, dojo.byId('gridDiv'));
 			grid.startup();
 		});
@@ -80,40 +82,53 @@
 </head>
 <body class="tundra">
 	<h1 class="title">Test dojox.grid.EnhancedGrid Phase 1 Features</h1>
-	<p>
-		<li><b>EnhancedGrid phase 1 provides the following features:</b></li>
-		<li>1. Nested Sorting</li>
-		<li>2. Built-in support for Indirect Selection (radio buttons and check boxes)</li>
-		<li>3. Declarative context menu</li>
-		<li>4. Selecting rows/columns via swipe</li>
-		<li>5. Drag-n-drop: columns,rows - MOVE</li>
-	</p>
+	<div>
+		<b>EnhancedGrid phase 1 provides the following features:</b>
+		<ol>
+			<li>Nested Sorting</li>
+			<li>Built-in support for Indirect Selection (radio buttons and check boxes)</li>
+			<li>Declarative context menu</li>
+			<li>Selecting rows/columns via swipe</li>
+			<li>Drag-n-drop: columns,rows - MOVE</li>
+		</ol>
+	</div>
 	
-	<p>
-		<li><b>Keyboard support:</b></li>
-		<li>1. Use <b>TAB or SHIFT + TAB</b> to navigate keyboard focus among column headers, row headers and cell regions</li><br/>
-		<li>2. When focus is on column header:</li>
-			<li> - Use <b>LEFT/RIGHT</b> to navigate keyboard focus among column headers </li>
-			<li> - Use <b>SPACE</b> to choose a column or sorting choice</li>
-			<li> - Use <b>SHIFT + LEFT/RIGHT</b> to select multiple columns</li>
-			<li> - Use <b>CTRL + LEFT/RIGHT</b> to move columns</li><br/>
-		<li>3. When focus is on row header or column of checkbox:</li>
-			<li> - Use <b>UP/DOWN</b> to navigate keyboard focus among row headers </li>
-			<li> - Use <b>SPACE</b> to choose a row</li>
-			<li> - Use <b>SHIFT + UP/DOWN</b> to select multiple rows</li>
-			<li> - Use <b>CTRL + UP/DOWN</b> to move rows</li>
-	</p>
+	<div>
+		<b>Keyboard support:</b>
+		<ol>
+			<li>Use <b>TAB or SHIFT + TAB</b> to navigate keyboard focus among column headers, row headers and cell regions</li>
+			<li>When focus is on column header:<br>
+				<ol style="list-style: none;">
+					<li> - Use <b>LEFT/RIGHT</b> to navigate keyboard focus among column headers </li>
+					<li> - Use <b>SPACE</b> to choose a column or sorting choice</li>
+					<li> - Use <b>SHIFT + LEFT/RIGHT</b> to select multiple columns</li>
+					<li> - Use <b>CTRL + LEFT/RIGHT</b> to move columns</li>
+				</ol>
+			</li>
+			<li>When focus is on row header or column of checkbox:<br>
+				<ol style="list-style: none;">
+					<li> - Use <b>UP/DOWN</b> to navigate keyboard focus among row headers </li>
+					<li> - Use <b>SPACE</b> to choose a row</li>
+					<li> - Use <b>SHIFT + UP/DOWN</b> to select multiple rows</li>
+					<li> - Use <b>CTRL + UP/DOWN</b> to move rows</li>
+				</ol>
+			</li>
+		</ol>
+	</div>
 	
-	<p>	
-		<li><b>Some known issues (plan to fix in phase 2):</b></li>
-		<li>1. EnhancedGrid doesn't support complicated layout(e.g. multiple rows in column header), TreeGrid(SubGrid).</li>
-		<li>2. EnhancedGrid hasn't been fully tested with editable feature.</li>		
-	</p>
+	<div>
+		<b>Some known issues (plan to fix in phase 2):</b>
+		<ol>	
+			<li>EnhancedGrid doesn't support complicated layout(e.g. multiple rows in column header), TreeGrid(SubGrid).</li>
+		</ol>
+	</div>
 	<!--span dojoType="dojox.data.CsvStore" 
 		jsId="csvStore1" url="support/music-for-demo.part.csv">
 	</span-->
-	<p>
-		<li>Multiple selection mode:</li>
+	<div>
+		<b>
+		    Multiple selection mode:
+		</b>
 		<div id="grid1" dojoType="dojox.grid.EnhancedGrid" query="{ Track: '*' }" rowsPerPage="30" 
 			plugins='{nestedSorting: true, dnd: true, indirectSelection: true, menus:{headerMenu:"headerMenu", rowMenu:"rowMenu", cellMenu:"cellMenu", selectedRegionMenu:"selectedRegionMenu"}}'
 			store="csvStore1" structure="layout" rowSelector="20px">
@@ -146,16 +161,21 @@
 		<input type='button' value='Select All' onclick='dijit.byId("grid1").rowSelectCell.toggleAllSelection(true)'/>
 		&nbsp;&nbsp;
 		<input type='button' value='Deselect All' onclick='dijit.byId("grid1").rowSelectCell.toggleAllSelection(false)'/>
-	</p>
-	<!--div id="gridDiv"></div-->
+	</div>
 	
-	<p>
-		<li>Single selection mode:</li>
+	<!-- Un-comment this block to see more usages
+	<div id="gridDiv"></div>
+	
+	<div>
+		<b>
+		    Single selection mode:
+		</b>
 		<div id="grid2" dojoType="dojox.grid.EnhancedGrid" query="{ Track: '*' }" rowsPerPage="30" selectionMode="single"
-			plugins='{nestedSorting: true, dnd: true, indirectSelection: true, menus:{headerMenu:"headerMenu", rowMenu:"rowMenu", cellMenu:"cellMenu", selectedRegionMenu:"selectedRegionMenu"}}'
+			plugins='{nestedSorting: true, dnd: true, indirectSelection: {name: "Selection", width:"60px", styles:"text-align: center;"}, menus:{headerMenu:"headerMenu", rowMenu:"rowMenu", cellMenu:"cellMenu", selectedRegionMenu:"selectedRegionMenu"}}'
 			store="csvStore1" structure="layout" rowSelector="20px"  
 		</div>
-	</p>
+	</div>
+	-->
 
 </body>
 </html>

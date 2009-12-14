@@ -29,7 +29,7 @@ dojo.require("dojox.lang.functional.reversed");
 			for(var i = 0; i < this.series.length; ++i){
 				var run = this.series[i];
 				for(var j = 0; j < run.data.length; ++j){
-					var v = run.data[j];
+					var value = run.data[j], v = typeof value == "number" ? value : value.y;
 					if(isNaN(v)){ v = 0; }
 					acc[j] += v;
 				}
@@ -63,13 +63,32 @@ dojo.require("dojox.lang.functional.reversed");
 				fill = run.fill ? run.fill : dc.augmentFill(t.series.fill, color);
 				for(var j = 0; j < acc.length; ++j){
 					var v = acc[j],
-						height = vt(v);
+						height = vt(v),
+						value = run.data[j],
+						specialColor  = color,
+						specialFill   = fill,
+						specialStroke = stroke;
+					if(typeof value != "number"){
+						if(value.color){
+							specialColor = new dojo.Color(value.color);
+						}
+						if("fill" in value){
+							specialFill = value.fill;
+						}else if(value.color){
+							specialFill = dc.augmentFill(t.series.fill, specialColor);
+						}
+						if("stroke" in value){
+							specialStroke = value.stroke;
+						}else if(value.color){
+							specialStroke = dc.augmentStroke(t.series.stroke, specialColor);
+						}
+					}
 					if(width >= 1 && height >= 1){
 						var shape = s.createRect({
 							x: offsets.l + ht(j + 0.5) + gap,
 							y: dim.height - offsets.b - vt(v),
 							width: width, height: height
-						}).setFill(fill).setStroke(stroke);
+						}).setFill(specialFill).setStroke(specialStroke);
 						run.dyn.fill   = shape.getFill();
 						run.dyn.stroke = shape.getStroke();
 						if(events){
@@ -86,12 +105,15 @@ dojo.require("dojox.lang.functional.reversed");
 							};
 							this._connectEvents(shape, o);
 						}
+						if(this.animate){
+							this._animateColumn(shape, dim.height - offsets.b, height);
+						}
 					}
 				}
 				run.dirty = false;
 				// update the accumulator
 				for(var j = 0; j < run.data.length; ++j){
-					var v = run.data[j];
+					var value = run.data[j], v = typeof value == "number" ? value : value.y;
 					if(isNaN(v)){ v = 0; }
 					acc[j] -= v;
 				}

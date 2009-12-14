@@ -50,13 +50,14 @@ dojo.declare("dojox.grid._Events", null, {
 			return;
 		}
 		var dk = dojo.keys;
+		var colIdx;
 		switch(e.keyCode){
 			case dk.ESCAPE:
 				this.edit.cancel();
 				break;
 			case dk.ENTER:
 				if(!this.edit.isEditing()){
-					var colIdx = this.focus.getHeaderIndex();
+					colIdx = this.focus.getHeaderIndex();
 					if(colIdx >= 0) {
 						this.setSortIndex(colIdx);
 						break;
@@ -80,7 +81,7 @@ dojo.declare("dojox.grid._Events", null, {
 				break;
 			case dk.SPACE:
 				if(!this.edit.isEditing()){
-					var colIdx = this.focus.getHeaderIndex();
+					colIdx = this.focus.getHeaderIndex();
 					if(colIdx >= 0) {
 						this.setSortIndex(colIdx);
 						break;
@@ -98,7 +99,7 @@ dojo.declare("dojox.grid._Events", null, {
 				if(!this.edit.isEditing()){
 					var keyCode = e.keyCode;  // IE seems to lose after stopEvent when modifier keys
 					dojo.stopEvent(e);
-					var colIdx = this.focus.getHeaderIndex();
+					colIdx = this.focus.getHeaderIndex();
 					if (colIdx >= 0 && (e.shiftKey && e.ctrlKey)){
 						this.focus.colSizeAdjust(e, colIdx, (keyCode == dk.LEFT_ARROW ? -1 : 1)*5);
 					}
@@ -110,7 +111,7 @@ dojo.declare("dojox.grid._Events", null, {
 				}
 				break;
 			case dk.UP_ARROW:
-				if(!this.edit.isEditing() && this.focus.rowIndex != 0){
+				if(!this.edit.isEditing() && this.focus.rowIndex !== 0){
 					dojo.stopEvent(e);
 					this.focus.move(-1, 0);
 				}
@@ -122,7 +123,7 @@ dojo.declare("dojox.grid._Events", null, {
 				}
 				break;
 			case dk.PAGE_UP:
-				if(!this.edit.isEditing() && this.focus.rowIndex != 0){
+				if(!this.edit.isEditing() && this.focus.rowIndex !== 0){
 					dojo.stopEvent(e);
 					if(this.focus.rowIndex != this.scroller.firstVisibleRow+1){
 						this.focus.move(this.scroller.firstVisibleRow-this.focus.rowIndex, 0);
@@ -142,6 +143,8 @@ dojo.declare("dojox.grid._Events", null, {
 						this.focus.move(this.scroller.lastVisibleRow-this.scroller.firstVisibleRow-1, 0);
 					}
 				}
+				break;
+			default:
 				break;
 		}
 	},
@@ -248,9 +251,9 @@ dojo.declare("dojox.grid._Events", null, {
 		//		Event fired when a cell is double-clicked.
 		// e: Event
 		//		Decorated event object contains reference to grid, cell, and rowIndex
-		if(dojo.isIE){
+		if(this._click.length > 1 && dojo.isIE){
 			this.edit.setEditCell(this._click[1].cell, this._click[1].rowIndex);
-		}else if(this._click[0].rowIndex != this._click[1].rowIndex){
+		}else if(this._click.length > 1 && this._click[0].rowIndex != this._click[1].rowIndex){
 			this.edit.setEditCell(this._click[0].cell, this._click[0].rowIndex);
 		}else{
 			this.edit.setEditCell(e.cell, e.rowIndex);

@@ -22,11 +22,6 @@
 		@import "../../image/resources/image.css";
 		@import "../../layout/resources/ExpandoPane.css";
 		
-		.dndDropIndicator {
-			border: 2px dashed #99BBE8;
-			cursor:default;
-			margin-bottom:5px;
-		}
 		.dijitTabContainer  .gridContainerTable {
 			border: 0px none;
 		}
@@ -83,6 +78,7 @@
 	<script type="text/javascript" src="../../../dijit/tests/_testCommon.js"></script>
 	
 	<script type="text/javascript" src="test_PortletInGridContainer.js"></script>
+	<script type="text/javascript" src="../FeedPortlet.js"></script>
 	<script type="text/javascript" src="CalendarStackLayout.js"></script>
 </head>
 <body class="soria">
@@ -310,7 +306,7 @@
 			>
 
 				<div dojoType="dojox.widget.ExpandableFeedPortlet" 
-						title="Cool Blogs -> Remembering Your Selection">
+						title="Cool Blogs -> Remembering Your Selection" showFeedTitle="false">
 					<select dojoType="dojox.widget.PortletFeedSettings" id="coolBlogsSettings">
 						<script type="dojo/connect">
 							this.attr("selectedIndex", dojo.cookie(this.id + "-selectedIndex") || 0);
@@ -336,6 +332,9 @@
 					a feed to show and refresh the page, that same feed will be selected.
 					this example also shows how to modify the title of the portlet when a new
 					feed is selected.
+					When a feed is loaded, it automatically sets the title of the Portlet to the 
+					title of the feed.  This portlet has disabled that behavior using
+					showFeedTitle="false"
 					</div>
 				</div>
 				<div dojoType="dojox.widget.ExpandableFeedPortlet" title="Cool Blogs -> onlyOpenOne == true" 
@@ -529,7 +528,102 @@
 										timer = setTimeout(dojo.hitch(this, "updateChart"), 200);
 									}
 								}));
-																	</script>								<script type="dojo/connect" event="startup">									dojo.require("dojox.charting.themes.Bahamation");									var dc = dojox.charting;																		var container = dojo.create("div", {}, this.containerNode);									dojo.style(container, {"height": "300px", "width" : "300px"});																		console.log("dimensions of container are", dojo.marginBox(container));																		var chart = this.chart = new dc.Chart2D(container);										chart.setTheme(dc.themes.Bahamation);									chart.addPlot("default", {										type: "Pie", 										font: "normal normal 11pt Tahoma", 										fontColor: "black", 										labelOffset: -30,										radius: 80									});																		this.updateChart();								</script>								<script type="dojo/method" event="updateChart">									var extensions = {};									var items = this._items;									var dc = dojox.charting;																		if (!items || items.length < 1) {									  return;									}																		function val(item, attr) {									  return fileStore.getValue(item, attr);									}									function getExtension(item) {									  if (val(item, "directory")) {										  return "folder";										}										var str = val(item, "name");										var parts = str.split(".");										if (parts.length < 2) {										  return "none";										}										return parts[1];									}																		dojo.forEach(items, function(item){									  if (val(item, "directory")) {										  return;										}																		  var count = extensions[getExtension(item)] ;										if (!count) {										  count = 0;										}										var ext = getExtension(item);										extensions[ext] = ++count;									});									var series = [];									for (var ext in extensions) {										series.push({										  y : extensions[ext],											text: ext,											stroke: "black",											tooltip: extensions[ext] + " " + 												(ext == "none" ? 												  "files with no extension" :													ext + " files")													+ " found" 										});									}																											this.chart.addSeries("Series A", series);								  this.chart.resize(300, 300);																			dojo.forEach(this._anims || [], function(anim){									  anim.destroy();									});																		this._anims = [									new dc.action2d.MoveSlice(this.chart, "default"),									new dc.action2d.Highlight(this.chart, "default"),									new dc.action2d.Tooltip(this.chart, "default")];																		this.chart.render();								</script>								<div>									This Pie chart shows the proportion of files in the Dojo toolkit.									As you open folders in the tree, it updates the chart.								</div>							</div>												</div>			</div>		
+									
+								</script>
+								<script type="dojo/connect" event="startup">
+									dojo.require("dojox.charting.themes.Bahamation");
+									var dc = dojox.charting;
+									
+									var container = dojo.create("div", {}, this.containerNode);
+									dojo.style(container, {"height": "300px", "width" : "300px"});
+									
+									console.log("dimensions of container are", dojo.marginBox(container));
+									
+									var chart = this.chart = new dc.Chart2D(container);	
+									chart.setTheme(dc.themes.Bahamation);
+									chart.addPlot("default", {
+										type: "Pie", 
+										font: "normal normal 11pt Tahoma", 
+										fontColor: "black", 
+										labelOffset: -30,
+										radius: 80
+									});									
+									this.updateChart();
+								</script>
+								<script type="dojo/method" event="updateChart">
+									var extensions = {};
+									var items = this._items;
+									var dc = dojox.charting;
+									
+									if (!items || items.length < 1) {
+									  return;
+									}
+									
+									function val(item, attr) {
+									  return fileStore.getValue(item, attr);
+									}
+									function getExtension(item) {
+									  if (val(item, "directory")) {
+										  return "folder";
+										}
+										var str = val(item, "name");
+										var parts = str.split(".");
+										if (parts.length < 2) {
+										  return "none";
+										}
+										return parts[1];
+									}
+									
+									dojo.forEach(items, function(item){
+									  if (val(item, "directory")) {
+										  return;
+										}
+									
+									  var count = extensions[getExtension(item)] ;
+										if (!count) {
+										  count = 0;
+										}
+										var ext = getExtension(item);
+										extensions[ext] = ++count;
+									});
+									var series = [];
+									for (var ext in extensions) {
+										series.push({
+										  y : extensions[ext],
+											text: ext,
+											stroke: "black",
+											tooltip: extensions[ext] + " " + 
+												(ext == "none" ? 
+												  "files with no extension" :
+													ext + " files")
+													+ " found" 
+										});
+									}
+									
+									
+									this.chart.addSeries("Series A", series);
+								  this.chart.resize(300, 300);	
+									
+									dojo.forEach(this._anims || [], function(anim){
+									  anim.destroy();
+									});
+									
+									this._anims = [
+									new dc.action2d.MoveSlice(this.chart, "default"),
+									new dc.action2d.Highlight(this.chart, "default"),
+									new dc.action2d.Tooltip(this.chart, "default")];
+									
+									this.chart.render();
+								</script>
+								<div>
+									This Pie chart shows the proportion of files in the Dojo toolkit.
+									As you open folders in the tree, it updates the chart.
+								</div>
+							</div>
+						
+						</div>
+			</div>
+		
 		</div>
 		
 		<table id="gridDataTable" style="display:none;">
@@ -571,4 +665,3 @@
 
 </body>
 </html>
-

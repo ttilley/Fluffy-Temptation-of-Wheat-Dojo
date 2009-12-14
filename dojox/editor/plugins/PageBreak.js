@@ -25,8 +25,8 @@ dojo.declare("dojox.editor.plugins.PageBreak",dijit._editor._Plugin,{
 	//		The nodes that should not allow page breaks to be inserted into them.
 	_unbreakableNodes: ["li", "ul", "ol"],
 
-        // _pbContent: [private] String
-        //              The markup used for the pagebreak insert.
+	// _pbContent: [private] String
+	//		The markup used for the pagebreak insert.
 	_pbContent: "<hr style='page-break-after: always;' class='dijitEditorPageBreak'>",
 
 	_initButton: function(){
@@ -34,15 +34,13 @@ dojo.declare("dojox.editor.plugins.PageBreak",dijit._editor._Plugin,{
 		//		Over-ride for creation of the resize button.
 		var ed = this.editor;
 		var strings = dojo.i18n.getLocalization("dojox.editor.plugins", "PageBreak");
-		this.command = "pageBreak";
-		ed.commands[this.command] = strings["pageBreak"];
-		this._label = strings["pageBreak"];
-		this.inherited(arguments);
-		delete this.command; // kludge so setEditor doesn't make the button invisible
-
-		this.connect(this.button, "onClick", 
-			dojo.hitch(this, this._insertPageBreak));
-
+		this.button = new dijit.form.Button({
+			label: strings["pageBreak"],
+			showLabel: false,
+			iconClass: this.iconClassPrefix + " " + this.iconClassPrefix + "PageBreak",
+			tabIndex: "-1",
+			onClick: dojo.hitch(this, "_insertPageBreak")
+		});
 		ed.onLoadDeferred.addCallback(
 			dojo.hitch(this, function(){
 				//Register our hotkey to CTRL-SHIFT-ENTER.
@@ -58,6 +56,15 @@ dojo.declare("dojox.editor.plugins.PageBreak",dijit._editor._Plugin,{
 				}
 			})
 		);
+	},
+
+	setEditor: function(editor){
+		// summary:
+		//		Over-ride for the setting of the editor.
+		// editor: Object
+		//		The editor to configure for this plugin to use.
+		this.editor = editor;
+		this._initButton();
 	},
 
 	_style: function(){
@@ -90,8 +97,10 @@ dojo.declare("dojox.editor.plugins.PageBreak",dijit._editor._Plugin,{
 				"\tpadding: 0px 0px 0px 0px;\n" +
 			"}\n\n" +
 			"@media print {\n" +
-				"\t.dijitEditorPageBreak { page-break-after: always; "+
-				"background-color: transparent; border-style: none; height: 1px; }\n" +
+				"\t.dijitEditorPageBreak { page-break-after: always; " +
+				"background-color: rgba(0,0,0,0); color: rgba(0,0,0,0); " +
+				"border: 0px none rgba(0,0,0,0); display: hidden; " +
+				"width: 0px; height: 0px;}\n" +
 			"}";
 
 			if(!dojo.isIE){
@@ -144,7 +153,7 @@ dojo.declare("dojox.editor.plugins.PageBreak",dijit._editor._Plugin,{
 dojo.subscribe(dijit._scopeName + ".Editor.getPlugin",null,function(o){
 	if(o.plugin){ return; }
 	var name = o.args.name.toLowerCase();
-	if(name ===  "pagebreak"){
+	if(name === "pagebreak"){
 		o.plugin = new dojox.editor.plugins.PageBreak({});
 	}
 });

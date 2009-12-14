@@ -2,12 +2,15 @@ dojo.provide('dojox.widget.Dialog');
 dojo.experimental('dojox.widget.Dialog');
 
 dojo.require('dijit.Dialog');
+dojo.require("dojox.layout.ContentPane");
+
 dojo.require('dojox.fx');
 
 dojo.declare('dojox.widget.Dialog', 
-	dijit.Dialog, 
+	[dojox.layout.ContentPane, dijit._DialogBase], 
 	{
-	// summary: A Lightbox-like Modal-dialog for HTML Content
+	// summary:
+	//		A Lightbox-like Modal-dialog for HTML Content
 	//
 	// description:
 	//		An HTML-capable Dialog widget with advanced sizing 
@@ -104,6 +107,7 @@ dojo.declare('dojox.widget.Dialog',
 	},
 	
 	show: function(){
+		if(this.open){ return; }
 		
 		this._setSize();
 		dojo.style(this.closeButtonNode,"opacity", 0);
@@ -228,9 +232,13 @@ dojo.declare('dojox.widget.Dialog',
 		// summary: Show the inner container after sizing animation
 
 		var container = this.containerNode;
-		dojo.style(this.domNode,"overflow","visible");
+		dojo.style(this.domNode, {
+			overflow: "visible",
+			opacity: 1
+		});
+		dojo.style(this.closeButtonNode,"opacity",1);
 		dojo.style(container, {
-			height: this._displaysize.h + "px",
+			height: this._displaysize.h - this.titleNode.offsetHeight + "px",
 			width: this._displaysize.w + "px",
 			overflow:"auto"
 		});

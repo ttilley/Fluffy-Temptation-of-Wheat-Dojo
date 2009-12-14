@@ -26,6 +26,7 @@ dojo.require("dojox.rpc.Rest");
 			idAttribute: jr.getIdAttribute(service),
 			schemas: jr.schemas,
 			loader:	jr._loader,
+			idAsRef: service.idAsRef, 
 			assignAbsoluteIds: true
 		});
 		dojox.json.ref.refAttribute  = "$ref";
@@ -108,15 +109,18 @@ dojo.require("dojox.rpc.Rest");
 					dirtyObjects.splice(i--,1);
 				}
 			}
-			if(kwArgs.revertOnError !== false){
-				dojo.connect(kwArgs,"onError",function(){
+			dojo.connect(kwArgs,"onError",function(){
+				if(kwArgs.revertOnError !== false){
 					var postCommitDirtyObjects = dirtyObjects;
 					dirtyObjects = savingObjects;
 					var numDirty = 0; // make sure this does't do anything if it is called again
 					jr.revert(); // revert if there was an error
 					dirtyObjects = postCommitDirtyObjects;
-				});
-			}
+				}
+				else{
+					dirtyObjects = dirtyObject.concat(savingObjects); 
+				}
+			});
 			jr.sendToServer(actions, kwArgs);
 			return actions;
 		},

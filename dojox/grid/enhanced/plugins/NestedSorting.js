@@ -34,7 +34,7 @@ dojo.declare("dojox.grid.enhanced.plugins.NestedSorting", null, {
 	//_overResizeWidth: Integer
 	//		Overwrite the default over resize width, 
 	//		so that the resize cursor is more obvious when leveraged with sorting hover tips
-	_overResizeWidth: dojo.isIE ? 4 : 3,
+	_overResizeWidth: 3,
 
 	//storeItemSelected: String
 	//		Attribute used in data store to mark which row(s) are selected accross sortings
@@ -60,7 +60,7 @@ dojo.declare("dojox.grid.enhanced.plugins.NestedSorting", null, {
 	constructor: function(inGrid){
 		// summary:
 		//		Mixin in all the properties and methods into DataGrid		
-		dojo.mixin(inGrid, this);		
+		inGrid.mixin(inGrid, this);		
 		//init views
 		dojo.forEach(inGrid.views.views, function(view){
 			//some init work for the header cells
@@ -95,9 +95,9 @@ dojo.declare("dojox.grid.enhanced.plugins.NestedSorting", null, {
 		//      0:  revert the target column back to unsorted state
 		// e: Event
 		//		Decorated event object which contains reference to grid, target cell etc.
-		if (!this.nestedSorting) {
+		if(!this.nestedSorting){
 			this.inherited(arguments);
-		}else {
+		}else{
 			if(this.dnd && !this.dndRowConn){
 				this.dndRowConn = dojo.connect(this.select, 'startMoveRows', dojo.hitch(this, this.clearSort))				
 			} 
@@ -110,6 +110,7 @@ dojo.declare("dojox.grid.enhanced.plugins.NestedSorting", null, {
 			this.focus.addSortFocus(e);
 			if(this.canSort()){
 				this.sort();
+				this.edit.info = {};
 				this.update();
 			}
 			this._toggleProgressTip(false, e);//turn off progress cursor
@@ -159,7 +160,7 @@ dojo.declare("dojox.grid.enhanced.plugins.NestedSorting", null, {
 		var cellSortInfo = null;
 		var _sortAttrs = this.sortAttrs;
 		dojo.forEach(_sortAttrs, function(attr, index, attrs){
-			if(attr && attr["attr"] == cell.field){
+			if(attr && attr["attr"] == cell.field && attr["cell"] == cell){
 				cellSortInfo = {unarySortAsc: attrs[0] ? attrs[0]["asc"] : undefined,
 								nestedSortAsc:attr["asc"],
 								sortPos: index + 1
@@ -203,9 +204,9 @@ dojo.declare("dojox.grid.enhanced.plugins.NestedSorting", null, {
 			_sortAttrs.splice((delIndex - minus++), 1);
 		});
 		//add new column to sorting sequence
-		if (!existing) {
+		if(!existing){
 			var si = inAsc ? inAsc : 1;
-			if (si != 0) {
+			if(si != 0){
 				_sortAttrs.push({
 					attr: cell.field,
 					asc: si,
@@ -255,7 +256,7 @@ dojo.declare("dojox.grid.enhanced.plugins.NestedSorting", null, {
 		if(!si){
 			return 'Unsorted';
 		}
-		switch (si) {
+		switch (si){
 			case 1:
 				return 'Ascending';//'SortUp';
 			case -1:
@@ -286,7 +287,7 @@ dojo.declare("dojox.grid.enhanced.plugins.NestedSorting", null, {
 		var n = inCell.name || inCell.grid.getCellName(inCell);
 		if(inCell.grid.pluginMgr.isFixedCell(inCell)){
 			return [
-				'<div class="dojoxGridSortCellContent">',
+				'<div class="dojoxGridCellContent">',
 				n,
 				'</div>'
 			].join('');
@@ -345,7 +346,7 @@ dojo.declare("dojox.grid.enhanced.plugins.NestedSorting", null, {
 
 		//get all related region elements 
 		var elements = this._getCellElements(e.cellNode);
-		if(!elements) {return;}
+		if(!elements){return;}
 		
 		var _sortAttrs = this.sortAttrs;	
 		//Grid has not been sorted			
@@ -357,7 +358,7 @@ dojo.declare("dojox.grid.enhanced.plugins.NestedSorting", null, {
 
 		if(notSorted || inUnarySort){
 			this._addHoverUnarySortTip(elements, cellSortInfo, e);
-		}else {
+		}else{
 			//if in nested sort - "this" cell sort position > 1, then set nested sort state
 			this._addHoverNestedSortTip(elements, cellSortInfo, e);
 			//update the min cell width for column resizing
@@ -374,7 +375,7 @@ dojo.declare("dojox.grid.enhanced.plugins.NestedSorting", null, {
 		this.focus._updateFocusBorder();
 	},
 	
-	_addHoverUnarySortTip: function(elements, cellSortInfo, e) {
+	_addHoverUnarySortTip: function(elements, cellSortInfo, e){
 		// summary:
 		//		Add hover tip for unary sorting
 		// elements: Object
@@ -395,7 +396,7 @@ dojo.declare("dojox.grid.enhanced.plugins.NestedSorting", null, {
 		this._addTipInfo(elements['unarySortWrapper'], this._composeSortTip(stateStr, 'singleSort'));
 	},
 	
-	_addHoverNestedSortTip: function(elements, cellSortInfo, e) {
+	_addHoverNestedSortTip: function(elements, cellSortInfo, e){
 		// summary:
 		//		Add hover tip for nested sorting
 		// elements: Object
@@ -465,7 +466,7 @@ dojo.declare("dojox.grid.enhanced.plugins.NestedSorting", null, {
 		}
 	},
 	
-	_addTipInfo: function(node, text) {
+	_addTipInfo: function(node, text){
 		// summary:
 		//		Add title tip to target node and also all the descendants
 		// node: Dom node
@@ -478,7 +479,7 @@ dojo.declare("dojox.grid.enhanced.plugins.NestedSorting", null, {
 		});
 	},
 
-	_addA11yInfo:function(node,className) {
+	_addA11yInfo:function(node,className){
 		// summary:
 		//		Add related class and a11y sorting arrow character
 		// node: Dom node
@@ -501,12 +502,12 @@ dojo.declare("dojox.grid.enhanced.plugins.NestedSorting", null, {
 
 		//get all related region elements 
 		var elements = this._getCellElements(e.cellNode);
-		if(!elements) {return;}
+		if(!elements){return;}
 
-		var nestedSortChoice  = elements['nestedSortChoice'];
-		var unarySortChoice   = elements['unarySortChoice'];
-		var unarySortWrapper  = elements['unarySortWrapper'];
-		var nestedSortWrapper = elements['nestedSortWrapper'];
+		var nestedSortChoice  = elements.nestedSortChoice;
+		var unarySortChoice   = elements.unarySortChoice;
+		var unarySortWrapper  = elements.unarySortWrapper;
+		var nestedSortWrapper = elements.nestedSortWrapper;
 		
 		//remove all highlights
 		this._toggleHighlight(e.sourceView, e, true);
@@ -558,11 +559,11 @@ dojo.declare("dojox.grid.enhanced.plugins.NestedSorting", null, {
 		this._sortTipMap[e.cellIndex] = false;
 	},
 
-	_getUnaryNode: function() {
+	_getUnaryNode: function(){
 		// summary:
 		//		Get the sort position DOM node of unary column (1st in the sort sequence)
 		// return: Dom node
-		for(var i = 0; i < this.views.views.length; i++) {
+		for(var i = 0; i < this.views.views.length; i++){
 			var n = dojo.byId(this.views.views[i].id + 'SortPos' + this._unarySortCell.cell.index);
 			if(n) return n;
 		}
@@ -579,20 +580,23 @@ dojo.declare("dojox.grid.enhanced.plugins.NestedSorting", null, {
 		var sortWrapperBox = dojo.marginBox(sortWrapper);
 						
 		//fix rtl in IE
-		if(dojo.isIE && !dojo._isBodyLtr()) {
+		if(dojo.isIE && !dojo._isBodyLtr()){
 			var w = 0;
-			dojo.forEach(sortWrapper.childNodes, function(node) {
+			dojo.forEach(sortWrapper.childNodes, function(node){
 				w += dojo.marginBox(node).w;
 			})
 			sortWrapperBox.w = w;
-			sortWrapperBox.l = sortWrapperBox.t = 'null';
+			sortWrapperBox.l = (sortWrapperBox.t = 0);
 			dojo.marginBox(sortWrapper, sortWrapperBox);
 		}				
 		if(selectRegionBox.w != (parentBox.w - sortWrapperBox.w)){
-			selectRegionBox.w = parentBox.w - sortWrapperBox.w;			
-			// fix font increase & decrease issue in Safari & Chrome
-			dojo.isWebKit && (selectRegionBox.h = dojo.contentBox(parentBox).h);			
-			dojo.marginBox(selectRegion,selectRegionBox);
+			selectRegionBox.w = parentBox.w - sortWrapperBox.w;
+			if(!dojo.isWebKit){
+				dojo.marginBox(selectRegion,selectRegionBox);	
+			}else{//fix insufficient width of select region in Safari & Chrome when zoomed in
+				selectRegionBox.h = dojo.contentBox(parentBox).h;
+				dojo.style(selectRegion, "width", (selectRegionBox.w - 4) + "px");
+			}
 		}
 	},
 	
@@ -610,7 +614,7 @@ dojo.declare("dojox.grid.enhanced.plugins.NestedSorting", null, {
 		this._minColWidthUpdated = true;
 	},
 
-	getMinColWidth: function() {
+	getMinColWidth: function(){
 		// summary:
 		//		Fetch the min column width
 		return this._minColWidth;
@@ -625,12 +629,13 @@ dojo.declare("dojox.grid.enhanced.plugins.NestedSorting", null, {
 		
 		selectRegions.concat(unarySortWrappers).concat(nestedSortWrappers).forEach(function(region){
 			dojo.connect(region, 'onmousemove', dojo.hitch(this.grid, this.grid._toggleHighlight, this/*view*/));
+			dojo.connect(region, 'onmouseout', dojo.hitch(this.grid, this.grid._removeActiveState));
 		}, this);
 		
 		this.grid._fixHeaderCellStyle(selectRegions, this/*view*/);
 		
 		//fix rtl in IE
-		if(dojo.isIE && !dojo._isBodyLtr()) {
+		if(dojo.isIE && !dojo._isBodyLtr()){
 			this.grid._fixAllSelectRegion();
 		}
 	},
@@ -644,19 +649,11 @@ dojo.declare("dojox.grid.enhanced.plugins.NestedSorting", null, {
 		// cellView: View
 		//		View that contains related cells
 		dojo.forEach(selectRegions, dojo.hitch(this, function(selectRegion){
-			var selectRegionBox = dojo.marginBox(selectRegion);
-			var elements = this._getCellElements(selectRegion);
-			var sortWrapper = elements['sortWrapper'];
+			var selectRegionBox = dojo.marginBox(selectRegion),
+				elements = this._getCellElements(selectRegion),
+				sortWrapper = elements.sortWrapper;
 			sortWrapper.style.height = selectRegionBox.h + 'px';
 			sortWrapper.style.lineHeight = selectRegionBox.h + 'px';
-			if(dojo.isFF < 3) {
-				dojo.query('span', sortWrapper).forEach(function(node){
-					if(!dojo.attr(node, 'id') || !dojo.attr(node, 'id').match(/(SortSeparator|SortPos)/)) {
-						dojo.style(node, 'height', selectRegionBox.h + 'px');
-						dojo.style(node, 'lineHeight', selectRegionBox.h + 'px');
-					}
-				});
-			}			
 			var selectSortSeparator = elements['selectSortSeparator'], sortSeparator = elements['sortSeparator'];
 			sortSeparator.style.height = selectSortSeparator.style.height = selectRegionBox.h * 3/5 + 'px';
 			sortSeparator.style.marginTop = selectSortSeparator.style.marginTop = selectRegionBox.h * 1/5 + 'px';
@@ -664,11 +661,11 @@ dojo.declare("dojox.grid.enhanced.plugins.NestedSorting", null, {
 		}));
 	},
 
-	_fixAllSelectRegion: function () {
+	_fixAllSelectRegion: function (){
 		// summary:
 		//		Fix rtl in IE
 		var nodes = dojo.query('.dojoxGridHeaderCellSelectRegion', this.viewsHeaderNode);
-		dojo.forEach(nodes, dojo.hitch(this, function(node) {
+		dojo.forEach(nodes, dojo.hitch(this, function(node){
 			this._fixSelectRegion(node);
 		}));
 	},
@@ -689,7 +686,7 @@ dojo.declare("dojox.grid.enhanced.plugins.NestedSorting", null, {
 		}
 		//console.debug("onmousemove,info.selectChoice="+info.selectChoice + ' info.nestedSortChoice='+info.nestedSortChoice+' info.unarySortChoice='+info.unarySortChoice);
 		var elements = this._getCellElements(e.target);
-		if(!elements) {return;}
+		if(!elements){return;}
 		
 		var selectRegion      = elements['selectRegion'];
 		var nestedSortWrapper = elements['nestedSortWrapper'];
@@ -709,6 +706,17 @@ dojo.declare("dojox.grid.enhanced.plugins.NestedSorting", null, {
 				dojo.addClass(unarySortWrapper, 'dojoxGridSortHover');
 			}
 		}
+	},
+	
+	_removeActiveState: function(e){
+		// summary:
+		//		Remove active state for the event target 
+		// e: Event
+		if(!e.target || !e.type || !e.type.match(/mouse|contextmenu/)){
+			return;
+		}
+		var node = this._getChoiceRegion(e.target, this._getSortEventInfo(e));
+		node && dojo.removeClass(node, this.headerCellActiveClass);
 	},
 	
 	_toggleProgressTip: function(on, e){
@@ -798,19 +806,19 @@ dojo.declare("dojox.grid.enhanced.plugins.NestedSorting", null, {
 		if(!e.cell || e.cell.isRowSelector || this.focus.headerCellInFocus(e.cellIndex)){
 			return;
 		}
-		if(!this._inResize(e.sourceView)) {
+		if(!this._inResize(e.sourceView)){
 			this.addHoverSortTip(e);
 		}else{
-			if(e.target.offsetParent != e.cellNode && dojo.hasClass(e.target.offsetParent, 'dojoxGridCell')){
-				e.cellNode = e.target.offsetParent;
-				var nd = dojo.query("[id^=selectCol]", e.cellNode)[0];
-				e.cellIndex = nd ? nd.id.substring('selectCol'.length) : e.cellIndex;
+			var idx = e.cellIndex;
+			if(!this._sortTipMap[e.cellIndex]){
+				e.cellIndex = this._sortTipMap[idx + 1] ? (idx + 1) : (this._sortTipMap[idx - 1] ? (idx - 1) : idx);
+				e.cellNode = e.cellNode.parentNode.childNodes[e.cellIndex];
 			}
 			this.removeHoverSortTip(e);
 		}
 	},
 	
-	_getCellElements: function(node) {
+	_getCellElements: function(node){
 		// summary:
 		//		Fetch all dom nodes related with sorting, using dojo.query()
 		//		to search from top 'th' parent of the given node
@@ -819,13 +827,13 @@ dojo.declare("dojox.grid.enhanced.plugins.NestedSorting", null, {
 		// return: Object
 		//		Json object contains all dom nodes related with sorting	
 		try{
-			while(node && node.nodeName.toLowerCase() != 'th') {
+			while(node && node.nodeName.toLowerCase() != 'th'){
 				node = node.parentNode;
 			}
 			if(!node){return null;}
 			// try to get dojoxGridSortRoot
 			var ns = dojo.query(".dojoxGridSortRoot", node);
-			if(ns.length != 1) {return null;}
+			if(ns.length != 1){return null;}
 			var n = ns[0];
 			return {
 				'selectSortSeparator': dojo.query("[id^='selectSortSeparator']", n)[0],
@@ -840,10 +848,27 @@ dojo.declare("dojox.grid.enhanced.plugins.NestedSorting", null, {
 				'sortRoot'			 : n,
 				'headCellNode'		 : node
 			}		
-		} catch(e) {
+		}catch(e){
 			console.debug('NestedSorting._getCellElemets() error:' + e);
 		}
 		return null;
+	},
+	
+	_getChoiceRegion: function(target, choiceInfo){
+		// summary:
+		//		Find an appropriate region node for the choice event
+		// target: Dom Node
+		//		Choice event target
+		// choiceInfo: Object
+		//		Choice info e.g. 'unarySortChoice' | 'nestedSortChoice' | 'selectChoice'
+		// return: Dom Node
+		//		Appropriate choice region node
+		var node, elements = this._getCellElements(target);
+		if(!elements){ return; }
+		choiceInfo.unarySortChoice && (node = elements['unarySortWrapper']);
+		choiceInfo.nestedSortChoice && (node = elements['nestedSortWrapper']);
+		choiceInfo.selectChoice && (node = elements['selectRegion']);
+		return node;	
 	},
 
 	_inResize: function(view){
@@ -862,7 +887,7 @@ dojo.declare("dojox.grid.enhanced.plugins.NestedSorting", null, {
 		dojo.forEach(this._by_idx, function(o, idx){
 			if(!o || !o.item){return;}
 			var selected = !!this.selection.isSelected(idx);
-			o.item[this.storeItemSelected] = selected;
+			o.item[this.storeItemSelected] = [selected];
 			if(this.indirectSelection && this.rowSelectCell.toggleAllTrigerred && selected != this.toggleAllValue){
 				this.exceptionalSelectedItems.push(o.item);
 			}
@@ -878,12 +903,16 @@ dojo.declare("dojox.grid.enhanced.plugins.NestedSorting", null, {
 		dojo.forEach(items, function(item, idx){
 			if(this.indirectSelection && this.rowSelectCell.toggleAllTrigerred){
 				if(dojo.indexOf(this.exceptionalSelectedItems, item) < 0){
-					item[this.storeItemSelected] = this.toggleAllValue;	
+					item[this.storeItemSelected] = [this.toggleAllValue];	
 				}				
 			}
-			item[this.storeItemSelected] && this.selection.addToSelection(req.start+idx);// && console.debug(' selected row' + (req.start+idx));
+			item[this.storeItemSelected] && item[this.storeItemSelected][0] && this.selection.addToSelection(req.start+idx);
 		}, this);
 		dojo.publish(this.sortRowSelectionChangedTopic,[this]);
+		if(dojo.isMoz && this._by_idx.length == 0){
+			//Fix a weird issue in FF, when there are empty rows after page loaded
+			this.update();
+		}
 	}, 
 
 	allSelectionToggled: function(checked){
@@ -907,7 +936,7 @@ dojo.declare("dojox.grid.enhanced.plugins.NestedSorting", null, {
 		// rowIdx: Integer
 		//		Target row index
 		var data = this._by_idx[rowIdx];
-		return data && data.item && !!data.item[this.storeItemSelected];
+		return data && data.item && !!(data.item[this.storeItemSelected] && data.item[this.storeItemSelected][0]);
 	},
 	
 	initAriaInfo: function(){
@@ -973,7 +1002,6 @@ dojo.declare("dojox.grid.enhanced.plugins._NestedSortingFocusManager", dojox.gri
 	_initColumnHeaders: function(){
 		// summary:
 		//		Bind onfocus and onblur hanlders to regions in each header cell node
-		this._connects.push(dojo.connect(this.grid.viewsHeaderNode, "onblur", this, "doBlurHeader"));
 		var headerNodes = this._findHeaderCells();
 		dojo.forEach(headerNodes, dojo.hitch(this, function(headerNode){
 			var selectRegion = dojo.query('.dojoxGridHeaderCellSelectRegion', headerNode);
@@ -1018,7 +1046,7 @@ dojo.declare("dojox.grid.enhanced.plugins._NestedSortingFocusManager", dojox.gri
 		focusRegion && dojox.grid.util.fire(focusRegion, "focus");
 	},
 	
-	focusSelectColEndingHeader: function(e) {
+	focusSelectColEndingHeader: function(e){
 		// summary:
 		//		Put focus on the ending column header cell for swipe column selecting(when DnD plugin is on).
 		//		See dojox.grid.enhanced.dnd._DndBuilder.domouseup()
@@ -1036,14 +1064,24 @@ dojo.declare("dojox.grid.enhanced.plugins._NestedSortingFocusManager", dojox.gri
 		this.isNavHeader() && this.focusHeader(null, true);
 	},
 	
+	_setActiveColHeader: function(/*Node*/colHeaderNode, /*Integer*/colFocusIdx, /*Integer*/ prevColFocusIdx){
+		// summary:
+		//		Overwritten, see _FocusManager._setActiveColHeader()		
+		dojo.attr(this.grid.domNode, "aria-activedescendant",colHeaderNode.id);
+		this._colHeadNode = colHeaderNode;
+		this._colHeadFocusIdx = colFocusIdx;
+	},
+	
 	doColHeaderFocus: function(e){
 		// summary:
 		//		Overwritten, see _FocusManager.doColHeaderFocus()		
         this.lastHeaderFocus.cellNode = this._colHeadNode;
-		if (e.target == this._colHeadNode) {
-			this.inherited(arguments);
-		}else {
-			this.focusView.header.baseDecorateEvent(e);
+		if(e.target == this._colHeadNode){
+			this._scrollHeader(this.getHeaderIndex());
+		}else{
+			var focusView = this.getFocusView(e);
+			if(!focusView){ return; }		
+			focusView.header.baseDecorateEvent(e);
 			this._addFocusBorder(e.target);
 			this._colHeadFocusIdx = e.cellIndex;
 			this._colHeadNode = this._findHeaderCells()[this._colHeadFocusIdx];
@@ -1056,7 +1094,7 @@ dojo.declare("dojox.grid.enhanced.plugins._NestedSortingFocusManager", dojox.gri
 		this.grid.addHoverSortTip(this.currentHeaderFocusEvt = this._mockEvt(e.target));
 		
 		//fix ie rtl, focus add a border to the element, so need to change width of selection region
-		if (dojo.isIE && !dojo._isBodyLtr()) {
+		if(dojo.isIE && !dojo._isBodyLtr()){
 			this.grid._fixAllSelectRegion();
 		}
 	},
@@ -1067,11 +1105,31 @@ dojo.declare("dojox.grid.enhanced.plugins._NestedSortingFocusManager", dojox.gri
 		this.inherited(arguments);
 		this._removeFocusBorder();
 		//if(!this.isNavHeader() || this.lastHeaderFocus.cellNode && this.lastHeaderFocus.cellNode != this._colHeadNode){
-		if(!this.isNavCellRegion){		
-			this.focusView.header.baseDecorateEvent(e);
+		if(!this.isNavCellRegion){
+			var focusView = this.getFocusView(e);
+			if(!focusView){ return; }		
+			focusView.header.baseDecorateEvent(e);
 			this.grid.removeHoverSortTip(e);
 			this.lastHeaderFocus.cellNode = this._colHeadNode;
 		}
+	},
+	
+	getFocusView: function(e){
+		// summary:
+		//		Get the current focus view
+		// e: Event
+		//		Event that triggers the current focus
+		// return: Object
+		//		The current focus view
+		var focusView;
+		dojo.forEach(this.grid.views.views, function(view){
+			if(!focusView){
+				var viewBox = dojo.coords(view.domNode), targetBox = dojo.coords(e.target);
+				var inRange = targetBox.x >= viewBox.x && targetBox.x <= (viewBox.x + viewBox.w);
+				inRange && (focusView = view);
+			}
+		});
+		return (this.focusView = focusView);
 	},
 		
 	_mockEvt: function(region){
@@ -1195,7 +1253,7 @@ dojo.declare("dojox.grid.enhanced.plugins._NestedSortingFocusManager", dojox.gri
 		this.lastHeaderFocus.regionIdx = (notSorted || inUnarySort) ? 2 : (e.nestedSortChoice ? 1 : 0);
 	},	
 	
-	_addFocusBorder: function(node) {
+	_addFocusBorder: function(node){
 		// summary:
 		//		 Add focus borders to node, use this instead of native CSS way to fix border wobbling issue
 		// node: Dom node
@@ -1207,14 +1265,16 @@ dojo.declare("dojox.grid.enhanced.plugins._NestedSortingFocusManager", dojox.gri
 		dojo.toggleClass(node, "dojoxGridSelectRegionFocus", true);
 		dojo.toggleClass(node, "dojoxGridSelectRegionHover", false);
 		
-		if (node.hasChildNodes()) {
+		//cache the height - in IE6 the value will be doubled after 'node.insertBefore()'
+		var nodeH = node.offsetHeight;
+		if(node.hasChildNodes()){
 			node.insertBefore(this._focusBorderBox, node.firstChild);
-		}else {
+		}else{
 			node.appendChild(this._focusBorderBox);
 		}
 		
 		var _d = {'l': 0, 't': 0, 'r': 0, 'b': 0};		
-		for(var i in _d) {
+		for(var i in _d){
 			_d[i] = dojo.create('div');
 		}
 		
@@ -1222,16 +1282,16 @@ dojo.declare("dojox.grid.enhanced.plugins._NestedSortingFocusManager", dojox.gri
 			x: dojo.coords(node).x - dojo.coords(this._focusBorderBox).x ,
 			y: dojo.coords(node).y - dojo.coords(this._focusBorderBox).y,
 			w: node.offsetWidth,
-			h: node.offsetHeight
+			h: nodeH
 		};
-		for (var i in _d) {
+		for(var i in _d){
 			var n = _d[i];
 			dojo.addClass(n, 'dojoxGridFocusBorder');
 			dojo.style(n, 'top', pos.y + 'px');
 			dojo.style(n, 'left', pos.x + 'px');
 			this._focusBorderBox.appendChild(n);
 		}
-		var normalize = function(val) {
+		var normalize = function(val){
 			return val > 0 ? val : 0;
 		}
 		dojo.style(_d.r, 'left',   normalize(pos.x + pos.w - 1) + 'px');
@@ -1242,19 +1302,19 @@ dojo.declare("dojox.grid.enhanced.plugins._NestedSortingFocusManager", dojox.gri
 		dojo.style(_d.b, 'width',  normalize(pos.w - 1) + 'px');
 	},
 	
-	_updateFocusBorder: function() {
+	_updateFocusBorder: function(){
 		// summary:
 		//		 Update focus borders.
-		if(this._focusBorderBox == null) {
-			return ;
+		if(this._focusBorderBox == null){
+			return;
 		}
 		this._addFocusBorder(this._focusBorderBox.parentNode);
 	},
 
-	_removeFocusBorder: function() {
+	_removeFocusBorder: function(){
 		// summary:
 		//		 Remove focus borders.		
-		if(this._focusBorderBox && this._focusBorderBox.parentNode) {
+		if(this._focusBorderBox && this._focusBorderBox.parentNode){
 			dojo.toggleClass(this._focusBorderBox.parentNode, "dojoxGridSelectRegionFocus", false);
 			this._focusBorderBox.parentNode.removeChild(this._focusBorderBox);
 			

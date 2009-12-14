@@ -3,7 +3,7 @@ dojo.provide("dojox.html.format");
 dojo.require("dojox.html.entities");
 
 (function(){
-	dojox.html.format.prettyPrint = function(html/*String*/, indentBy /*Integer?*/, maxLineLength /*Integer?*/, map/*Array?*/){
+	dojox.html.format.prettyPrint = function(html/*String*/, indentBy /*Integer?*/, maxLineLength /*Integer?*/, map/*Array?*/, /*boolean*/ xhtml){
 		// summary:
 		//		Function for providing a 'pretty print' version of HTML content from
 		//		the provided string.  It's nor perfect by any means, but it does
@@ -21,17 +21,25 @@ dojo.require("dojox.html.entities");
 		//		Optional array of entity mapping characters to use when processing the 
 		//		HTML Text content.  By default it uses the default set used by the 
 		//		dojox.html.entities.encode function.
+		// xhtml: boolean
+		//		Optional parameter that declares that the returned HTML should try to be 'xhtml' compatible.
+		//		This means normally unclosed tags are terminated with /> instead of >.  Example: <hr> -> <hr />
 		var content = [];
 		var indentDepth = 0;
 		var closeTags = [];
 		var iTxt = "\t";
 		var textContent = "";
 		var inlineStyle = [];
+		var i;
+
+		// Compile regexps once for this call.
+		var rgxp_fixIEAttrs = /[=]([^"']+?)(\s|>)/g;
+		var rgxp_styleMatch = /style=("[^"]*"|'[^']*'|\S*)/gi;
+		var rgxp_attrsMatch = /\s\w+=("[^"]*"|'[^']*'|\S*)/gi;
 
 		// Check to see if we want to use spaces for indent instead
 		// of tab.
 		if(indentBy && indentBy > 0 && indentBy < 10){
-			var i;
 			iTxt = "";
 			for(i = 0; i < indentBy; i++){
 				iTxt += " ";
@@ -43,12 +51,12 @@ dojo.require("dojox.html.entities");
 		var contentDiv = dojo.doc.createElement("div");
 		contentDiv.innerHTML = html;
 
-		//Local alias to our entity encoder.
+		// Use the entity encode/decode functions, they cache on the map,
+		// so it won't multiprocess a map.
 		var encode = dojox.html.entities.encode;
 		var decode = dojox.html.entities.decode;
 
 		/** Define a bunch of formatters to format the output. **/
-
 		var isInlineFormat = function(tag){
 			// summary:
 			//		Function to determine if the current tag is an inline
@@ -79,6 +87,8 @@ dojo.require("dojox.html.entities");
 			}
 		};
 
+		//Create less divs.
+		var div = contentDiv.ownerDocument.createElement("div");
 		var outerHTML =  function(node){
 			// summary:
 			//		Function to return the outer HTML of a node.
@@ -86,9 +96,10 @@ dojo.require("dojox.html.entities");
 			//		allows avoiding looking at any child nodes, because in this
 			//		case, we don't want them.
 			var clone = node.cloneNode(false);
-			var div = dojo.doc.createElement("div");
 			div.appendChild(clone);
-			return div.innerHTML;
+			var html = div.innerHTML;
+			div.innerHTML = "";
+			return html;
 		};
 
 		var indent = function(){
@@ -243,36 +254,74 @@ dojo.require("dojox.html.entities");
 		var openTag = function(node){
 			// summary:
 			//		Function to open a new tag for writing content.
-
 			var name = node.nodeName.toLowerCase();
 			// Generate the outer node content (tag with attrs)
 			var nText = dojo.trim(outerHTML(node));
 			var tag = nText.substring(0, nText.indexOf(">") + 1);
-			
-			// Okay, there's a chance the casing will be off (thanks, IE!)
-			// so we need to 'fix' it.
-			tag = tag.replace(new RegExp("<" + name, "i"), "<" + name);
 
 			// Also thanks to IE, we need to check for quotes around 
 			// attributes and insert if missing.
-			tag = tag.replace(new RegExp("=[^\"']\\S+(\\s|>)", "g"), function(match){
-				var endChar = match.length - 1;
-				match = "=\"" + match.substring(1, endChar) + 
-					"\"" + match.charAt(endChar);
-				return match;
-			});
+			tag = tag.replace(rgxp_fixIEAttrs,'="$1"$2');
 
 			// And lastly, thanks IE for changing style casing and end
-			// semi-colon.
-			tag = tag.replace(/style=("|').+\1/gi, function(match){
-				match = match.substring(0,7) + 
-					match.substring(7, match.length).toLowerCase();
-				if(match.charAt(match.length - 2) !== ";"){
-					match = match.substring(0,match.length - 1) + 
-						";" + match.charAt(match.length - 1);
+			// semi-colon and webkit adds spaces, so lets clean it up by
+			// sorting, etc, while we're at it.
+			tag = tag.replace(rgxp_styleMatch, function(match){
+				var sL = match.substring(0,6);
+				var style = match.substring(6, match.length);
+				var closure = style.charAt(0);
+				style = dojo.trim(style.substring(1,style.length -1));
+				style = style.split(";");
+				var trimmedStyles = [];
+				dojo.forEach(style, function(s){
+					s = dojo.trim(s);
+					if(s){
+						// Lower case the style name, leave the value alone.  Mainly a fixup for IE.
+						s = s.substring(0, s.indexOf(":")).toLowerCase() + s.substring(s.indexOf(":"), s.length);
+						trimmedStyles.push(s);
+					}
+				});
+				trimmedStyles = trimmedStyles.sort();
+				
+				// Reassemble and return the styles in sorted order.
+				style = trimmedStyles.join("; ");
+				var ts = dojo.trim(style);
+				if(!ts || ts === ";"){
+					// Just remove any style attrs that are empty.
+					return "";
+				}else{
+					style += ";";
+					return sL + closure + style + closure;
 				}
-				return match;
 			});
+
+			// Try and sort the attributes while we're at it.
+			var attrs = [];
+			tag = tag.replace(rgxp_attrsMatch, function(attr){
+				attrs.push(dojo.trim(attr));
+				return "";
+			});
+			attrs = attrs.sort();
+
+			// Reassemble the tag with sorted attributes!
+			tag = "<" + name;
+			if(attrs.length){
+				 tag += " " + attrs.join(" ");
+			}
+
+			// Determine closure status.  If xhtml, 
+			// then close the tag properly as needed.
+			if(nText.indexOf("</") != -1){
+				closeTags.push(name);
+				tag += ">";
+			}else{
+				if(xhtml){
+					tag += " />";
+				}else{
+					tag += ">";
+				}
+				closeTags.push(false);
+			}
 
 			var inline = isInlineFormat(name);
 			inlineStyle.push(inline); 
@@ -282,14 +331,8 @@ dojo.require("dojox.html.entities");
 				content.push(formatText(textContent));
 				textContent = "";
 			}
-			
-			// Determine if this has a closing tag or not!
-			if(nText.indexOf("</") != -1){
-				closeTags.push(name);
-			}else{
-				closeTags.push(false);
-			}
 
+			// Determine if this has a closing tag or not!
 			if(!inline){
 				indent();
 				content.push(tag);
@@ -355,7 +398,8 @@ dojo.require("dojox.html.entities");
 				for(i = 0; i < children.length; i++){
 					var n = children[i];
 					if(n.nodeType === 1){
-						if(dojo.isIE && n.parentNode != node){
+						var tg = dojo.trim(n.tagName.toLowerCase());
+                        if(dojo.isIE && n.parentNode != node){
 							// IE is broken.  DOMs are supposed to be a tree.  
 							// But in the case of malformed HTML, IE generates a graph
 							// meaning one node ends up with multiple references 
@@ -364,29 +408,34 @@ dojo.require("dojox.html.entities");
 							// this because otherwise the source output HTML will have dups.
 							continue;
 						}
-
-						
-						//Process non-dup elements!
-						openTag(n);
-						if(n.tagName.toLowerCase() === "script"){
-							content.push(formatScript(n.innerHTML));
-						}else if(n.tagName.toLowerCase() === "pre"){
-							var preTxt = n.innerHTML;
-							if(dojo.isMoz){
-								//Mozilla screws this up, so fix it up.
-								preTxt = preTxt.replace("<br>", "\n");
-								preTxt = preTxt.replace("<pre>", "");
-								preTxt = preTxt.replace("</pre>", "");
-							}
-							// Add ending newline, if needed.
-							if(preTxt.charAt(preTxt.length - 1) !== "\n"){
-								preTxt += "\n";
-							}
-							content.push(preTxt);
+						if(tg && tg.charAt(0) === "/"){
+							// IE oddity.  Malformed HTML can put in odd tags like:
+							// </ >, </span>.  It treats a mismatched closure as a new
+							// start tag.  So, remove them.
+							continue;
 						}else{
-							processNode(n);
+							//Process non-dup, seemingly wellformed elements!
+							openTag(n);
+							if(tg === "script"){
+								content.push(formatScript(n.innerHTML));
+							}else if(tg === "pre"){
+								var preTxt = n.innerHTML;
+								if(dojo.isMoz){
+									//Mozilla screws this up, so fix it up.
+									preTxt = preTxt.replace("<br>", "\n");
+									preTxt = preTxt.replace("<pre>", "");
+									preTxt = preTxt.replace("</pre>", "");
+								}
+								// Add ending newline, if needed.
+								if(preTxt.charAt(preTxt.length - 1) !== "\n"){
+									preTxt += "\n";
+								}
+								content.push(preTxt);
+							}else{
+								processNode(n);
+							}
+							closeTag();
 						}
-						closeTag();
 					}else if(n.nodeType === 3 || n.nodeType === 4){
 						processTextNode(n);
 					}else if(n.nodeType === 8){

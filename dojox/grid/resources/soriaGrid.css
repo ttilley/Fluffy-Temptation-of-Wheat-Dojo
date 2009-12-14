@@ -84,7 +84,7 @@
 }
 
 .soria .dojoxGridRowbarSelected {
-	background: #D9E8F9 url(../../../dijit/themes/soria/images/titleBar.png) #ddd no-repeat center;
+	background: url(../../../dijit/themes/soria/images/titleBar.png) #D9E8F9 no-repeat center;
 	border-right: 1px solid #ccc;
 }
 
@@ -200,6 +200,13 @@
 .soria .dojoxGridExpandoLoading .dojoxGridExpandoNode {
 	background: url('../../../dijit/themes/soria/images/treeExpand_loading.gif');	
 }
+.soria .dojoxGridTreeModel .dojoxGridNoChildren .dojoxGridExpando {
+	visibility: visible !important;
+	width: 18px !important;
+}
+.soria .dojoxGridTreeModel .dojoxGridNoChildren .dojoxGridExpandoNode {
+	background: url('../../../dijit/themes/soria/images/spriteTree.gif') no-repeat -36px top;
+}
 .soria .dojoxGridExpandoNodeInner {
 	visibility: hidden;
 }
@@ -221,4 +228,10 @@
 .soria .dojoxGridRowCollapsed .dojoxGridExpandoCell,
 .soria .dojoxGridTreeModel .dojoxGridExpandoCell {
 	border-bottom-color: #D5CDB5;
+}
+.soria .dojoxGridSubRowAlt {
+	background-color: #F8F8F8;
+}
+.soria .dojoxGridRowOdd .dojoxGridSubRowAlt {
+	background-color: #EDEFF3;
 }

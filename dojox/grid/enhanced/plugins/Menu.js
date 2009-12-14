@@ -10,7 +10,7 @@ dojo.declare("dojox.grid.enhanced.plugins.Menu", null, {
 	//		</div>
 
 	constructor: function(inGrid){
-		dojo.mixin(inGrid, this);
+		inGrid.mixin(inGrid, this);
 	},
 	
 	_initMenus: function(){
@@ -21,7 +21,7 @@ dojo.declare("dojox.grid.enhanced.plugins.Menu", null, {
 		!this.rowMenu && (this.rowMenu = this._getMenuWidget(this.menus['rowMenu']));
 		!this.cellMenu && (this.cellMenu = this._getMenuWidget(this.menus['cellMenu']));
 		!this.selectedRegionMenu && (this.selectedRegionMenu = this._getMenuWidget(this.menus['selectedRegionMenu']));
-		this.headerMenu && this.attr('headerMenu', this.headerMenu);
+		this.headerMenu && this.attr('headerMenu', this.headerMenu) && this.setupHeaderMenu();
 		this.rowMenu && this.attr('rowMenu', this.rowMenu);
 		this.cellMenu && this.attr('cellMenu', this.cellMenu);
 		this.isDndSelectEnable && this.selectedRegionMenu && dojo.connect(this.select, 'setDrugCoverDivs', dojo.hitch(this, this._bindDnDSelectEvent));
@@ -51,10 +51,8 @@ dojo.declare("dojox.grid.enhanced.plugins.Menu", null, {
 			//this.selectedRegionMenu.unBindDomNode(this.domNode);
 			this.selectedRegionMenu.bindDomNode(cover);
 			dojo.connect(cover, "contextmenu", dojo.hitch(this, function(e){
-				if(this.selectedRegionMenu){
-					this.selectedRegionMenu._openMyself(e);
-					dojo.stopEvent(e);
-				}
+				dojo.mixin(e, this.select.getSelectedRegionInfo());
+				this.onSelectedRegionContextMenu(e);
 			}));
 		}));
 	},

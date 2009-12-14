@@ -1,15 +1,17 @@
 -------------------------------------------------------------------------------
 dojox.editor
 -------------------------------------------------------------------------------
-Version 0.5
-Release date: 7/10/2008
+Version 0.9
+Release date: 9/14/2009
 -------------------------------------------------------------------------------
 Project state:
 experimental, beta, stable
 -------------------------------------------------------------------------------
 Credits
 	Mike Wilcox 	 - Author
-	Jared Jurkiewicz - Author (PrettyPrint, PageBreak, ShowBlockNodes)
+	Jared Jurkiewicz - Author (PrettyPrint, PageBreak, ShowBlockNodes, 
+		Preview, Save, ToolbarLineBreak, InsertEntity, 
+		NormalizeIndentOutdent, Breadcrumb, FindReplace)
 	Dustin Machi 	 - Technical Assistance
 -------------------------------------------------------------------------------
 Project description
@@ -36,7 +38,7 @@ dojox.editor.plugins.PrettyPrint:
 	the maximum text line length (not including indent), and what 
 	characters in text strings should be encoded to their &<enc>; 
 	representation.
-  
+
 dojox.editor.plugins.PageBreak:
 	Status: Supported (stable).
 	A simple plugin that allows you to insert 'page breaks' into the doc
@@ -45,10 +47,53 @@ dojox.editor.plugins.PageBreak:
 
 dojox.editor.plugins.ShowBlockNodes:
 	Status: Supported (stable).
-        A simple plugin that allows you to toggle on and off a CSS 'view' of
+	A simple plugin that allows you to toggle on and off a CSS 'view' of
 	how the page is laid out in terms of the block nodes used for its
 	formatting.
- 
+
+dojox.editor.plugins.Save:
+	Status: Supported (beta).
+	A simple plugin that allows you to POST the content of the editor back
+	to a URL.
+
+dojox.editor.plugins.Preview:
+	Status: Supported (beta).
+	A simple plugin that allows you to display the content of the editor
+	in a new window and apply a set of styles to it so you can see how
+	content will look with various styles applied.  It is likely this
+	plugin will still evolve a bit.
+
+dojox.editor.plugins.ToolbarLineBreak:
+	Status: Supported (stable).
+	An extremely simple plugin that allows you to 'linebreak' the dijit toolbar so that really long 
+	toolbars for editor (lots of plugins enabled), can be broken up into multiple rows.
+
+dojox.editor.plugins.InsertEntity:
+	Status: Experimental (unsupported).
+	A plugin that enables the ability to insert HTML/XML entity characters
+	into a page.  These are often called 'symbols'.  The set it provides are the
+	basic latin (8859) set and a portion of greek symbols common to mathematics.
+	It has been marked experimental as it is likely this plugin will evolve a bit.
+
+dojox.editor.plugins.NormalizeIndentOutdent:
+	Status: Experimental (unsupported).
+	A plugin that normalizes the behavior of indent/outdent to use margin styles instead
+	of <blockquote> tags.  Also fixes indent/outdent of lists to work properly.  This is new
+	and has been tested, but not extensively.  Therefore it is currently classed as experimental.
+
+dojox.editor.plugins.Breadcrumb:
+	Status: Experimental (unsupported).
+	A plugin that adds a breadcrumb toolbar to the bottom of the editor.  Useful for seeing
+	where you aren and what operations you can perform.  This is new and has been tested, but not 
+	extensively.  Therefore it is currently classed as experimental.
+
+dojox.editor.plugins.FindReplace:
+	Status: Experimental (unsupported).
+	A plugin that adds a togglable Find/Replace toolbar to the editor.  Useful for searching
+	and replacing text strings in the editor content.  Only works on FF, IE, and WebKit.  No Opera
+	support.  This is new and has been tested, but not extensively.  Therefore it is currently 
+	classed as experimental.
+
 -------------------------------------------------------------------------------
 Dependencies:
 
@@ -62,9 +107,17 @@ Documentation
 The plugins directory contains extensions which work with dijit.Editor.
 
 See also:
+	http://docs.dojocampus.org/dojox/editor/plugins/TablePlugins
 	http://docs.dojocampus.org/dojox/editor/plugins/PrettyPrint
 	http://docs.dojocampus.org/dojox/editor/plugins/PageBreak
 	http://docs.dojocampus.org/dojox/editor/plugins/ShowBlockNodes
+	http://docs.dojocampus.org/dojox/editor/plugins/Preview
+	http://docs.dojocampus.org/dojox/editor/plugins/Save
+	http://docs.dojocampus.org/dojox/editor/plugins/ToolbarLineBreak
+	http://docs.dojocampus.org/dojox/editor/plugins/InsertEntity
+	http://docs.dojocampus.org/dojox/editor/plugins/NormalizeIndentOutdent
+	http://docs.dojocampus.org/dojox/editor/plugins/Breadcrumb
+        http://docs.dojocampus.org/dojox/editor/plugins/FindReplace
 
 -------------------------------------------------------------------------------
 Plugin Installation instructions
@@ -90,8 +143,8 @@ For the PrettyPrint plugin:
 	No CSS required.
 
 For the PageBreak plugin:
-        dojo.require("dojox.editor.plugins.PageBreak");
-        and CSS:
+	dojo.require("dojox.editor.plugins.PageBreak");
+	and CSS:
 	<link href="[path]dojox/editor/plugins/resources/css/PageBreak.css" type="text/css" rel="stylesheet" />
 
 For the ShowBlockNodes plugin:
@@ -99,10 +152,52 @@ For the ShowBlockNodes plugin:
 	and CSS:
 	<link href="[path]dojox/editor/plugins/resources/css/ShowBlockNodes.css" type="text/css" rel="stylesheet" />
 
+For the Preview plugin:
+	dojo.require("dojox.editor.plugins.Preview");
+	and CSS:
+	<link href="[path]dojox/editor/plugins/resources/css/Preview.css" type="text/css" rel="stylesheet" />
+
+For the Save plugin:
+	dojo.require("dojox.editor.plugins.Save");
+	and CSS:
+	<link href="[path]dojox/editor/plugins/resources/css/Save.css" type="text/css" rel="stylesheet" />
+
+For the ToolbarLineBreak plugin:
+	dojo.require("dojox.editor.plugins.ToolbarLineBreak");
+	and CSS:
+	No CSS required.
+
+For the InsertEntity plugin:
+	dojo.require("dojox.editor.plugins.InsertEntity");
+	and CSS:
+	<link href="[path]dojox/editor/plugins/resources/css/InsertEntity.css" type="text/css" rel="stylesheet" />
+
+
+For the NormalizeIndentOutdent plugin:
+	dojo.require("dojox.editor.plugins.NormalizeIndentOutdent");
+	and CSS:
+	No CSS required.
+
+For the Breadcrumb plugin:
+	dojo.require("dojox.editor.plugins.Breadcrumb");
+	and CSS:
+	<link href="[path]dojox/editor/plugins/resources/css/Breadcrumb.css" type="text/css" rel="stylesheet" />
+
+For the FindReplace plugin:
+	dojo.require("dojox.editor.plugins.FindReplace");
+	and CSS:
+	<link href="[path]dojox/editor/plugins/resources/css/FindReplace.css" type="text/css" rel="stylesheet" />
 
 See tests for examples:
-	dojox/editor/plugins/tests/editorTablePlugs.html
-	dojox/editor/plugins/tests/editorUploadPlug.html
-	dojox/editor/plugins/tests/editorPrettyPrint.html
-	dojox/editor/plugins/tests/editorPageBreak.html
-	dojox/editor/plugins/tests/editorShowBlockNodes.html
+	dojox/editor/tests/editorTablePlugs.html
+	dojox/editor/tests/editorUploadPlug.html
+	dojox/editor/tests/editorPrettyPrint.html
+	dojox/editor/tests/editorPageBreak.html
+	dojox/editor/tests/editorShowBlockNodes.html
+	dojox/editor/tests/editorPreview.html
+	dojox/editor/tests/editorSave.html
+	dojox/editor/tests/editorToolbarLineBreak.html
+	dojox/editor/tests/editorInsertEntity.html
+	dojox/editor/tests/editorNormalizeIndentOutdent.html
+	dojox/editor/tests/editorBreadcrumb.html
+	dojox/editor/tests/editorFindReplace.html

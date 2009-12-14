@@ -83,7 +83,7 @@ dojo.require("dojo.data.util.filter");
 						var remove = this._updates[i].remove;
 						if(remove){
 							for(var j = 0; j < resultSet.length;j++){
-								if(resultSet[j]==remove){
+								if(resultSet[j] == remove){
 									resultSet.splice(j--,1);
 									var updated = true;
 								}
@@ -100,10 +100,10 @@ dojo.require("dojo.data.util.filter");
 						resultSet.sort(this.makeComparator(request.sort.concat()));
 					}
 					resultSet._fullLength = resultSet.length;
-					if(request.count && updated){
+					if(request.count && updated && request.count !== Infinity){
 						// do we really need to do this?
 						// make sure we still find within the defined paging set
-						resultSet.splice(request.count,resultSet.length);
+						resultSet.splice(request.count, resultSet.length);
 					}
 					request._version = this._updates.length;
 					return updated ? 2 : 1;
@@ -132,7 +132,7 @@ dojo.require("dojo.data.util.filter");
 					}else if(!(typeof argsSuper.query[i] == 'string' && 
 							// if it is a pattern, we can test to see if it is a sub-pattern 
 							// FIXME: This is not technically correct, but it will work for the majority of cases
-							dojo.data.util.filter.patternToRegExp(argsSuper.query[i]).test(clientQuery[i]))){  
+							dojo.data.util.filter.patternToRegExp(argsSuper.query[i]).test(clientQuery[i]))){
 						return false;
 					}
 				}
@@ -195,7 +195,7 @@ dojo.require("dojo.data.util.filter");
 						self.updateResultSet(results,args);
 						args.cacheResults = results;
 						if(!args.count || results.length < args.count){
-							defResult.fullLength = results.length;
+							defResult.fullLength = ((args.start)?args.start:0) + results.length;
 						}
 					}
 					return results;

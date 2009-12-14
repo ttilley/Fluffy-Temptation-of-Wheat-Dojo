@@ -8,6 +8,7 @@ dojo.declare("dojox.grid.enhanced.plugins.IndirectSelection", null, {
 	//		 Provides indirect selection feature - swipe selecting row(s)
 	// example:
 	// 		 <div dojoType="dojox.grid.EnhancedGrid" plugins="{indirectSelection: true}" ...></div>
+	// 	  or <div dojoType="dojox.grid.EnhancedGrid" plugins="{indirectSelection: {name: 'xxx', width:'30px', styles:'text-align: center;'}}" ...></div>	
 
 	constructor: function(inGrid){
 		this.grid = inGrid;
@@ -21,7 +22,8 @@ dojo.declare("dojox.grid.enhanced.plugins.IndirectSelection", null, {
 		if(!this.grid.indirectSelection || this.grid.selectionMode == 'none'){
 			return;
 		}
-		var rowSelectCellAdded = false;
+		var rowSelectCellAdded = false, inValidFields = ['get', 'formatter', 'field', 'fields'],
+		defaultCellDef = {type: dojox.grid.cells.DijitMultipleRowSelector, name: '', editable: true, width:'30px', styles:'text-align: center;'};
 		dojo.forEach(this.structure, dojo.hitch(this, function(view){
 			var cells = view.cells;
 			if(cells && cells.length > 0 && !rowSelectCellAdded){
@@ -31,8 +33,15 @@ dojo.declare("dojox.grid.enhanced.plugins.IndirectSelection", null, {
 					rowSelectCellAdded = true;
 					return;
 				}
-				var cellType = this.grid.selectionMode == 'single' ? dojox.grid.cells.DijitSingleRowSelector : dojox.grid.cells.DijitMultipleRowSelector;
-				var selectDef = {type: cellType, name: '', editable: true, width:'30px', styles:'text-align: center;'};
+				var selectDef, cellType = this.grid.selectionMode == 'single' ? dojox.grid.cells.DijitSingleRowSelector : dojox.grid.cells.DijitMultipleRowSelector;
+				if(!dojo.isObject(this.grid.indirectSelection)){
+					selectDef = dojo.mixin(defaultCellDef, {type: cellType});
+				}else{
+					selectDef = dojo.mixin(defaultCellDef, this.grid.indirectSelection, {type: cellType, editable: true});
+					dojo.forEach(inValidFields, function(field){//remove invalid feilds
+						if(field in selectDef){ delete selectDef[field]; }
+					});
+				}
 				cells.length > 1 && (selectDef["rowSpan"] = cells.length);//for complicate layout
 				dojo.forEach(this.cells, function(cell, i){
 					if(cell.index >= 0){
@@ -129,6 +138,7 @@ dojo.declare("dojox.grid.cells._SingleRowSelectorMixin", null, {
 			widget.attr('checked', value);
 		}
 		this.defaultValue = false;
+		this.grid.edit.isEditing() && this.grid.edit.apply();
 	},
 	
 	_toggleSingleRow: function(idx, value) {
@@ -220,7 +230,7 @@ dojo.declare("dojox.grid.cells._MultipleRowSelectorMixin", null, {
 		// e: Event
 		//		Mouse up event
 		dojo.isIE && this.view.content.decorateEvent(e);//TODO - why only e in IE hasn't been decoreated?
-		var inSwipeSelection = e.cellIndex >= 0 && (this.inIndirectSelectionMode() || this._inDndSelection);
+		var inSwipeSelection = e.cellIndex >= 0 && (this.inIndirectSelectionMode() || this._inDndSelection) && !this.grid.edit.isEditRow(e.rowIndex);
 		inSwipeSelection && this._focusEndingCell(e.rowIndex, e.cellIndex);
 		this._finisheSelect();
 	},
@@ -485,7 +495,20 @@ dojo.declare("dojox.grid.cells.DijitSingleRowSelector", [dojox.grid.cells._Widge
 		}
 		this.grid.selection.deselectAll();
 		this._toggleSingleRow(idx, value);
-	}	
+	},
+	
+	setDisabled: function(idx, disabled){
+		// summary:
+		//		toggle 'disabled' | 'enabled' of the selector widget in row idx
+		// idx: Integer
+		//		Row index
+		// disabled: Boolean
+		//		True - disabled | False - enabled
+		if(this.widgetMap[this.view.id]){
+			var widget = this.widgetMap[this.view.id][idx];
+			widget && widget.attr('disabled', disabled);
+		} 
+	}
 });
 
 dojo.declare("dojox.grid.cells.DijitMultipleRowSelector", [dojox.grid.cells.DijitSingleRowSelector, dojox.grid.cells._MultipleRowSelectorMixin], {

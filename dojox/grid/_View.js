@@ -30,7 +30,7 @@ dojo.require("dojo.dnd.Manager");
 		// 		Width for the view, in valid css unit
 		viewWidth: "",
 
-		templateString: dojo.cache("dojox.grid","resources/View.html"),
+		templatePath: dojo.moduleUrl("dojox.grid","resources/View.html"),
 		
 		themeable: false,
 		classTag: 'dojoxGrid',
@@ -80,7 +80,7 @@ dojo.require("dojo.dnd.Manager");
 
 		// focus 
 		focus: function(){
-			if(dojo.isWebKit || dojo.isOpera){
+			if(dojo.isIE || dojo.isWebKit || dojo.isOpera){
 				this.hiddenFocusNode.focus();
 			}else{
 				this.scrollboxNode.focus();
@@ -390,7 +390,7 @@ dojo.require("dojo.dnd.Manager");
 
 			var getIdx = function(n){
 				return n ? dojo.attr(n, "idx") : null;
-			}
+			};
 			var w = dojo.marginBox(nodes[0]).w;
 			if(source.viewIndex !== this.index){
 				var views = this.grid.views.views;
@@ -415,8 +415,7 @@ dojo.require("dojo.dnd.Manager");
 				idx,
 				getIdx(nodes[0]),
 				getIdx(stn),
-				stb
-			);
+				stb);
 		},
 
 		renderHeader: function(){
@@ -440,7 +439,7 @@ dojo.require("dojo.dnd.Manager");
 							inCell.grid.sortInfo > 0 ? 'dojoxGridSortUp' : 'dojoxGridSortDown',
 							'"><div class="dojoxGridArrowButtonChar">',
 							inCell.grid.sortInfo > 0 ? '&#9650;' : '&#9660;',
-							'</div><div class="dojoxGridArrowButtonNode" role="'+(dojo.isFF<3 ? "wairole:" : "")+'presentation"></div>' ]);
+							'</div><div class="dojoxGridArrowButtonNode" role="presentation"></div>']);
 			}
 			ret = ret.concat([n, '</div>']);
 			return ret.join('');
@@ -528,7 +527,7 @@ dojo.require("dojo.dnd.Manager");
 
 		adaptHeight: function(minusScroll){
 			if(!this.grid._autoHeight){
-				var h = (this.domNode.style.height && parseInt(this.domNode.style.height.replace(/px/,''))) || this.domNode.clientHeight;
+				var h = (this.domNode.style.height && parseInt(this.domNode.style.height.replace(/px/,''), 10)) || this.domNode.clientHeight;
 				var self = this;
 				var checkOtherViewScrollers = function(){
 					var v;
@@ -684,7 +683,7 @@ dojo.require("dojo.dnd.Manager");
 			//var s = dojo.marginBox(this.headerContentNode.firstChild);
 			var isLtr = dojo._isBodyLtr();
 			if(this.firstScroll < 2){
-				if((!isLtr && this.firstScroll == 1) || (isLtr && this.firstScroll == 0)){
+				if((!isLtr && this.firstScroll == 1) || (isLtr && this.firstScroll === 0)){
 					var s = dojo.marginBox(this.headerNodeContainer);
 					if(dojo.isIE){
 						this.headerNodeContainer.style.width = s.w + this.getScrollbarWidth() + 'px';
@@ -703,7 +702,7 @@ dojo.require("dojo.dnd.Manager");
 			this.headerNode.scrollLeft = this.scrollboxNode.scrollLeft;
 			// 'lastTop' is a semaphore to prevent feedback-loop with setScrollTop below
 			var top = this.scrollboxNode.scrollTop;
-			if(top != this.lastTop){
+			if(top !== this.lastTop){
 				this.grid.scrollTo(top);
 			}
 		},
@@ -776,22 +775,23 @@ dojo.require("dojo.dnd.Manager");
 			var source = this.manager.source, node;
 			if(source.creator){
 				// create an avatar representation of the node
-				node = source._normailzedCreator(source.getItem(this.manager.nodes[0].id).data, "avatar").node;
+				node = source._normalizedCreator(source.getItem(this.manager.nodes[0].id).data, "avatar").node;
 			}else{
 				// or just clone the node and hope it works
 				node = this.manager.nodes[0].cloneNode(true);
+				var table, tbody;
 				if(node.tagName.toLowerCase() == "tr"){
 					// insert extra table nodes
-					var table = dd.createElement("table"),
-						tbody = dd.createElement("tbody");
+					table = dd.createElement("table");
+					tbody = dd.createElement("tbody");
 					tbody.appendChild(node);
 					table.appendChild(tbody);
 					node = table;
 				}else if(node.tagName.toLowerCase() == "th"){
 					// insert extra table nodes
-					var table = dd.createElement("table"),
-						tbody = dd.createElement("tbody"),
-						r = dd.createElement("tr");
+					table = dd.createElement("table");
+					tbody = dd.createElement("tbody");
+					var r = dd.createElement("tr");
 					table.cellPadding = table.cellSpacing = "0";
 					r.appendChild(node);
 					tbody.appendChild(r);
@@ -826,5 +826,5 @@ dojo.require("dojo.dnd.Manager");
 			return new dojox.grid._GridAvatar(this);
 		}
 		return oldMakeAvatar.call(dojo.dnd.manager());
-	}
+	};
 })();

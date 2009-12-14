@@ -158,6 +158,16 @@ dojo.declare("dojox.grid.DataGrid", dojox.grid._Grid, {
 		var idx = this._getItemIndex(item, true);
 
 		if(idx >= 0){
+			// When a row is deleted, all rest rows are shifted down,
+			// and migrate from page to page. If some page is not 
+			// loaded yet empty rows can migrate to initialized pages
+			// without refreshing. It causes empty rows in some pages, see:
+			// http://bugs.dojotoolkit.org/ticket/6818
+			// this code fix this problem by reseting loaded page info
+			this._pages = [];
+			this._bop = -1;
+			this._eop = -1;
+
 			var o = this._by_idx[idx];
 			this._by_idx.splice(idx, 1);
 			delete this._by_idty[o.idty];
@@ -237,6 +247,8 @@ dojo.declare("dojox.grid.DataGrid", dojox.grid._Grid, {
 			}
 		}
 		if(!size){
+			this.views.render();
+			this._resize();
 			this.showMessage(this.noDataMessage);
 			this.focus.initFocusView();
 		}else{
@@ -281,6 +293,7 @@ dojo.declare("dojox.grid.DataGrid", dojox.grid._Grid, {
 			this._isLoaded = true;
 			this.showMessage(this.errorMessage);
 		}
+		this._pending_requests[req.start] = false;
 		this.onFetchError(err, req);
 	},
 
@@ -288,7 +301,7 @@ dojo.declare("dojox.grid.DataGrid", dojox.grid._Grid, {
 	},
 
 	_fetch: function(start, isRender){
-		var start = start || 0;
+		start = start || 0;
 		if(this.store && !this._pending_requests[start]){
 			if(!this._isLoaded && !this._isLoading){
 				this._isLoading = true;
@@ -300,7 +313,7 @@ dojo.declare("dojox.grid.DataGrid", dojox.grid._Grid, {
 				if(this.items){
 					var items = this.items;
 					var store = this.store;
-					this.rowsPerPage = items.length
+					this.rowsPerPage = items.length;
 					var req = {
 						start: start,
 						count: this.rowsPerPage,
@@ -342,7 +355,7 @@ dojo.declare("dojox.grid.DataGrid", dojox.grid._Grid, {
 					});
 				}
 			}catch(e){
-				this._onFetchError(e);
+				this._onFetchError(e, {start: start, count: this.rowsPerPage});
 			}
 		}
 	},
@@ -570,10 +583,19 @@ dojo.declare("dojox.grid.DataGrid", dojox.grid._Grid, {
 		//		Remove the selected rows from the grid.
 		if(this._canEdit){
 			this.edit.apply();
-			var items = this.selection.getSelected();
-			if(items.length){
-				dojo.forEach(items, this.store.deleteItem, this.store);
-				this.selection.clear();
+			var fx = dojo.hitch(this, function(items){
+				if(items.length){
+					dojo.forEach(items, this.store.deleteItem, this.store);
+					this.selection.clear();
+				}			
+			});
+			if(this.allItemsSelected){
+				this.store.fetch({
+							query: this.query, 
+							queryOptions: this.queryOptions,
+							onComplete: fx});
+			}else{
+				fx(this.selection.getSelected());
 			}
 		}
 	}
@@ -592,9 +614,9 @@ dojox.grid.DataGrid.cell_markupFactory = function(cellFunc, node, cellDef){
 	if(cellFunc){
 		cellFunc(node, cellDef);
 	}
-}
+};
 
 dojox.grid.DataGrid.markupFactory = function(props, node, ctor, cellFunc){
 	return dojox.grid._Grid.markupFactory(props, node, ctor, 
 					dojo.partial(dojox.grid.DataGrid.cell_markupFactory, cellFunc));
-}
+};

@@ -1,6 +1,7 @@
 dojo.provide("dojox.editor.plugins.ShowBlockNodes");
 
 dojo.require("dijit._editor._Plugin");
+dojo.require("dijit.form.Button");
 dojo.require("dojo.i18n");
 
 dojo.requireLocalization("dojox.editor.plugins", "ShowBlockNodes");
@@ -13,11 +14,7 @@ dojo.declare("dojox.editor.plugins.ShowBlockNodes",dijit._editor._Plugin,{
 	//		exposed/extracted when the editor value is obtained, it is purely for help
 	//		while working on the page.
 
-	// buttonClass [protected]
-	//		Over-ride indicating the class of button to use, in this case a toggle.
-	buttonClass: dijit.form.ToggleButton,
-
-	// useDefaultCommand [protected]
+	// useDefaultCommand [protected] boolean
 	//		Over-ride indicating that the command processing is done all by this plugin.
 	useDefaultCommand: false,
 
@@ -25,26 +22,31 @@ dojo.declare("dojox.editor.plugins.ShowBlockNodes",dijit._editor._Plugin,{
 	//		The CSS class name for the button node is formed from `iconClassPrefix` and `command`
 	iconClassPrefix: "dijitAdditionalEditorIcon",
 
-	// _styled [private]
+	// _styled [private] boolean
 	//		Flag indicating the document has had the style updates applied.
 	_styled: false,
 
 	_initButton: function(){
 		//	summary:
-		//		Over-ride for creation of the resize button.
+		//		Over-ride for creation of the preview button.
 		var strings = dojo.i18n.getLocalization("dojox.editor.plugins", "ShowBlockNodes");
-		this.command = "showBlockNodes";
-		this.editor.commands[this.command] = strings["showBlockNodes"];
-		this.inherited(arguments);
-		delete this.command; // kludge so setEditor doesn't make the button invisible
+		this.button = new dijit.form.ToggleButton({
+			label: strings["showBlockNodes"],
+			showLabel: false,
+			iconClass: this.iconClassPrefix + " " + this.iconClassPrefix + "ShowBlockNodes",
+			tabIndex: "-1",
+			onChange: dojo.hitch(this, "_showBlocks")
+		});
+		this.editor.addKeyHandler(dojo.keys.F9, true, true, dojo.hitch(this, this.toggle));
+	},
 
-		this.connect(this.button, "onChange", 
-			dojo.hitch(this, this._showBlocks));
-
-		this.editor.addKeyHandler(dojo.keys.F9, true, true, dojo.hitch(this, function(){
-			// Enable the CTRL-SHIFT-F9 hotkey for ViewBlockNodes
-			this.toggle();
-		}));
+	setEditor: function(editor){
+		// summary:
+		//		Over-ride for the setting of the editor.
+		// editor: Object
+		//		The editor to configure for this plugin to use.
+		this.editor = editor;
+		this._initButton();
 	},
 
 	toggle: function(){
@@ -58,7 +60,7 @@ dojo.declare("dojox.editor.plugins.ShowBlockNodes",dijit._editor._Plugin,{
 		//		Function to trigger printing of the editor document
 		// tags:
 		//		private
-		var doc = this.editor.iframe.contentWindow.document;
+		var doc = this.editor.document;
 		if(!this._styled){
 			try{
 				//Attempt to inject our specialized style rules for doing this.
@@ -71,15 +73,17 @@ dojo.declare("dojox.editor.plugins.ShowBlockNodes",dijit._editor._Plugin,{
 					"pre", "hr", "ins", "noscript", "li", "map", "button", 
 					"dd", "dt"];
 
-				var template = ".editorShowBlocks {TAG} {\n" +
-					"\tbackground-image: url({MODURL}/images/blockelems/{TAG}.gif);\n" +
-					"\tbackground-repeat: no-repeat;\n"	+
-					"\tbackground-position: top left;\n" +
-					"\tborder-width: 1px;\n" +
-					"\tborder-style: dashed;\n" +
-					"\tborder-color: #D0D0D0;\n" +
-					"\tpadding-top: 15px;\n" +
-					"\tpadding-left: 15px;\n" +
+				var template = "@media screen {\n" +
+						"\t.editorShowBlocks {TAG} {\n" +
+						"\t\tbackground-image: url({MODURL}/images/blockelems/{TAG}.gif);\n" +
+						"\t\tbackground-repeat: no-repeat;\n"	+
+						"\t\tbackground-position: top left;\n" +
+						"\t\tborder-width: 1px;\n" +
+						"\t\tborder-style: dashed;\n" +
+						"\t\tborder-color: #D0D0D0;\n" +
+						"\t\tpadding-top: 15px;\n" +
+						"\t\tpadding-left: 15px;\n" +
+					"\t}\n" +
 				"}\n";
 
 				dojo.forEach(blocks, function(tag){
@@ -89,18 +93,25 @@ dojo.declare("dojox.editor.plugins.ShowBlockNodes",dijit._editor._Plugin,{
 				//Finally associate in the image locations based off the module url.
 				var modurl = dojo.moduleUrl(dojox._scopeName, "editor/plugins/resources").toString();
 				if(!(modurl.match(/^https?:\/\//i)) &&
-				   !(modurl.match(/^file:\/\//i))){
+					!(modurl.match(/^file:\/\//i))){
 					// We have to root it to the page location on webkit for some nutball reason. 
 					// Probably has to do with how iframe was loaded.
-					var bUrl = this._calcBaseUrl(dojo.doc.location.href);
-					if(bUrl[bUrl.length - 1] !== "/"){
+					var bUrl;
+					if(modurl.charAt(0) === "/"){
+						//Absolute path on the server, so lets handle...
+						var proto = dojo.doc.location.protocol;
+						var hostn = dojo.doc.location.host;
+						bUrl = 	proto + "//" + hostn;
+					}else{
+						bUrl = this._calcBaseUrl(dojo.global.location.href);
+					}
+					if(bUrl[bUrl.length - 1] !== "/" && modurl.charAt(0) !== "/"){
 						bUrl += "/";
 					}
 					modurl = bUrl + modurl;
 				}
 				// Update all the urls.
 				style = style.replace(/\{MODURL\}/gi, modurl);
-
 				if(!dojo.isIE){
 					var sNode = doc.createElement("style");
 					sNode.appendChild(doc.createTextNode(style));
@@ -116,13 +127,9 @@ dojo.declare("dojox.editor.plugins.ShowBlockNodes",dijit._editor._Plugin,{
 
 		// Apply/remove the classes based on state.
 		if(show){
-			dojo.withDoc(doc, function(){
-				dojo.addClass(dojo.body(), "editorShowBlocks");
-			});
+			dojo.addClass(this.editor.editNode, "editorShowBlocks");
 		}else{
-			dojo.withDoc(doc, function(){
-				dojo.removeClass(dojo.body(), "editorShowBlocks");
-			});
+			dojo.removeClass(this.editor.editNode, "editorShowBlocks");
 		}
 	},
 
@@ -130,7 +137,7 @@ dojo.declare("dojox.editor.plugins.ShowBlockNodes",dijit._editor._Plugin,{
 		// summary:
 		//		Internal function used to figure out the full root url (no relatives)
 		//		for loading images in the styles in the iframe.
-		// fullUrl:
+		// fullUrl: String
 		//		The full url to tear down to the base.
 		// tags:
 		//		private

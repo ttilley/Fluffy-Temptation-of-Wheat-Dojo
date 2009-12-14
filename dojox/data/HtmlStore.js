@@ -11,7 +11,7 @@ dojo.declare("dojox.data.HtmlStore", null, {
 		//	description:
 		//		The HtmlStore can be created in one of two ways: a) by parsing an existing
 		//		table or list DOM node on the current page or b) by referencing an external url and giving
-		//		the id of the table or listin that page.  The remote url will be parsed as an html page.
+		//		the id of the table or list in that page.  The remote url will be parsed as an html page.
 		//
 		//		The HTML table or list should be of the following form:
 		//
@@ -54,7 +54,16 @@ dojo.declare("dojox.data.HtmlStore", null, {
 		//		OR
 		//		url:	The url of the remote page to load
 		//		dataId:	The id of the table element in the remote page
-		
+		//		and the option:
+		//		trimWhitespace:  Trim off any surrounding whitespace from the headers (attribute
+		//			names) and text content of the items in question.  Default is false for 
+		//			backwards compatibility.
+		if(args && "urlPreventCache" in args){
+			this.urlPreventCache = args.urlPreventCache?true:false;
+		}
+		if(args && "trimWhitespace" in args){
+			this.trimWhitespace = args.trimWhitespace?true:false;
+		}
 		if(args.url){
 			if(!args.dataId)
 				throw new Error("dojo.data.HtmlStore: Cannot instantiate using url without an id!");
@@ -69,22 +78,35 @@ dojo.declare("dojox.data.HtmlStore", null, {
 			}
 			this._indexItems();
 		}
-		if(args && "urlPreventCache" in args){
-			this.urlPreventCache = args.urlPreventCache?true:false;
-		}
 	},
 
-	url: "",     // So the parser can instantiate the store via markup.
-	dataId: "", // So the parser can instantiate the store via markup.
+	// url: [public] string
+	//		The URL from which to load an HTML document for data loading
+	url: "",
+	
+	// dataId: [public] string
+	//		The id in the document for an element from which to get the data.
+	dataId: "",
 
-	//urlPreventCache: boolean
-	//Flag to denote if peventCache should be used on xhrGet calls.
+	// trimWhitepace: [public] boolean
+	//		Boolean flag to denote if the store should trim whitepace around 
+	//		header and data content of a node.  This matters if reformatters
+	//		alter the white spacing around the tags.  The default is false for
+	//		backwards compat.
+	trimWhitespace: false, 
+
+	// urlPreventCache: [public] boolean
+	//		Flag to denote if peventCache should be used on xhrGet calls.
 	urlPreventCache: false,
 	
 	_indexItems: function(){
+		// summary:
+		//		Function to index items found under the id.
+		// tags:
+		//		private
 		this._getHeadings();
-		if (this._rootNode.rows){//tables
-			if(this._rootNode.tBodies && this._rootNode.tBodies.length > 0) {
+		if(this._rootNode.rows){//tables
+			if(this._rootNode.tBodies && this._rootNode.tBodies.length > 0){
 				this._rootNode = this._rootNode.tBodies[0];
 			}
 			var i;
@@ -95,7 +117,7 @@ dojo.declare("dojox.data.HtmlStore", null, {
 		}else{//lists
 			var c=1;
 			for(i=0; i<this._rootNode.childNodes.length; i++){
-				if(this._rootNode.childNodes[i].nodeType===1){
+				if(this._rootNode.childNodes[i].nodeType === 1){
 					this._rootNode.childNodes[i].store = this;
 					this._rootNode.childNodes[i]._ident = c;
 					c++;
@@ -112,7 +134,8 @@ dojo.declare("dojox.data.HtmlStore", null, {
 		this._headings = [];
 		if(this._rootNode.tHead){
 			dojo.forEach(this._rootNode.tHead.rows[0].cells, dojo.hitch(this, function(th){
-				this._headings.push(dojox.xml.parser.textContent(th));
+				var text = dojox.xml.parser.textContent(th); 
+				this._headings.push(this.trimWhitespace?dojo.trim(text):text);
 			}));
 		}else{
 			this._headings = ["name"];
@@ -123,14 +146,14 @@ dojo.declare("dojox.data.HtmlStore", null, {
 		//	summary:
 		//		Function to return all rows in the table as an array of items.
 		var items = [];
-                var i;
+		var i;
 		if(this._rootNode.rows){//table
 			for(i=0; i<this._rootNode.rows.length; i++){
 				items.push(this._rootNode.rows[i]);
 			}
 		}else{ //list
 			for(i=0; i<this._rootNode.childNodes.length; i++){
-				if (this._rootNode.childNodes[i].nodeType===1){
+				if(this._rootNode.childNodes[i].nodeType === 1){
 					items.push(this._rootNode.childNodes[i]);
 				}
 			}
@@ -164,7 +187,7 @@ dojo.declare("dojox.data.HtmlStore", null, {
 	},
 
 /***************************************
-     dojo.data.api.Read API
+	 dojo.data.api.Read API
 ***************************************/
 	
 	getValue: function(	/* item */ item, 
@@ -183,13 +206,14 @@ dojo.declare("dojox.data.HtmlStore", null, {
 
 		this._assertIsItem(item);
 		var index = this._assertIsAttribute(attribute);
-
 		if(index>-1){
-			if (item.cells){
-			  return [dojox.xml.parser.textContent(item.cells[index])];
+			var text;
+			if(item.cells){
+				text = dojox.xml.parser.textContent(item.cells[index]);
 			}else{//return Value for lists
-			    return [dojox.xml.parser.textContent(item)];
+				text = dojox.xml.parser.textContent(item);
 			}
+			return [this.trimWhitespace?dojo.trim(text):text];
 		}
 		return []; //Array
 	},
@@ -220,7 +244,7 @@ dojo.declare("dojox.data.HtmlStore", null, {
 		//		See dojo.data.api.Read.containsValue()
 		var regexp = undefined;
 		if(typeof value === "string"){
-		   regexp = dojo.data.util.filter.patternToRegExp(value, false);
+			regexp = dojo.data.util.filter.patternToRegExp(value, false);
 		}
 		return this._containsValue(item, attribute, value, regexp); //boolean.
 	},
@@ -355,7 +379,7 @@ dojo.declare("dojox.data.HtmlStore", null, {
 			//same value for each item examined.  Much more efficient.
 			var regexpList = {};
 			var key;
-                        var value;
+						var value;
 			for(key in request.query){
 				value = request.query[key]+'';
 				if(typeof value === "string"){
@@ -368,7 +392,7 @@ dojo.declare("dojox.data.HtmlStore", null, {
 				var candidateItem = arrayOfAllItems[i];
 				for(key in request.query){
 					value = request.query[key]+'';
-					if (!this._containsValue(candidateItem, key, value, regexpList[key])){
+					if(!this._containsValue(candidateItem, key, value, regexpList[key])){
 						match = false;
 					}
 				}
@@ -426,7 +450,7 @@ dojo.declare("dojox.data.HtmlStore", null, {
 	},
 
 /***************************************
-     dojo.data.api.Identity API
+	 dojo.data.api.Identity API
 ***************************************/
 
 	getIdentity: function(/* item */ item){
@@ -454,7 +478,6 @@ dojo.declare("dojox.data.HtmlStore", null, {
 		var self = this;
 		var item = null;
 		var scope = null;
-
 		if(!this._rootNode){
 			if(!this.url){
 				this._rootNode = dojo.byId(this.dataId);
@@ -463,8 +486,8 @@ dojo.declare("dojox.data.HtmlStore", null, {
 					item = this._rootNode.rows[identity + 1];
 				}else{ //Lists
 					for(var i = 0; i < self._rootNode.childNodes.length; i++){
-						if(self._rootNode.childNodes[i].nodeType === 1 && identity === dojox.xml.parser.textContent(self._rootNode.childNodes[i])) {
-								item = self._rootNode.childNodes[i];
+						if(self._rootNode.childNodes[i].nodeType === 1 && identity === dojox.xml.parser.textContent(self._rootNode.childNodes[i])){
+							item = self._rootNode.childNodes[i];
 						}
 					}
 				}
@@ -502,7 +525,7 @@ dojo.declare("dojox.data.HtmlStore", null, {
 						item = self._rootNode.rows[identity-1];
 					}else{ //List
 						for(var i = 0; i < self._rootNode.childNodes.length; i++){
-							if(self._rootNode.childNodes[i].nodeType === 1 && identity === dojox.xml.parser.textContent(self._rootNode.childNodes[i])) {
+							if(self._rootNode.childNodes[i].nodeType === 1 && identity === dojox.xml.parser.textContent(self._rootNode.childNodes[i])){
 									item = self._rootNode.childNodes[i];
 									break;
 							}
