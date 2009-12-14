@@ -453,16 +453,19 @@ function jsdoc_form_alter($form_id, &$form) {
     unset($form['taxonomy']);
   }
   elseif ($form_id == 'search_form' && $form['module']['#value'] == 'jsdoc') {
-    $options = array('' => '-----');
-
     foreach (jsdoc_get_versions() as $version) {
       $options[$version->title] = $version->title;
+    }
+
+    if (empty($options)) {
+      $options = array('' => '-----');
     }
 
     $form['jsdoc_version'] = array(
       '#title' => t('Version'),
       '#type' => 'select',
       '#options' => $options,
+      '#default_value' => jsdoc_get_version()->title
     );
 
     if ($version = search_query_extract($form['basic']['inline']['keys']['#default_value'], 'version')) {
@@ -795,6 +798,9 @@ function _jsdoc_convert_object(&$node, $object, $parent = FALSE, $method = FALSE
             }
           }
         }
+        if (!$node->jsdoc_constructor && !empty($constructors)) {
+          $node->jsdoc_constructor = reset($constructors);
+        }
       }
     }
 
@@ -1124,9 +1130,14 @@ function jsdoc_get_mixins(&$node, $type = NULL) {
   $resolved_mixins = array('prototype' => array(), 'instance' => array(), 'normal' => array());
   foreach ($node->jsdoc_mixins as $from => $mixins) {
     foreach ($mixins as $mixin) {
-      $mixin_node = jsdoc_object_node_load($mixin->location, $version);
+      $location = $mixin->location;
+      if (substr($location, -10) == '.prototype') {
+        $location = substr($location, 0, -10);
+      }
+      $mixin_node = jsdoc_object_node_load($location, $version);
       if ($mixin_node->nid) {
         $resolved_mixins[$from][] = (object)array(
+          'attached' => $node,
           'scope' => $mixin->scope,
           'node' => $mixin_node
         );
@@ -1609,6 +1620,9 @@ function _jsdoc_resolve_child($node, $name) {
   foreach ($children as $possible) {
     if ($possible->title == $name || $node->title . '.' . $possible->title == $name) {
       $actual = $possible->node;
+      $actual->type = $possible->type;
+      unset($actual->jsdoc_type);
+      break;
     }
   }
 
@@ -1682,6 +1696,23 @@ function jsdoc_child_node_view($node, $name) {
       '#weight' => 30
     );
   }
+  elseif (($object = jsdoc_object_node_load(jsdoc_get_type($actual), jsdoc_get_version($node))) && $object->nid) {
+    list($prototype_chain, $mixin_chain, $children) = jsdoc_get_oo_info($object);
+
+    $theme_children = array();
+    foreach ($children as $child) {
+      if ($child->instance || $child->prototype) {
+        $theme_children[] = $child;
+      }
+    }
+
+    if (count($theme_children)) {
+      $form['children'] = array(
+        '#value' => theme('jsdoc_object_children', $theme_children),
+        '#weight' => 40
+      );
+    }
+  }
 
   return drupal_render_form('jsdoc_child_form', $form);
 }
@@ -1696,17 +1727,15 @@ function jsdoc_child_node_view($node, $name) {
 function _jsdoc_resolve_mixins($node, $from) {
   $resolved_mixins = array();
 
+  $all_mixins = array();
   if ($from == 'prototype') {
-    $all_mixins = array();
     $prototype_chain = jsdoc_get_prototype_chain($node);
     foreach ($prototype_chain as $parent) {
       if (!$parent->nid) { continue; }
       $all_mixins[] = $parent;
     }
   }
-  else {
-    $all_mixins = array($node);
-  }
+  $all_mixins[] = $node;
 
   foreach ($all_mixins as $parent) {
     foreach (jsdoc_get_mixins($parent, $from) as $mixin) {
@@ -1717,6 +1746,7 @@ function _jsdoc_resolve_mixins($node, $from) {
       $resolved_mixins[] = $mixin;
     }
     $resolved_mixins[] = (object)array(
+      'attached' => $node,
       'scope' => 'prototype',
       'node' => $parent
     );
@@ -1732,10 +1762,6 @@ function _jsdoc_resolve_mixins($node, $from) {
   }
 
   return $resolved_mixins;
-}
-
-function jsdoc_get_children(&$node) {
-  
 }
 
 function jsdoc_get_oo_info(&$node, $child=NULL) {
@@ -1760,6 +1786,7 @@ function jsdoc_get_oo_info(&$node, $child=NULL) {
     // Resolve prototype-level items
     foreach (_jsdoc_resolve_mixins($node, 'prototype') as $mixin) {
       $mixin_chain[] = (object)array(
+        'attached' => $mixin->attached,
         'scope' => 'prototype',
         'from' => $mixin->scope,
         'methods' => jsdoc_get_methods($mixin->node, $mixin->scope),
@@ -1769,7 +1796,16 @@ function jsdoc_get_oo_info(&$node, $child=NULL) {
       );
     }
 
-    $returned_mixin_chain = $mixin_chain;
+    $returned_mixin_chain = array();
+    $returned_mixin_titles = array();
+    foreach ($mixin_chain as $mixin) {
+      if ($mixin->in_prototype_chain || $mixin->attached->title == $node->title) {
+        if ($mixin->node->title != $node->title && !$returned_mixin_titles[$mixin->node->title]) {
+          $returned_mixin_titles[$mixin->node->title] = TRUE;
+          $returned_mixin_chain[] = $mixin;
+        }
+      }
+    }
 
     $mixin_chain[] = (object)array(
       'scope' => 'prototype',
@@ -1777,7 +1813,7 @@ function jsdoc_get_oo_info(&$node, $child=NULL) {
       'methods' => jsdoc_get_methods($node, 'prototype'),
       'properties' => jsdoc_get_properties($node, 'prototype'),
       'in_prototype_chain' => true,
-      'node' => $mixin
+      'node' => $node
     );
 
     // Now with instance-level items
@@ -1799,8 +1835,10 @@ function jsdoc_get_oo_info(&$node, $child=NULL) {
       'methods' => jsdoc_get_methods($node, 'instance'),
       'properties' => jsdoc_get_properties($node, 'instance'),
       'in_prototype_chain' => false,
-      'node' => $mixin
+      'node' => $node
     );
+
+    array_pop($prototype_chain);
   }
 
   $mixin_chain[] = (object)array(
@@ -1873,6 +1911,9 @@ function jsdoc_get_oo_info(&$node, $child=NULL) {
             $children[$title]->inheritance[] = _jsdoc_get_object_themed($mixin->node);
           }
         }
+
+        $scope = $mixin->scope;
+        $children[$title]->$scope = TRUE;
 
         if ($title == $item->title) {
           $children[$title]->actual_title = $title;
@@ -2057,12 +2098,15 @@ function _jsdoc_get_title_themed($node) {
   return $themed;  
 }
 
-function _jsdoc_get_object_themed($node, $title=null, $depth=0) {
+function _jsdoc_get_object_themed(&$node, $title=null, $depth=0) {
   if (is_null($title)) {
     $title = $node->title;
   }
+  if (isset($node->jsdoc_object_themed)) {
+    return $node->jsdoc_object_themed;
+  }
 
-  $object = (object)array(
+  $object = $node->jsdoc_object_themed = (object)array(
     'title' => $title,
     'url' => $node->jsdoc_url,
     'tags' => jsdoc_get_tags($node),
@@ -2136,12 +2180,18 @@ function _jsdoc_get_object_themed($node, $title=null, $depth=0) {
     }
   }
 
-  return $object;
+  return ($node->jsdoc_object_themed = $object);
 }
 
 function jsdoc_resolve_constructor(&$node) {
   if ($node->jsdoc_resolved_constructor) {
     return $node->jsdoc_resolved_constructor;
+  }
+
+  if ($node->jsdoc_constructor) {
+    $constructor = (object)array();
+    _jsdoc_convert_object($constructor, $node->jsdoc_constructor, $node, TRUE);
+    return ($node->jsdoc_resolved_constructor = $constructor);
   }
 
   $superclass = jsdoc_get_parent_prototype($node);
@@ -2157,11 +2207,17 @@ function jsdoc_resolve_constructor(&$node) {
   return ($node->jsdoc_resolved_constructor = $node->jsdoc_constructor);
 }
 
-function _jsdoc_get_fields($type, $node) {
+function _jsdoc_get_fields($type, &$node) {
   // I basically want to find the children of this as
   // if it appeared in the normal API.
-  $fields = array();
-  $obj = jsdoc_object_node_load($type, jsdoc_get_version($node), TRUE, TRUE);
+  static $cache = array();
+  $version = jsdoc_get_version($node);
+  if (isset($cache[$version->title][$type])) {
+    return $cache[$version->title][$type];
+  }
+
+  $fields = $cache[$version->title][$type] = array();
+  $obj = jsdoc_object_node_load($type, $version, TRUE, TRUE);
   // It will have an nid if it's local. For example type: Function isn't local
   if ($obj && $obj->nid) {
     list($prototype_chain, $mixin_chain, $children) = jsdoc_get_oo_info($obj);
@@ -2173,9 +2229,9 @@ function _jsdoc_get_fields($type, $node) {
         'title' => $title,
         'summary' => $child->summary,
         'types' => false
-        );
+      );
       if (!$cleaned) {
-        $field->url = 'jsdoc/' . jsdoc_get_version($node)->title . '/' . $obj->title . '.' . $child->title;
+        $field->url = 'jsdoc/' . $version->title . '/' . $obj->title . '.' . $child->title;
         $field->a = l($title, $field->url);
       }
 
@@ -2188,7 +2244,7 @@ function _jsdoc_get_fields($type, $node) {
         $field_type = str_replace('...', '', $field_type, $found);
         $repeating = ($found > 0);
 
-        $field_obj = jsdoc_object_node_load($field_type, jsdoc_get_version($node));
+        $field_obj = jsdoc_object_node_load($field_type, $version);
         $field_type = (object)array(
           'title' => $field_obj->title,
           'repeating' => $repeating,
@@ -2209,7 +2265,7 @@ function _jsdoc_get_fields($type, $node) {
       return;
     }else{
       uksort($fields, 'strnatcasecmp');
-      return $fields;
+      return ($cache[$version->title][$type] = $fields);
     }
   }
 }
@@ -2236,7 +2292,7 @@ function _jsdoc_get_parameters_themed(&$node, $cleaned=false) {
     return $node->jsdoc_parameters_themed;
   }
 
-  $parameters = array();
+  $parameters = $node->jsdoc_parameters_themed = array();
   $retrieved_parameters = jsdoc_get_parameters($node);
 
   foreach ($retrieved_parameters as $item) {
@@ -2503,6 +2559,10 @@ function _jsdoc_node_prepare($node) {
   $form['summary']['#weight'] = $form['body']['#weight'] - 1;
 
   $teaser = jsdoc_get_teaser($node);
+  if (!$node->body || $node->body == t('n/a')) {
+    $node->body = $teaser;
+    $teaser = '';
+  }
   $body = jsdoc_get_body($node);
   if ($body == t('n/a')) {
     $body = '';

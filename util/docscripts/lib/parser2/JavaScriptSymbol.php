@@ -116,6 +116,7 @@ class JavaScriptSymbol extends Symbol {
       case 'literal':
       case 'operator':
       case 'this':
+      case 'unary':
         return new JavaScriptLiteral($this);
       }
     }
@@ -628,7 +629,7 @@ class JavaScriptSymbol extends Symbol {
 
   public function std_while($parser) {
     $parser->advance('(');
-    $this->first = $parser->expression();
+    $this->first = $parser->statements(array(')'));
     $parser->advance(')');
     if ($parser->peek('{')) {
       $this->second = $this->block($parser);

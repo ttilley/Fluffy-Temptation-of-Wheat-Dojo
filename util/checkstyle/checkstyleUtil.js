@@ -1,5 +1,7 @@
 checkstyleUtil = {
-	errors: []
+	errors: [],
+	
+	commentNames: ["summary", "description", "example", "tags", "this"]
 };
 
 checkstyleUtil.applyRules = function(fileName, contents){
@@ -22,70 +24,160 @@ checkstyleUtil.applyRules = function(fileName, contents){
 checkstyleUtil.getComments = function(contents){
 	var comments = [];
 	
+	var i;
+	
 	// Initialize the array to false values.
-	for(var i = 0; i < contents.length; i++){
-		contents[i] = false;
+	for(i = 0; i < contents.length; i++){
+		comments[i] = 0;
 	}
 	
 	var sep = "\n";
 	
-	function markComments(start, end){
-		var idx = contents.indexOf(start);
-	
-		while(idx > -1){
-			var endComment = contents.indexOf(end, idx);
-			if(endComment < 0){
-				endComment = contents.length;
-			}
-			
-			for(var i = idx; i < endComment; i++){
-				comments[i] = true;
-			}
-			idx = contents.indexOf(start, endComment);
-		}	
-	}
-	function markQuotes(quote){
-		var inQuote = false;
-		for(var i = 0; i < contents.length; i++){
-			if(comments[i]){
-				continue;
-			}
-			if(contents.charAt(i) == quote 
-				&& (i == 0 || contents.charAt(i - 1) != "\\")){
-				inQuote = !inQuote;
-			} else if(inQuote){
-				comments[i] = true;
-			}
+	function markRange(start, stop){
+		for(var i = start; i < stop; i++){
+			comments[i] = 1;
 		}
 	}
-	
+
+
 	function markRegexs() {
 		var idx = contents.indexOf("/g");
-		
+		var i;
 		while(idx > -1) {
-			if(!comments[idx]){
+			if(!comments[idx] && contents.charAt(idx - 1) != "*"){
 				// Look back until either a forward slash
 				// or a new line is found
 				var prevChar = contents.charAt(idx - 1);
-				var i = idx;
+				i = idx;
 				while(prevChar != "\n" && prevChar != "/" && i > 0){
 					prevChar = contents.charAt(--i);
 				}
-				if(prevChar == "/"){
-					for(; i < idx; i++){
-						comments[i] = true;
-					}
+				if(prevChar == "/" && i < idx - 1){
+					markRange(i, idx);
 				}
 			}
 			idx = contents.indexOf("/g", idx + 2)
 		}
+		
+		// Now mark all .match and .replace function calls
+		// They generally contain regular expressions, and are just too bloody difficult.
+		var fnNames = ["match", "replace"];
+		var name;
+		
+		for (i = 0; i < fnNames.length; i++){
+			name = fnNames[i];
+			
+			idx = contents.indexOf(name + "(");
+			
+			while(idx > -1){
+				// Find the end parenthesis
+				if(comments[idx]){
+					idx = contents.indexOf(name + "(", idx + name.length);
+				} else {
+					var fnEnd = contents.indexOf(")", idx);
+					markRange(idx, fnEnd + 1);
+				}
+			}
+		}
+		
+		// Now look for all the lines that declare a regex variable, e.g.
+		// var begRegExp = /^,|^NOT |^AND |^OR |^\(|^\)|^!|^&&|^\|\|/i; 
+		
+		idx = contents.indexOf(" = /");
+		
+		while(idx > -1){
+			if(!comments[idx] && contents.charAt(idx + 4) != "*"){
+				var eol = contents.indexOf("\n", idx + 1);
+				markRange(idx + 3, Math.max(eol, idx + 4));
+			}
+		
+			idx = contents.indexOf(" = /", idx + 3);
+		}
 	}
-	
-	markComments("//", sep);
-	markComments("/*", "*/");
-	markQuotes("\"");
-	markQuotes('\'');
+
 	markRegexs();
+	
+	
+	var marker = null;
+	var ch;
+	
+	var DOUBLE_QUOTE = 1;
+	var SINGLE_QUOTE = 2;
+	var LINE_COMMENT = 3;
+	var MULTI_COMMENT = 4;
+	var UNMARK = 5;
+	
+	var pos;
+	
+	for (i = 0; i < contents.length; i++) {
+		var skip = false;
+		
+		if(comments[i]){
+			continue;
+		}
+		
+		ch = contents[i];
+		
+		switch(ch){
+			case "\"":
+				if(marker == DOUBLE_QUOTE) {
+					marker = UNMARK;
+				} else if (marker == null) {
+					marker = DOUBLE_QUOTE;
+					pos = i;
+				}
+				
+				break;
+			case "'":
+				if(marker == SINGLE_QUOTE) {
+					marker = UNMARK;
+				} else if (marker == null) {
+					marker = SINGLE_QUOTE;
+					pos = i;
+				}
+			
+				break;
+			case "/":
+				if(marker == null){
+					if(contents[i + 1] == "/"){
+						marker = LINE_COMMENT;
+						pos = i;
+						skip = true;
+					} else if(contents[i + 1] == "*"){
+						marker = MULTI_COMMENT;
+						pos = i;
+						skip = true;
+					}
+				}
+				
+				break;
+			case "*":
+				if (marker == MULTI_COMMENT){
+					if(contents[i + 1] == "/"){
+						marker = UNMARK;
+						skip = true;
+					}
+				}
+			
+				break;
+			case "\n":
+				if(marker == LINE_COMMENT){
+					marker = UNMARK;
+				}
+				break;
+		
+		}
+		if (marker != null) {	
+			comments[i] = 1;
+		}
+		if (marker == UNMARK){
+			marker = null;
+		}
+		if  (skip) {
+			i++;
+			comments[i] = 1;
+		}
+	}
 	
 	
 	return comments;
@@ -192,7 +284,7 @@ checkstyleUtil.createSpaceWrappedSearch = function(token, message){
 
 checkstyleUtil.isEOL = function(contents, pos){
 	var c = contents.charCodeAt(pos);
-	return c == 10 || c == 13;
+	return c == 10 || c == 13 || contents.charAt(pos) == "\n";
 };
 
 // All the rules that will be applied to each file.
@@ -218,7 +310,7 @@ checkstyleUtil.rules = {
 		while(idx > -1){
 			if(!comments[idx]){
 				nextChar = checkstyleUtil.getNextChar(contents, idx + 1, comments, true);
-				if(nextChar.value == "}"){
+				if(nextChar && nextChar.value == "}"){
 					checkstyleUtil.addError("Trailing commas are not permitted", fileName, contents, idx);
 				}
 			}
@@ -312,6 +404,52 @@ checkstyleUtil.rules = {
 		}
 	},
 	
+	"commentFormatting": function(fileName, contents, comments){
+		
+		var commentNames = checkstyleUtil.commentNames;
+		var invalidPrefixes = ["//", "//\t"];
+		var idx;
+		
+		for(var i = 0; i < commentNames.length; i++){
+			var comment = commentNames[i];
+
+			for(var j = 0; j < invalidPrefixes.length; j++){
+				idx = contents.indexOf(invalidPrefixes[j] + comment + ":");
+
+				// Make sure that there is a space before the comment.
+				while(idx > -1){
+					checkstyleUtil.addError("Must be just a space in a comment before \"" + comment + "\"" , fileName, contents, idx);
+					var nextLine = checkstyleUtil.findNextCharPos(contents, idx + 1, "\n");
+					if(nextLine < 0){
+						break;
+					}
+					idx = contents.indexOf(invalidPrefixes[j] + comment + ":", nextLine);
+				}
+			}
+			
+			idx = contents.indexOf(comment + ":");
+			
+			// Make sure that the comment name is on a line by itself. The body of the comment
+			// must be on the next line.
+			while(idx > -1){
+				if(comments[idx]){
+					var search = idx + comment.length + 1;
+				
+					// Make sure that there is nothing after the comment name on the same line.
+					while(!checkstyleUtil.isEOL(contents, search)){
+						if(contents[search] != " " && contents[search] != "\t"){
+							checkstyleUtil.addError("The comment \"" + comment + "\" must be followed by a new line" , 
+										fileName, contents, idx);
+							break;
+						}
+						search++;
+					}
+				}
+				idx = contents.indexOf(comment + ":", idx + comment.length + 2);
+			}
+		}
+	},
+	
 	"spacesAroundEquals": checkstyleUtil.createSpaceWrappedSearch("==", "The equals sign should be preceded and followed by a space"),
 	"spacesAroundOr": checkstyleUtil.createSpaceWrappedSearch("||", "The || sign should be preceded and followed by a space"),
 	"spacesAroundAnd": checkstyleUtil.createSpaceWrappedSearch("&&", "The && sign should be preceded and followed by a space")
@@ -350,6 +488,7 @@ checkstyleUtil.makeSimpleFixes = function(contents){
 	for(var i = 0; i < noSpaceAfter.length; i++){
 		contents = checkstyleUtil.fixSpaceAfter(contents, noSpaceAfter[i], comments);
 	}
+	/*
 	contents = contents.split("    ").join("\t")
 				.split("  ").join("\t")
 				.split(") {").join("){")
@@ -360,13 +499,116 @@ checkstyleUtil.makeSimpleFixes = function(contents){
 				.split("\twhile (").join("\twhile(")
 				.split("\tfor (").join("\tfor(")
 				.split("\tswitch (").join("\tswitch(");
+	*/
 	
+	contents = checkstyleUtil.replaceAllExceptComments(contents, "=  ", "= ", comments);
+	comments = checkstyleUtil.getComments(contents);
+	contents = checkstyleUtil.replaceAllExceptComments(contents, "    ", "\t", comments);
+	comments = checkstyleUtil.getComments(contents);
+	contents = checkstyleUtil.replaceAllExceptComments(contents, "  ", "\t", comments);
+	comments = checkstyleUtil.getComments(contents);
+	contents = checkstyleUtil.replaceAllExceptComments(contents, "\tif (", "\tif(", comments);
+	comments = checkstyleUtil.getComments(contents);
+	contents = checkstyleUtil.replaceAllExceptComments(contents, "} else", "}else", comments);
+	comments = checkstyleUtil.getComments(contents);
+	contents = checkstyleUtil.replaceAllExceptComments(contents, "}\telse", "}else", comments);
+	comments = checkstyleUtil.getComments(contents);
+	contents = checkstyleUtil.replaceAllExceptComments(contents, "}else {", "}else{", comments);
+	comments = checkstyleUtil.getComments(contents);
+	contents = checkstyleUtil.replaceAllExceptComments(contents, "\twhile (", "\twhile(", comments);
+	comments = checkstyleUtil.getComments(contents);
+	contents = checkstyleUtil.replaceAllExceptComments(contents, "\tfor (", "\tfor(", comments);
+	comments = checkstyleUtil.getComments(contents);
+	contents = checkstyleUtil.replaceAllExceptComments(contents, "\tswitch (", "\tswitch(", comments);
+	comments = checkstyleUtil.getComments(contents);
+	contents = checkstyleUtil.replaceAllExceptComments(contents, ") {", "){", comments);
+	comments = checkstyleUtil.getComments(contents);
+	contents = checkstyleUtil.replaceAllExceptComments(contents, "//summary:", "// summary:", {});
+	contents = checkstyleUtil.replaceAllExceptComments(contents, "//description:", "// description:", {});
+	comments = checkstyleUtil.getComments(contents);
+	
+	contents = checkstyleUtil.fixTrailingWhitespace(contents);
+	comments = checkstyleUtil.getComments(contents);
+	contents = checkstyleUtil.fixSpaceBeforeAndAfter(contents, "===", comments);
+	comments = checkstyleUtil.getComments(contents);
+	contents = checkstyleUtil.fixSpaceBeforeAndAfter(contents, "!==", comments);
 	comments = checkstyleUtil.getComments(contents);
 	contents = checkstyleUtil.fixSpaceBeforeAndAfter(contents, "==", comments);
 	comments = checkstyleUtil.getComments(contents);
 	contents = checkstyleUtil.fixSpaceBeforeAndAfter(contents, "||", comments);
 	comments = checkstyleUtil.getComments(contents);
 	contents = checkstyleUtil.fixSpaceBeforeAndAfter(contents, "&&", comments);
+	comments = checkstyleUtil.getComments(contents);
+	
+	contents = checkstyleUtil.fixCommentNames(contents);
+	
+	
+	
+	return contents;
+}
+
+checkstyleUtil.fixCommentNames = function(contents){
+	var commentNames = checkstyleUtil.commentNames;
+	var i;
+	
+	for(i = 0; i < commentNames.length; i++){
+		contents = checkstyleUtil.replaceAllExceptComments(contents, "//\t" + commentNames[i] + ":", "// " + commentNames[i] + ":", {});
+	}
+	
+	for(i = 0; i < commentNames.length; i++){
+		var commentName = commentNames[i];
+		var searchToken = "// " + commentName + ":";
+		var idx = contents.indexOf(searchToken);
+		
+		
+		while(idx > -1){
+			// If the comment name is not followed immediately by a new line, then insert a new line,
+			// two forward slashes and two tabs.
+			if(!checkstyleUtil.isEOL(contents, idx + commentName.length + 4)){
+				// Calculate how many tabs to put before the "//"
+				
+				var tabs = "";
+				var search = idx - 1;
+				while(!checkstyleUtil.isEOL(contents, search)){
+					tabs += contents.charAt(search);
+					search--;
+				}
+				var insertPos = idx + commentName.length + 4;
+				if(contents.charAt(insertPos) == " " || contents.charAt(insertPos) == "\t"){
+					contents = checkstyleUtil.deleteChar(contents, insertPos);
+				}
+				
+				contents = checkstyleUtil.insertChar(contents, "\n" + tabs + "//\t\t", idx + commentName.length + 4);
+			
+			}
+			idx = contents.indexOf(searchToken, idx + commentName.length);
+		}
+	}
+	return contents;
+}
+
+
+checkstyleUtil.replaceAllExceptComments = function(contents, old, newStr, comments){
+	var idx = contents.indexOf(old);
+	var toRemove = [];
+	
+	while(idx > -1){
+		if(!comments[idx]){
+			toRemove.push(idx);		
+		}
+
+		idx = contents.indexOf(old, idx + old.length);
+	}
+	
+	// Process the string backwards so we don't have to recompute the comments each time.
+	for(var i = toRemove.length - 1; i > -1; i--){
+		idx = toRemove[i];
+		if(!comments[idx]){
+			contents = contents.substring(0, idx)
+					+ newStr
+					+ contents.substring(idx + old.length, contents.length);
+		}
+	}
 	return contents;
 }
 
@@ -375,6 +617,31 @@ checkstyleUtil.insertChar = function(contents, ch, pos){
 }
 checkstyleUtil.deleteChar = function(contents, pos){
 	return contents.substring(0, pos) + contents.substring(pos + 1);
+}
+
+checkstyleUtil.fixTrailingWhitespace = function(contents) {
+	var idx = contents.indexOf("\n");
+	
+	// Find each new line character, then iterate backwards until a non-whitespace character is found
+	// then remove the whitespace.
+	while(idx > -1){
+		var search = idx - 1;
+		
+		while(search > -1 && (contents.charAt(search) == " " || contents.charAt(search) == "\t")){
+			search--;
+		}
+		
+		if(search < idx -1){
+			contents = contents.substring(0, search + 1)
+					+ contents.substring(idx, contents.length);
+			
+			idx = contents.indexOf("\n", search + 2);
+		}else{
+			idx = contents.indexOf("\n", idx + 1);
+		}
+	}
+
+	return contents;
 }
 
 checkstyleUtil.fixSpaceAfter = function(contents, token, comments){
@@ -393,18 +660,28 @@ checkstyleUtil.fixSpaceAfter = function(contents, token, comments){
 checkstyleUtil.fixSpaceBeforeAndAfter = function(contents, token, comments){
 	var idx = contents.indexOf(token);
 	var before, after;
+	var len = token.length;
 
 	while(idx > -1){
 		before = contents.charAt(idx - 1);
-		after = contents.charAt(idx + 2);
+		after = contents.charAt(idx + len);
 		if(!comments[idx]){
-			if(before != " " && before != "\t" && (token != " == " || before != "!")){
+			// Only insert a space before the token if:
+			// - char before is not a space or a tab
+			// - token is "==" and the char before is neither "!" or "="
+		
+			if(before != " " && before != "\t" && (token != "==" || (before != "!" && before != "="))){
 				contents = checkstyleUtil.insertChar(contents, " ", idx);
 				idx ++;
 			}
-			if((after != " " && contents.charCodeAt(idx + 2) != 13 
-					&& contents.charCodeAt(idx + 2) != 10)
-				&& 	(token != " == " || after != "=")){
+			
+			// Only insert a space after the token if:
+			// - char after is not a space
+			// - char after is not a new line
+			// - char after is not "="
+			if((after != " " && contents.charCodeAt(idx + len) != 13 
+					&& contents.charCodeAt(idx + len) != 10)
+					&& (token != "==" || after != "=")){
 				contents = contents = checkstyleUtil.insertChar(contents, " ", idx + token.length);
 				idx++;
 			}

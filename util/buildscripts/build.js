@@ -1,17 +1,26 @@
 //Main build script for Dojo
 var buildTimerStart = (new Date()).getTime();
-
-load("jslib/logger.js");
-load("jslib/fileUtil.js");
-load("jslib/buildUtil.js");
-load("jslib/buildUtilXd.js");
-load("jslib/i18nUtil.js");
+buildScriptsPath = typeof buildScriptsPath == "undefined" ? "./" : buildScriptsPath;
+load(buildScriptsPath + "jslib/logger.js");
+load(buildScriptsPath + "jslib/fileUtil.js");
+load(buildScriptsPath + "jslib/buildUtil.js");
+load(buildScriptsPath + "jslib/buildUtilXd.js");
+load(buildScriptsPath + "jslib/i18nUtil.js");
 
 //NOTE: See buildUtil.DojoBuildOptions for the list of build options.
 
 //*****************************************************************************
 //Convert arguments to keyword arguments.
 var kwArgs = buildUtil.makeBuildOptions(arguments);
+
+//Remove the default namespaces that are created by Rhino, but only
+//if asked to -- it has bad consequences if the build system is used
+//with other rhino-based server-side code.
+if(kwArgs.removeDefaultNameSpaces){
+	delete com;
+	delete net;
+	delete org;
+}
 
 //Set logging level.
 logger.level = kwArgs["log"];
@@ -74,8 +83,8 @@ function release(){
 	var dependencies = kwArgs.profileProperties.dependencies;
 	var prefixes = dependencies.prefixes;
 	var lineSeparator = fileUtil.getLineSeparator();
-	var copyrightText = fileUtil.readFile("copyright.txt");
-	var buildNoticeText = fileUtil.readFile("build_notice.txt");
+	var copyrightText = fileUtil.readFile(buildScriptsPath + "copyright.txt");
+	var buildNoticeText = fileUtil.readFile(buildScriptsPath + "build_notice.txt");
 	
 	//Find the dojo prefix path. Need it to process other module prefixes.
 	var dojoPrefixPath = buildUtil.getDojoPrefixPath(prefixes);
@@ -122,7 +131,7 @@ function release(){
 	}
 
 	logger.trace("Building dojo.js and layer files");
-	var result = buildUtil.makeDojoJs(buildUtil.loadDependencyList(kwArgs.profileProperties, kwArgs), kwArgs.version, kwArgs);
+	var result = buildUtil.makeDojoJs(buildUtil.loadDependencyList(kwArgs.profileProperties, kwArgs, buildScriptsPath), kwArgs.version, kwArgs);
 
 	//Save the build layers. The first layer is dojo.js.
 	var defaultLegalText = copyrightText + buildNoticeText;
@@ -274,7 +283,11 @@ function _copyToRelease(/*String*/prefixName, /*String*/prefixPath, /*Object*/kw
 	if(prefixName == "dojo" && kwArgs.query == "sizzle"){
 		fileUtil.copyFile(releasePath + "/_base/query-sizzle.js", releasePath + "/_base/query.js");
 	}
-
+	
+	if(!copiedFiles){ 
+		logger.info(" ********** Not Copied: " + prefixPath ); 
+	}
+	
 	//Make sure to copy over any "source" files for the layers be targeted by
 	//buildLayers. Otherwise dependencies will not be calculated correctly.
 	if(buildLayers){

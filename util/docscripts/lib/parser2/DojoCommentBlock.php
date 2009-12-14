@@ -35,6 +35,11 @@ class DojoCommentBlock {
     // TODO: Add return type(s)
   }
 
+  public function get($key) {
+    $comments = $this->all();
+    return $comments[$key] ? $comments[$key] : '';
+  }
+
   public function all() {
     if (isset($this->blocks)) {
       return $this->blocks;
@@ -52,7 +57,6 @@ class DojoCommentBlock {
 
       $comment = preg_replace('%(^//\s*|^/\*\s*|\s*\*/$)%', '', $comment);
       foreach (explode("\n", $comment) as $line) {
-        $line = preg_replace('%^(\s*\*\s*)+%', '', $line); // if they have ' * multilines like this'
         if (preg_match($expression, $line, $match)) {
           if ($key && !empty($buffer)) {
             $this->swallow($blocks, $key, $buffer);

@@ -50,12 +50,12 @@ dojo.provide("util.docscripts.cheat.lib");
 				],
 
 				"Ajax":[
-					"xhr", "xhrGet", "xhrPost", "xhrPut", "xhrDelete", "rawXhrPut", "rawXhrPost"
+					"xhr", "xhrGet", "xhrPost", "xhrPut", "xhrDelete", "rawXhrPut", "rawXhrPost", "contentHandlers"
 				],
 
 				"Language-Helpers":[
 					"isArray", "isFunction", "isString", "isObject", "isArrayLike", "unique", 
-					"eval", "isAlien", "trim", "Deferred", "_toArray"
+					"eval", "isAlien", "trim", "Deferred", "_toArray", "replace"
 				],
 
 				"Arrays":[
@@ -65,7 +65,7 @@ dojo.provide("util.docscripts.cheat.lib");
 
 				"Event-System":[
 					"connect", "publish", "subscribe", "pub", "sub", "unsubscribe", "disconnect", 
-					"fixEvent", "stopEvent", "connectPublisher"
+					"fixEvent", "stopEvent", "connectPublisher", "isCopyKey", "mouseButtons"
 				],
 
 				"NodeList-Events":[
@@ -81,7 +81,7 @@ dojo.provide("util.docscripts.cheat.lib");
 
 				"Objects-OO":[
 					"mixin", "declare", "extend", "delegate", "hitch", "partial", "setObject",
-					"getObject", "exists", "instantiate"
+					"getObject", "exists", "instantiate", "safeMixin" /* ? */
 				],
 
 				"Package-System":[
@@ -91,7 +91,7 @@ dojo.provide("util.docscripts.cheat.lib");
 
 				"Document-Lifecycle":[
 					"addOnLoad", "addOnUnload", "addOnWindowUnload","loaded", 
-					"unloaded", "loadInit",  "windowUnloaded"
+					"unloaded", "loadInit",  "windowUnloaded", "ready"
 				],
 
 
@@ -101,7 +101,7 @@ dojo.provide("util.docscripts.cheat.lib");
 				],
 
 				"DOM-Attributes":[
-					"hasAttr", "removeAttr",
+					"hasAttr", "removeAttr", "position", "getNodeProp",
 					"setSelectable", "isDescendant", "val", "attr", "coords", "marginBox", "contentBox"
 				],
 
@@ -116,7 +116,7 @@ dojo.provide("util.docscripts.cheat.lib");
 
 				"JSON":[
 					"fromJson", "toJson", "toJsonIndentStr", "formToObject", "queryToObject", "formToQuery", 
-					"formToJson", "objectToQuery"
+					"formToJson", "objectToQuery", "fieldToObject"
 				],
 
 				"Miscellaneous":[
@@ -129,7 +129,7 @@ dojo.provide("util.docscripts.cheat.lib");
 
 				"Sniffing":[
 					"isBrowser", "isFF", "isKhtml", "isMoz", "isMozilla", "isIE", "isOpera", "isBrowser", 
-					"isQuirks", "isWebKit", "isChrome"
+					"isQuirks", "isWebKit", "isChrome", /* new 1.4 */ "isMac"
 				]
 			},
 			
@@ -239,11 +239,13 @@ dojo.provide("util.docscripts.cheat.lib");
 
 		save: function(){
 			dojo.xhrPost({ 
-				url:"api-gen.php",
+				url:"cheat.php",
 				content: { body: dojo.body().innerHTML, version: dojo.version.toString() },
 				load: function(response){
-					console.log('complete', response);
-					window.location.href = "./api.html";
+					window.location.href = "./cheat.html";
+				},
+				error: function(er){
+					console.log("Error in saving:", er.responseText);
 				}
 			});
 		},

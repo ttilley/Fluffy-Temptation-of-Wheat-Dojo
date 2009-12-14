@@ -676,9 +676,17 @@ public class Compressor {
                  break;
              case Token.ADD:
                  result.append("+");
+                 int nextToken = encodedSource.charAt(i + 1);
+                 if (nextToken == Token.POS) {
+                     result.append(' ');
+                 }
                  break;
              case Token.SUB:
                  result.append("-");
+                 nextToken = encodedSource.charAt(i + 1);
+                 if (nextToken == Token.NEG) {
+                     result.append(' ');
+                 }
                  break;
              case Token.MUL:
                  result.append("*");
