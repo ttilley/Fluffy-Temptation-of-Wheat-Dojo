@@ -5,9 +5,9 @@
 	<title>TabContainerLite in StackContainer</title>
 	<link href="../../themes/tundra/tundra.css" rel="stylesheet" type="text/css" />
 	<link href="../../../dojo/resources/dojo.css" rel="stylesheet" type="text/css" />
-	<script type="text/javascript" 
-			language="javascript" 
-			src="../../../dojo/dojo.js" 
+	<script type="text/javascript"
+			language="javascript"
+			src="../../../dojo/dojo.js"
 			djConfig="parseOnLoad: true, isDebug: true">
 	</script>
 	<script type="text/javascript" language="javascript">
@@ -25,7 +25,7 @@
 
 		// This keeps track of how many times each pane was resized
 		var resizeCnt = {};
-		
+
 		function onResize(widget){
 			// called when a ContentPane or TabContainer is resized
 			console.log("resize on " + widget.id + ", display is " + dojo.style(widget.domNode, "display"));
@@ -34,7 +34,7 @@
 		}
 
 		dojo.declare("dijit.TestLayoutContained",
-			[dijit.layout._LayoutWidget], {
+			dijit.layout._LayoutWidget, {
 				startup: function(){
 					this.inherited(arguments);
 					this._started = true;
@@ -46,7 +46,7 @@
 				}
 			}
 		);
-			
+
 		dojo.addOnLoad(function(){
 			doh.registerGroup("after load",
 				[
@@ -134,7 +134,7 @@
 						runTest: function(t){
 							doh.is(1, resizeCnt["tab2cp2"], "Tab 2 was resized once");
 							doh.t(deferredOne._resized, "deferredOne nested layout widget was resized");
-							
+
 							var sizeAtResize = deferredOne._contentBox;
 							doh.t(sizeAtResize.w > 50, "content box has measurable width of " + sizeAtResize.w);
 							doh.t(sizeAtResize.h > 10, "content box has measurable height of " + sizeAtResize.h);
@@ -146,15 +146,15 @@
 	</script>
 </head>
 <body class="tundra">
-	<h1>Integration: TabContainerLite in StackContainer</h1>
+	<h1>Integration: TabContainer in StackContainer</h1>
 	<br>
 	<button dojoType="dijit.form.Button" id="previousPR"
 		onClick="dijit.byId('myStackContainerPR').back()">&lt;</button>
 	<span dojoType="dijit.layout.StackController" containerId="myStackContainerPR"></span>
 	<button dojoType="dijit.form.Button" id="nextPR"
 		onClick="dijit.byId('myStackContainerPR').forward()">&gt;</button>
-	<div id="myStackContainerPR" dojoType="dijit.layout.StackContainer" 
-		style="height:150px;">
+	<div id="myStackContainerPR" dojoType="dijit.layout.StackContainer"
+		style="height:150px; width: 400px;">
 			<div dojoType="dijit.layout.TabContainer" id="tab1" title="tab container 1">
 				<script type="dojo/connect" event="resize">
 					onResize(this);

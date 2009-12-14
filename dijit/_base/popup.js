@@ -12,9 +12,10 @@ dijit.popup = new function(){
 		beginZIndex=1000,
 		idGen = 1;
 
-	this.prepare = function(/*DomNode*/ node){
+	this.moveOffScreen = function(/*DomNode*/ node){
 		// summary:
-		//		Prepares a node to be used as a popup
+		//		Moves node offscreen without hiding it (so that all layout widgets included 
+		//		in this node can still layout properly)
 		//
 		// description:
 		//		Attaches node to dojo.doc.body, and
@@ -46,7 +47,7 @@ dijit.popup.__OpenArgs = function(){
 	// y: Integer
 	//		Absolute vertical position (in pixels) to place node at.  (Specity this *or* "around" parameter.)
 	// orient: Object || String
-	//		When the around parameter is specified, orient should be an 
+	//		When the around parameter is specified, orient should be an
 	//		ordered list of tuples of the form (around-node-corner, popup-node-corner).
 	//		dijit.popup.open() tries to position the popup according to each tuple in the list, in order,
 	//		until the popup appears fully within the viewport.
@@ -87,6 +88,17 @@ dijit.popup.__OpenArgs = function(){
 	this.padding = padding;
 }
 =====*/
+
+	// Compute the closest ancestor popup that's *not* a child of another popup.
+	// Ex: For a TooltipDialog with a button that spawns a tree of menus, find the popup of the button.
+	var getTopPopup = function(){
+		for(var pi=stack.length-1; pi > 0 && stack[pi].parent === stack[pi-1].widget; pi--){
+			/* do nothing, just trying to get right value for pi */
+		}
+		return stack[pi];
+	};
+
+	var wrappers=[];
 	this.open = function(/*dijit.popup.__OpenArgs*/ args){
 		// summary:
 		//		Popup the widget at the specified position
@@ -97,7 +109,7 @@ dijit.popup.__OpenArgs = function(){
 		//
 		// example:
 		//		opening the widget as a dropdown
-		//		|		dijit.popup.open({parent: this, popup: menuWidget, around: this.domNode, onClose: function(){...}  });
+		//		|		dijit.popup.open({parent: this, popup: menuWidget, around: this.domNode, onClose: function(){...}});
 		//
 		//		Note that whatever widget called dijit.popup.open() should also listen to its own _onBlur callback
 		//		(fired from _base/focus.js) to know that focus has moved somewhere else and thus the popup should be closed.
@@ -114,17 +126,30 @@ dijit.popup.__OpenArgs = function(){
 		// make wrapper div to hold widget and possibly hold iframe behind it.
 		// we can't attach the iframe as a child of the widget.domNode because
 		// widget.domNode might be a <table>, <ul>, etc.
-		var wrapper = dojo.create("div",{
-			id: id, 
-			"class":"dijitPopup",
+
+		var wrapperobj = wrappers.pop(), wrapper, iframe;
+		if(!wrapperobj){
+			wrapper = dojo.create("div",{
+				"class":"dijitPopup"
+			}, dojo.body());
+			dijit.setWaiRole(wrapper, "presentation");
+		}else{
+			// recycled a old wrapper, so that we don't need to reattach the iframe
+			// which is slow even if the iframe is empty, see #10167
+			wrapper = wrapperobj[0];
+			iframe = wrapperobj[1];
+		}
+
+		dojo.attr(wrapper,{
+			id: id,
 			style:{
 				zIndex: beginZIndex + stack.length,
 				visibility:"hidden",
-				left: "0px", top: "0px"		// prevent transient scrollbar causing misalign (#5776)
+				// prevent transient scrollbar causing misalign (#5776), and initial flash in upper left (#10111)
+				top: "-9999px"
 			},
 			dijitPopupParent: args.parent ? args.parent.id : ""
-		}, dojo.body());
-		dijit.setWaiRole(wrapper, "presentation");
+		});
 
 		var s = widget.domNode.style;
 		s.display = "";
@@ -133,7 +158,11 @@ dijit.popup.__OpenArgs = function(){
 		s.top = "0px";
 		wrapper.appendChild(widget.domNode);
 
-		var iframe = new dijit.BackgroundIframe(wrapper);
+		if(!iframe){
+			iframe = new dijit.BackgroundIframe(wrapper);
+		}else{
+			iframe.resize(wrapper)
+		}
 
 		// position the wrapper node
 		var best = around ?
@@ -144,15 +173,6 @@ dijit.popup.__OpenArgs = function(){
 		// TODO: use effects to fade in wrapper
 
 		var handlers = [];
-
-		// Compute the closest ancestor popup that's *not* a child of another popup.
-		// Ex: For a TooltipDialog with a button that spawns a tree of menus, find the popup of the button.
-		var getTopPopup = function(){
-			for(var pi=stack.length-1; pi > 0 && stack[pi].parent === stack[pi-1].widget; pi--){
-				/* do nothing, just trying to get right value for pi */
-			}
-			return stack[pi];
-		}
 
 		// provide default escape and tab key handling
 		// (this will work for any widget, not just menu)
@@ -172,10 +192,10 @@ dijit.popup.__OpenArgs = function(){
 		// watch for cancel/execute events on the popup and notify the caller
 		// (for a menu, "execute" means clicking an item)
 		if(widget.onCancel){
-			handlers.push(dojo.connect(widget, "onCancel", null, args.onCancel));
+			handlers.push(dojo.connect(widget, "onCancel", args.onCancel));
 		}
 
-		handlers.push(dojo.connect(widget, widget.onExecute ? "onExecute" : "onChange", null, function(){
+		handlers.push(dojo.connect(widget, widget.onExecute ? "onExecute" : "onChange", function(){
 			var topPopup = getTopPopup();
 			if(topPopup && topPopup.onExecute){
 				topPopup.onExecute();
@@ -201,30 +221,39 @@ dijit.popup.__OpenArgs = function(){
 		return best;
 	};
 
-	this.close = function(/*Widget*/ popup){
+	this.close = function(/*dijit._Widget*/ popup){
 		// summary:
 		//		Close specified popup and any popups that it parented
+		
+		// Basically work backwards from the top of the stack closing popups
+		// until we hit the specified popup, but IIRC there was some issue where closing
+		// a popup would cause others to close too.  Thus if we are trying to close B in [A,B,C]
+		// closing C might close B indirectly and then the while() condition will run where stack==[A]...
+		// so the while condition is constructed defensively.
 		while(dojo.some(stack, function(elem){return elem.widget == popup;})){
 			var top = stack.pop(),
 				wrapper = top.wrapper,
 				iframe = top.iframe,
 				widget = top.widget,
 				onClose = top.onClose;
-	
+
 			if(widget.onClose){
-				// TODO: in 2.0 standardize onHide() (used by StackContainer) and onHide() (used here)
+				// TODO: in 2.0 standardize onHide() (used by StackContainer) and onClose() (used here)
 				widget.onClose();
 			}
 			dojo.forEach(top.handlers, dojo.disconnect);
-	
-			// #2685: check if the widget still has a domNode so ContentPane can change its URL without getting an error
-			if(!widget||!widget.domNode){ return; }
-			
-			this.prepare(widget.domNode);
 
-			iframe.destroy();
-			dojo.destroy(wrapper);
-	
+			// Move the widget offscreen, unless it has already been destroyed in above onClose() etc.
+			if(widget && widget.domNode){
+				this.moveOffScreen(widget.domNode);
+			}
+                        
+			// recycle the wrapper plus iframe, so we prevent reattaching iframe everytime an popup opens
+			// don't use moveOffScreen which would also reattach the wrapper to body, which causes reloading of iframe
+			wrapper.style.top = "-9999px";
+			wrapper.style.visibility = "hidden";
+			wrappers.push([wrapper,iframe]);
+
 			if(onClose){
 				onClose();
 			}
@@ -233,7 +262,8 @@ dijit.popup.__OpenArgs = function(){
 }();
 
 dijit._frames = new function(){
-	// summary: cache of iframes
+	// summary:
+	//		cache of iframes
 	var queue = [];
 
 	this.pop = function(){
@@ -252,19 +282,15 @@ dijit._frames = new function(){
 			 	iframe = dojo.create("iframe");
 				iframe.src = 'javascript:""';
 				iframe.className = "dijitBackgroundIframe";
+				dojo.style(iframe, "opacity", 0.1);
 			}
 			iframe.tabIndex = -1; // Magic to prevent iframe from getting focus on tab keypress - as style didnt work.
-			dojo.body().appendChild(iframe);
 		}
 		return iframe;
 	};
 
 	this.push = function(iframe){
 		iframe.style.display="none";
-		if(dojo.isIE){
-			iframe.style.removeExpression("width");
-			iframe.style.removeExpression("height");
-		}
 		queue.push(iframe);
 	}
 }();
@@ -272,7 +298,7 @@ dijit._frames = new function(){
 
 dijit.BackgroundIframe = function(/* DomNode */node){
 	// summary:
-	//		For IE z-index schenanigans. id attribute is required.
+	//		For IE/FF z-index schenanigans. id attribute is required.
 	//
 	// description:
 	//		new dijit.BackgroundIframe(node)
@@ -280,20 +306,46 @@ dijit.BackgroundIframe = function(/* DomNode */node){
 	//			area (and position) of node
 
 	if(!node.id){ throw new Error("no id"); }
-	if(dojo.isIE < 7 || (dojo.isFF < 3 && dojo.hasClass(dojo.body(), "dijit_a11y"))){
+	if(dojo.isIE || dojo.isMoz){
 		var iframe = dijit._frames.pop();
 		node.appendChild(iframe);
-		if(dojo.isIE){
-			iframe.style.setExpression("width", dojo._scopeName + ".doc.getElementById('" + node.id + "').offsetWidth");
-			iframe.style.setExpression("height", dojo._scopeName + ".doc.getElementById('" + node.id + "').offsetHeight");
+		if(dojo.isIE<7){
+			this.resize(node);
+			this._conn = dojo.connect(node, 'onresize', this, function(){
+				this.resize(node);
+			});
+		}else{
+			dojo.style(iframe, {
+				width: '100%',
+				height: '100%'
+			});
 		}
 		this.iframe = iframe;
 	}
 };
 
 dojo.extend(dijit.BackgroundIframe, {
+	resize: function(node){
+		// summary:
+		// 		resize the iframe so its the same size as node
+		// description:
+		//		this function is a no-op in all browsers except
+		//		IE6, which does not support 100% width/height 
+		//		of absolute positioned iframes
+		if(this.iframe && dojo.isIE<7){
+			dojo.style(this.iframe, {
+				width: node.offsetWidth + 'px',
+				height: node.offsetHeight + 'px'
+			});
+		}
+	},
 	destroy: function(){
-		//	summary: destroy the iframe
+		// summary:
+		//		destroy the iframe
+		if(this._conn){
+			dojo.disconnect(this._conn);
+			this._conn = null;
+		}
 		if(this.iframe){
 			dijit._frames.push(this.iframe);
 			delete this.iframe;

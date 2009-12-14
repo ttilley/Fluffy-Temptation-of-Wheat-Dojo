@@ -31,7 +31,7 @@ dojo.declare(
 		//		If specified, get label for tree node from this attribute, rather
 		//		than by calling store.getLabel()
 		labelAttr: "",
-	 
+
 	 	// root: [readonly] dojo.data.Item
 		//		Pointer to the root item (read only, not a parameter)
 		root: null,
@@ -45,14 +45,14 @@ dojo.declare(
 		query: null,
 
 		// deferItemLoadingUntilExpand: Boolean
-		//		Setting this to true will cause the TreeStoreModel to defer calling loadItem on nodes 
+		//		Setting this to true will cause the TreeStoreModel to defer calling loadItem on nodes
 		// 		until they are expanded. This allows for lazying loading where only one
 		//		loadItem (and generally one network call, consequently) per expansion
 		// 		(rather than one for each child).
-		// 		This relies on partial loading of the children items; each children item of a 
-		// 		fully loaded item should contain the label and info about having children.  
+		// 		This relies on partial loading of the children items; each children item of a
+		// 		fully loaded item should contain the label and info about having children.
 		deferItemLoadingUntilExpand: false,
-		
+
 		constructor: function(/* Object */ args){
 			// summary:
 			//		Passed the arguments listed above (store, etc)
@@ -71,9 +71,9 @@ dojo.declare(
 			// if the store supports Notification, subscribe to the notification events
 			if(store.getFeatures()['dojo.data.api.Notification']){
 				this.connects = this.connects.concat([
-					dojo.connect(store, "onNew", this, "_onNewItem"),
-					dojo.connect(store, "onDelete", this, "_onDeleteItem"),
-					dojo.connect(store, "onSet", this, "_onSetItem")
+					dojo.connect(store, "onNew", this, "onNewItem"),
+					dojo.connect(store, "onDelete", this, "onDeleteItem"),
+					dojo.connect(store, "onSet", this, "onSetItem")
 				]);
 			}
 		},
@@ -125,8 +125,8 @@ dojo.declare(
 
 			var store = this.store;
 			if(!store.isItemLoaded(parentItem)){
-				// The parent is not loaded yet, we must be in deferItemLoadingUntilExpand 
-				// mode, so we will load it and just return the children (without loading each 
+				// The parent is not loaded yet, we must be in deferItemLoadingUntilExpand
+				// mode, so we will load it and just return the children (without loading each
 				// child item)
 				var getChildren = dojo.hitch(this, arguments.callee);
 				store.loadItem({
@@ -140,7 +140,7 @@ dojo.declare(
 			}
 			// get children of specified item
 			var childItems = [];
-			for (var i=0; i<this.childrenAttrs.length; i++){
+			for(var i=0; i<this.childrenAttrs.length; i++){
 				var vals = store.getValues(parentItem, this.childrenAttrs[i]);
 				childItems = childItems.concat(vals);
 			}
@@ -237,7 +237,7 @@ dojo.declare(
 			var store = this.store,
 				parentAttr = this.childrenAttrs[0];	// name of "children" attr in parent item
 
-			// remove child from source item, and record the attribute that child occurred in	
+			// remove child from source item, and record the attribute that child occurred in
 			if(oldParentItem){
 				dojo.forEach(this.childrenAttrs, function(attr){
 					if(store.containsValue(oldParentItem, attr, childItem)){
@@ -267,7 +267,7 @@ dojo.declare(
 
 		// =======================================================================
 		// Callbacks
-		
+
 		onChange: function(/*dojo.data.Item*/ item){
 			// summary:
 			//		Callback whenever an item has changed, so that Tree
@@ -296,40 +296,60 @@ dojo.declare(
 		},
 
 		// =======================================================================
-		///Events from data store
+		// Events from data store
 
-		_onNewItem: function(/* dojo.data.Item */ item, /* Object */ parentInfo){
+		onNewItem: function(/* dojo.data.Item */ item, /* Object */ parentInfo){
 			// summary:
-			//		Handler for when new items appear in the store.
+			//		Handler for when new items appear in the store, either from a drop operation
+			//		or some other way.   Updates the tree view (if necessary).
+			// description:
+			//		If the new item is a child of an existing item,
+			//		calls onChildrenChange() with the new list of children
+			//		for that existing item.
+			//
+			// tags:
+			//		extension
 
-			//	In this case there's no correspond onSet() call on the parent of this
-			//	item, so need to get the new children list of the parent manually somehow.
+			// We only care about the new item if it has a parent that corresponds to a TreeNode
+			// we are currently displaying
 			if(!parentInfo){
 				return;
 			}
+
+			// Call onChildrenChange() on parent (ie, existing) item with new list of children
+			// In the common case, the new list of children is simply parentInfo.newValue or
+			// [ parentInfo.newValue ], although if items in the store has multiple
+			// child attributes (see `childrenAttr`), then it's a superset of parentInfo.newValue,
+			// so call getChildren() to be sure to get right answer.
 			this.getChildren(parentInfo.item, dojo.hitch(this, function(children){
-				// NOTE: maybe can be optimized since parentInfo contains the new and old attribute value
 				this.onChildrenChange(parentInfo.item, children);
 			}));
 		},
-		
-		_onDeleteItem: function(/*Object*/ item){
+
+		onDeleteItem: function(/*Object*/ item){
 			// summary:
 			//		Handler for delete notifications from underlying store
 			this.onDelete(item);
 		},
 
-		_onSetItem: function(/* item */ item, 
-						/* attribute-name-string */ attribute, 
+		onSetItem: function(/* item */ item,
+						/* attribute-name-string */ attribute,
 						/* object | array */ oldValue,
 						/* object | array */ newValue){
 			// summary:
-			//		Set data event on an item in the store
-		
+			//		Updates the tree view according to changes in the data store.
+			// description:
+			//		Handles updates to an item's children by calling onChildrenChange(), and
+			//		other updates to an item by calling onChange().
+			//
+			//		See `onNewItem` for more details on handling updates to an item's children.
+			// tags:
+			//		extension
+
 			if(dojo.indexOf(this.childrenAttrs, attribute) != -1){
 				// item's children list changed
 				this.getChildren(item, dojo.hitch(this, function(children){
-					// NOTE: maybe can be optimized since parentInfo contains the new and old attribute value
+					// See comments in onNewItem() about calling getChildren()
 					this.onChildrenChange(item, children);
 				}));
 			}else{

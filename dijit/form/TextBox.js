@@ -6,22 +6,22 @@ dojo.declare(
 	"dijit.form.TextBox",
 	dijit.form._FormValueWidget,
 	{
-		//	summary:
+		// summary:
 		//		A base class for textbox form inputs
 
-		//	trim: Boolean
+		// trim: Boolean
 		//		Removes leading and trailing whitespace if true.  Default is false.
 		trim: false,
 
-		//	uppercase: Boolean
+		// uppercase: Boolean
 		//		Converts all characters to uppercase if true.  Default is false.
 		uppercase: false,
 
-		//	lowercase: Boolean
+		// lowercase: Boolean
 		//		Converts all characters to lowercase if true.  Default is false.
 		lowercase: false,
 
-		//	propercase: Boolean
+		// propercase: Boolean
 		//		Converts the first character of each word to uppercase if true.
 		propercase: false,
 
@@ -37,7 +37,7 @@ dojo.declare(
 		baseClass: "dijitTextBox",
 
 		attributeMap: dojo.delegate(dijit.form._FormValueWidget.prototype.attributeMap, {
-			maxLength: "focusNode" 
+			maxLength: "focusNode"
 		}),
 
 		_getValueAttr: function(){
@@ -57,7 +57,7 @@ dojo.declare(
 			// summary:
 			//		Hook so attr('value', ...) works.
 			//
-			// description: 
+			// description:
 			//		Sets the value of the widget to "value" which can be of
 			//		any type as determined by the widget.
 			//
@@ -70,7 +70,7 @@ dojo.declare(
 			//		otherwise a computed visual value is used.
 			//
 			// priorityChange:
-			//		If true, an onChange event is fired immediately instead of 
+			//		If true, an onChange event is fired immediately instead of
 			//		waiting for the next blur event.
 
 			var filteredValue;
@@ -121,9 +121,9 @@ dojo.declare(
 			// 		after filtering (ie, trimming spaces etc.).
 			//
 			//		For some subclasses of TextBox (like ComboBox), the displayed value
-			//		is different from the serialized value that's actually 
+			//		is different from the serialized value that's actually
 			//		sent to the server (see dijit.form.ValidationTextBox.serialize)
-			
+
 			return this.filter(this.textbox.value);
 		},
 
@@ -135,11 +135,11 @@ dojo.declare(
 			dojo.deprecated(this.declaredClass+"::setDisplayedValue() is deprecated. Use attr('displayedValue', ...) instead.", "", "2.0");
 			this.attr('displayedValue', value);
 		},
-			
+
 		_setDisplayedValueAttr: function(/*String*/value){
 			// summary:
 			//		Hook so attr('displayedValue', ...) works.
-			//	description: 
+			// description:
 			//		Sets the value of the visual element to the string "value".
 			//		The widget value is also set to a corresponding,
 			//		but not necessarily the same, value.
@@ -194,30 +194,6 @@ dojo.declare(
 			this._refreshState();
 		},
 
-		_onMouseDown: function(){
-			// flag if everything should be selected on mouse click
-			// don't actually select here in case they're selecting specific text with the mouse
-			this._selectOnUp = !this._focused && !this.disabled && !this.readOnly;
-		},
-
-		_onClick: function(){
-			// select all text if nothing already selected
-			if(this._focused && this._selectOnUp){
-				var textIsNotSelected;
-				if(dojo.isIE){
-					var range = dojo.doc.selection.createRange();
-					var parent = range.parentElement();
-					textIsNotSelected = parent == this.textbox && range.text.length == 0;
-				}else{
-					textIsNotSelected = this.textbox.selectionStart == this.textbox.selectionEnd;
-				}
-				if(textIsNotSelected){
-					dijit.selectInputText(this.textbox);
-				}
-			}
-			this._selectOnUp = false;
-		},
-
 		postCreate: function(){
 			// setting the value here is needed since value="" in the template causes "undefined"
 			// and setting in the DOM (instead of the JS object) helps with form reset actions
@@ -231,16 +207,6 @@ dojo.declare(
 				this.connect(this.textbox, "onpaste", this._onInput);
 				this.connect(this.textbox, "oncut", this._onInput);
 			}
-			if(this.selectOnClick){
-				this.connect(this.textbox, "onmousedown", this._onMouseDown);
-				this.connect(this.textbox, "onclick", this._onClick);
-			}
-
-			/*#5297:if(this.srcNodeRef){
-				dojo.style(this.textbox, "cssText", this.style);
-				this.textbox.className += " " + this["class"];
-			}*/
-			this._layoutHack();
 		},
 
 		_blankValue: '', // if the textbox is blank, what value should be reported
@@ -289,13 +255,43 @@ dojo.declare(
 			if(this.disabled){ return; }
 			this._setBlurValue();
 			this.inherited(arguments);
-			if(this.selectOnClick && !dojo.isIE){
+
+			if(this._selectOnClickHandle){
+				this.disconnect(this._selectOnClickHandle);
+			}
+			if(this.selectOnClick && dojo.isMoz){
 				this.textbox.selectionStart = this.textbox.selectionEnd = undefined; // clear selection so that the next mouse click doesn't reselect
 			}
 		},
 
-		_onFocus: function(e){
+		_onFocus: function(/*String*/ by){
 			if(this.disabled || this.readOnly){ return; }
+
+			// Select all text on focus via click if nothing already selected.
+			// Since mouse-up will clear the selection need to defer selection until after mouse-up.
+			// Don't do anything on focus by tabbing into the widgetm since there's no associated mouse-up event.
+			if(this.selectOnClick && by == "mouse"){
+				this._selectOnClickHandle = this.connect(this.domNode, "onmouseup", function(){
+					// Only select all text on first click; otherwise users would have no way to clear
+					// the selection.
+					this.disconnect(this._selectOnClickHandle);
+
+					// Check if the user selected some text manually (mouse-down, mouse-move, mouse-up)
+					// and if not, then select all the text
+					var textIsNotSelected;
+					if(dojo.isIE){
+						var range = dojo.doc.selection.createRange();
+						var parent = range.parentElement();
+						textIsNotSelected = parent == this.textbox && range.text.length == 0;
+					}else{
+						textIsNotSelected = this.textbox.selectionStart == this.textbox.selectionEnd;
+					}
+					if(textIsNotSelected){
+						dijit.selectInputText(this.textbox);
+					}
+				});
+			}
+
 			this._refreshState();
 			this.inherited(arguments);
 		},
@@ -319,7 +315,7 @@ dijit.selectInputText = function(/*DomNode*/element, /*Number?*/ start, /*Number
 	element = dojo.byId(element);
 	if(isNaN(start)){ start = 0; }
 	if(isNaN(stop)){ stop = element.value ? element.value.length : 0; }
-	element.focus();
+	dijit.focus(element);
 	if(_document["selection"] && dojo.body()["createTextRange"]){ // IE
 		if(element.createTextRange){
 			var range = element.createTextRange();

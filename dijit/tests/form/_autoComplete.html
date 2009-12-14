@@ -81,6 +81,7 @@
 			store = new dojo.data.ItemFileReadStore({url: dojo.moduleUrl("dijit.tests._data", "states.json")});
 			combo = new testClass({
 				name:"prog",
+				title: "title attribute used for label",
 				autoComplete:false,
 				store: store,
 				searchAttr:"name"
@@ -120,7 +121,7 @@
 	<script>dojo.byId('title').appendChild(document.createTextNode(testWidget+" Unit Test"))</script>
 	<form id="form1" action="#" method="GET">
 
-		<p>Option tags, autoComplete=false, selectOnClick=true, default value of California, pageSize=30</p>
+		<p>Option tags, autoComplete=false, selectOnClick=true, default value of California, pageSize=30, custom labelFunc method</p>
 		<label for="setvaluetest">US State test 1</label> (200% Courier font):
 		<select id="setvaluetest"
 				name="state1"
@@ -128,9 +129,49 @@
 				style="width:50%;font-size:200%;font-family:Courier;"
 				autoComplete="false"
 				selectOnClick="true"
-				onChange="dojo.byId('oc1').value=arguments[0]"
+				onBlur="dojo.byId('b1').value=dijit.byId('setvaluetest').value"
 				pageSize="30"
 		>
+			<script type="dojo/method" event="onChange">
+				if(this.lastlabelFuncMsg){
+					console.info(this.lastlabelFuncMsg);
+					this.lastlabelFuncMsg = '';
+				}
+				var newValue = arguments[0];
+				dojo.byId('oc1').value = newValue;
+				var itemLabel;
+				if(this.item === null){
+					itemLabel = "null";
+					if(testWidget != "dijit.form.ComboBox" && this.isValid() && this.textbox.value != ''){
+						console.error(this.id + ' has a null item, onChange value = ' + newValue + ', widget value = ' + this.value + ', displayed Value = ' + this.textbox.value);
+						this.itemError = true;
+					}
+				}else if(typeof this.item === "undefined"){
+					itemLabel = "undefined";
+					console.error(this.id + ' has an undefined item, onChange value = ' + newValue + ', widget value = ' + this.value + ', displayed Value = ' + this.textbox.value);
+					this.itemError = true;
+				}else{
+					itemLabel = this.labelFunc(this.item, this.store);
+					if(this.textbox.value != itemLabel){
+						console.error(this.id + ' has an inconsistent item value, item label = ' + itemLabel + ', onChange value = ' + newValue + ', widget value = ' + this.value + ', displayed Value = ' + this.textbox.value);
+						this.itemError = true;
+					}
+				}
+				dojo.byId('i1').value = itemLabel;
+			</script>
+			<script type="dojo/method" event="labelFunc">
+				var item = arguments[0];
+				var store = arguments[1];
+				var label = store.getValue(item, this.searchAttr);
+				var value = store.getValue(item, 'value');
+				if(!this.labelFuncCount){ this.labelFuncCount = 0; }
+				if(!this.labelFuncCounts){ this.labelFuncCounts = []; }
+				if(!this.labelFuncCounts[value]){ this.labelFuncCounts[value] = 0; }
+				this.labelFuncCount++;
+				this.labelFuncCounts[value]++;
+				this.lastlabelFuncMsg = 'my labelfunc ' + label + ' (' + value + '), count = ' + this.labelFuncCounts[value];
+				return label + ' (' + value + ')';
+			</script>
 			<option value="AL">Alabama</option>
 			<option value="AK">Alaska</option>
 			<option value="AS">American Samoa</option>
@@ -195,6 +236,8 @@
 		</select>
 		<br>onChange:<input id="oc1" disabled value="not fired yet!" autocomplete="off">
 		<br>value:<input id="v1" disabled value="not fired yet!" autocomplete="off">
+		<br>blur:<input id="b1" disabled value="not fired yet!" autocomplete="off">
+		<br>this.item:<input id="i1" disabled value="no onChange yet!" autocomplete="off">
 		<input type="button" id="sv1_1" value="Set displayed value to Kentucky" onClick="dijit.byId('setvaluetest').attr('displayedValue', 'Kentucky')" tabIndex="-1">
 	        <input type="button" id="sv1_2" value="Set displayed value to Canada" onClick="dijit.byId('setvaluetest').attr('displayedValue', 'Canada')" tabIndex="-1">
 	        <input type="button" id="sv1_3" value="Set value to null" onClick="dijit.byId('setvaluetest').attr('value', null)" tabIndex="-1">
@@ -211,7 +254,7 @@
 			url="../_data/dijits.json"></div>
 
 		<p>Data store, autoComplete=true:</p>
-		<label for="datatest">US State test 2</label> (8pt font): 
+		<label for="datatest">US State test 2</label> (8pt font):
 		<input dojoType="$testWidget"
 				value="$-setvaluetest-CA"
 				store="stateStore"
@@ -224,7 +267,7 @@
 		<br>onChange:<input id="value2" disabled value="not fired yet!" autocomplete="off">
 		<hr>
 		<p>Artificially slowed-down data store, autoComplete=true:</p>
-		<label for="slow">US State test slow</label>: 
+		<label for="slow">US State test slow</label>:
 		<input dojoType="$testWidget"
 				value="$-setvaluetest-CA"
 				store="slowStateStore"
@@ -237,7 +280,7 @@
 		<button id="slowDestroy" tabIndex="-1" onclick="dijit.byId('slow').destroy();return false">Destroy widget to test in-flight query cancel</button>
 		<hr>
 
-		<label for="datatestDijit">Dijit List test #1</label> (150% font): 
+		<label for="datatestDijit">Dijit List test #1</label> (150% font):
 		<input dojoType="$testWidget"
 				value="dijit.Editor"
 				store="dijitStore"
@@ -282,6 +325,23 @@
 				highlightMatch="none"
 		>
 		<br>onChange:<input id="value4" disabled value="not fired yet!" autocomplete="off">
+		<hr>
+		<p>test that title used as label is preserved on input</p>
+		<select id="preservetitletest"
+				name="titletest"
+				dojoType="$testWidget"
+				style="width:50%;font-family:Courier;"
+				autoComplete="false"
+				selectOnClick="true"
+				pageSize="5"
+				title="New England States"
+		>
+			<option value="ct">Connecticut</option>
+			<option value="me">Maine</option>
+			<option value="ma">Massachusetts</option>
+			<option value="nh">New Hampshire</option>
+			<option value="vt">Vermont</option>
+		</select>
 		<hr>
 		<p>No arrow, data store which searches and highlights matches anywhere in the string</p>
 	 	<input dojoType="$testWidget"
@@ -382,10 +442,10 @@
 		<p>Special characters</p>
 		<p>The drop down list should be:</p>
 		<ul>
-		   <li>sticks &amp; stones
-		   <li>rags --&gt; riches
-		   <li>more\less
-		   <li>3 * 5
+		   <li>sticks &amp; stones</li>
+		   <li>rags --&gt; riches</li>
+		   <li>more\less</li>
+		   <li>3 * 5</li>
 		</ul>
 		<label for="specialchars">Special chars:</label>
 		<select dojoType="$testWidget"
@@ -426,6 +486,10 @@
 				promptMessage="Please enter a state"
 				invalidMessage="Invalid state name."
 		>
+		<input type="button" onclick="dijit.byId('labelFunc').attr('readOnly',false);" value="Remove readOnly">
+		<input type="button" onclick="dijit.byId('labelFunc').attr('readOnly',true);" value="Set readOnly">
+		<input type="button" onclick="dijit.byId('labelFunc').attr('disabled',false);" value="Remove disabled">
+		<input type="button" onclick="dijit.byId('labelFunc').attr('disabled',true);" value="Set disabled">
 		<hr>
 		<input type="button" value="Create one in a window" onclick="var win=window.open(window.location);">
 		<input type="submit">
@@ -455,7 +519,7 @@
 	  <option>IE bleed through</option>
 	  <option>problem</option>
 	</select>
-	
+
 	<div id="debugbox"></div>
 	<!-- maintain state of combo box if user presses back/forward button -->
 	<form name="_dojo_form" style="display:none" disabled="true"><textarea name="stabile" cols="80" rows="10"></textarea></form>

@@ -1,11 +1,10 @@
 dojo.provide("dijit._base.scroll");
 
-dijit.scrollIntoView = function(/* DomNode */node){
+dijit.scrollIntoView = function(/*DomNode*/ node, /*Object?*/ pos){
 	// summary:
-	//		Scroll the passed node into view, if it is not.
-
+	//		Scroll the passed node into view, if it is not already.
+	
 	// don't rely on that node.scrollIntoView works just because the function is there
-	// it doesnt work in Konqueror or Opera even though the function is there
 
 	try{ // catch unexpected/unrecreatable errors (#7808) since we can recover using a semi-acceptable native method
 	node = dojo.byId(node);
@@ -13,8 +12,8 @@ dijit.scrollIntoView = function(/* DomNode */node){
 		body = doc.body || dojo.body(),
 		html = doc.documentElement || body.parentNode,
 		isIE = dojo.isIE, isWK = dojo.isWebKit;
-	// if FF2 (which is perfect) or an untested browser, then use the native method
-	if((!(dojo.isFF >= 3 || isIE || isWK) || node == body || node == html) && (typeof node.scrollIntoView != "undefined")){
+	// if an untested browser, then use the native method
+	if((!(dojo.isMoz || isIE || isWK) || node == body || node == html) && (typeof node.scrollIntoView != "undefined")){
 		node.scrollIntoView(false); // short-circuit to native if possible
 		return;
 	}
@@ -24,7 +23,7 @@ dijit.scrollIntoView = function(/* DomNode */node){
 		rootWidth = clientAreaRoot.clientWidth,
 		rootHeight = clientAreaRoot.clientHeight,
 		rtl = !dojo._isBodyLtr(),
-		nodePos = dojo.position(node),
+		nodePos = pos || dojo.position(node),
 		el = node.parentNode,
 		isFixed = function(el){
 			return ((isIE <= 6 || (isIE && backCompat))? false : (dojo.style(el, 'position').toLowerCase() == "fixed"));
@@ -32,8 +31,7 @@ dijit.scrollIntoView = function(/* DomNode */node){
 	if(isFixed(node)){ return; } // nothing to do
 	while(el){
 		if(el == body){ el = scrollRoot; }
-		var pb = dojo._getPadBorderExtents(el),
-			elPos = dojo.position(el),
+		var elPos = dojo.position(el),
 			fixedPos = isFixed(el);
 		with(elPos){
 			if(el == scrollRoot){
@@ -41,8 +39,10 @@ dijit.scrollIntoView = function(/* DomNode */node){
 				if(scrollRoot == html && isIE && rtl){ x += scrollRoot.offsetWidth-w; } // IE workaround where scrollbar causes negative x
 				if(x < 0 || !isIE){ x = 0; } // IE can have values > 0
 				if(y < 0 || !isIE){ y = 0; }
+			}else{
+				var pb = dojo._getPadBorderExtents(el);
+				w -= pb.w; h -= pb.h; x += pb.l; y += pb.t;
 			}
-			w -= pb.w; h -= pb.h; x += pb.l; y += pb.t;
 			with(el){
 				if(el != scrollRoot){ // body, html sizes already have the scrollbar removed
 					var clientSize = clientWidth,
@@ -56,19 +56,6 @@ dijit.scrollIntoView = function(/* DomNode */node){
 					if(clientSize > 0 && scrollBarSize > 0){
 						h = clientSize;
 					}
-					if(isWK < 526){ // workaround older WebKit bugs - REMOVE when Safari 3.2 and Chrome 1.0 users are toast
-						if(rtl){
-							nodePos.x += scrollWidth - w - dojo._getBorderExtents(el).w;
-						}
-						if(fixedPos){
-							x += scrollRoot.scrollLeft;
-							y += scrollRoot.scrollTop;
-							nodePos.x -= scrollLeft;
-							nodePos.y -= scrollTop;
-						}
-					}
-				}else if(isIE && backCompat && rtl){
-					x += clientAreaRoot.offsetWidth - rootWidth - pb.w;
 				}
 				if(fixedPos){ // bounded by viewport, not parents
 					if(y < 0){
@@ -88,21 +75,21 @@ dijit.scrollIntoView = function(/* DomNode */node){
 				var l = nodePos.x - x, // beyond left: < 0
 					t = nodePos.y - Math.max(y, 0), // beyond top: < 0
 					r = l + nodePos.w - w, // beyond right: > 0
-					b = t + nodePos.h - h; // beyond bottom: > 0
+					bot = t + nodePos.h - h; // beyond bottom: > 0
 				if(r * l > 0){
 					var s = Math[l < 0? "max" : "min"](l, r);
 					nodePos.x += scrollLeft;
 					scrollLeft += (isIE >= 8 && !backCompat && rtl)? -s : s;
 					nodePos.x -= scrollLeft;
 				}
-				if(b * t > 0){
+				if(bot * t > 0){
 					nodePos.y += scrollTop;
-					scrollTop += Math[t < 0? "max" : "min"](t, b);
+					scrollTop += Math[t < 0? "max" : "min"](t, bot);
 					nodePos.y -= scrollTop;
 				}
 			}
 		}
-		el = el == scrollRoot? null : (fixedPos? null : el.parentNode);
+		el = (el != scrollRoot) && !fixedPos && el.parentNode;
 	}
 	}catch(error){
 		console.error('scrollIntoView: ' + error);

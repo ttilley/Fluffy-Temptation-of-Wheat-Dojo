@@ -7,7 +7,6 @@
 
 	<script type="text/javascript" src="../../../dojo/dojo.js" djConfig="isDebug: true"></script>
 	<script type="text/javascript">
-		dojo.require("dijit.dijit"); // optimize: load dijit layer
 		dojo.require("dijit.robotx");
 
 		dojo.addOnLoad(function(){
@@ -17,10 +16,11 @@
 			var widgetClicks = 0, buttonClicks = 0;
 			var w;
 
-			doh.register("ondijitclick w/mouse",
-				function runTest(){ 
+			doh.register("ondijitclick w/mouse", {
+				timeout:5000,
+				runTest:function(){
 					var d = new doh.Deferred();
-	
+
 					doh.robot.sequence(function(){
 						w = dijit.byId("first");
 						dojo.connect(w, "_onClick", function(){
@@ -31,18 +31,18 @@
 						})
 						w.domNode.focus();
 					}, 100);
-	
+
 					// click the widget
-					doh.robot.mouseMoveAt("first", 100);
-					doh.robot.mouseClick({left: true}, 100);
+					doh.robot.mouseMoveAt("first", 500);
+					doh.robot.mouseClick({left: true}, 500);
 
 					doh.robot.sequence(d.getTestCallback(function(){
 						doh.is(1, widgetClicks, "ondijitclick handler fired once");
-					}), 100);
-	
+					}), 1000);
+
 					return d;
 				}
-			);
+			});
 
 			doh.run();
 		});

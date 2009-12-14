@@ -77,28 +77,32 @@
 			<br>
 			Move the cursor left and right within the input field to see the effect on the spinner.
 			<br>
-			initial value=+1.0, smalldelta=0.1, largedelta=1.0, min=-10.9, max=155, places=1, maxLength=20<br>
+			initial value=+1.0, smalldelta=0.1, largedelta=1.0, min=-10.9, max=155, places=1, maxLength=20, exponent=false<br>
 			<label for="realspinner1">Real Number Spinbox #1: </label><br>
 			<input dojoType="dijit.form.NumberSpinner"
 				value="1.0"
 				smallDelta="0.1"
 				largeDelta="1.0"
-				constraints="{min:-10.9,max:155,places:1,round:true}"
+				constraints="{min:-10.9,max:155,places:1,round:true,exponent:false}"
 				maxLength="20"
 				name="realspinner1"
 				id="realspinner1">
 			<br>
 
 			<p>
-			<label for="spinnerMinOnly">Spinner with no maximum: </label><br>
+			<label for="spinnerMinOnly">Spinner with no maximum, 1 decimal place: </label><br>
 			<input dojoType="dijit.form.NumberSpinner"
 				value="1.0"
 				smallDelta="0.1"
 				largeDelta="1.0"
-				constraints="{min:-10.9,places:1,round:true}"
+				constraints="{min:-10.9,places:1,round:false}"
 				maxLength="20"
 				name="spinnerMinOnly"
 				id="spinnerMinOnly">
+			<input type="button" onclick="dijit.byId('spinnerMinOnly').attr('readOnly',false);" value="Remove readOnly">
+			<input type="button" onclick="dijit.byId('spinnerMinOnly').attr('readOnly',true);" value="Set readOnly">
+			<input type="button" onclick="dijit.byId('spinnerMinOnly').attr('disabled',false);" value="Remove disabled">
+			<input type="button" onclick="dijit.byId('spinnerMinOnly').attr('disabled',true);" value="Set disabled">
 			</p>
 			<p>
 			<script type="text/javascript">

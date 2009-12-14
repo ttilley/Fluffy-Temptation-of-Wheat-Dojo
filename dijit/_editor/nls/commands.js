@@ -38,6 +38,10 @@
 	'fontSize': 'Font Size',
 	'fontName': 'Font Name',
 	'tabIndent': 'Tab Indent',
+	"fullScreen": "Toggle Full Screen",
+	"viewSource": "View HTML Source",
+	"print": "Print",
+	"newPage": "New Page",
 	/* Error messages */
 	'systemShortcut': 'The "${0}" action is only available in your browser using a keyboard shortcut. Use ${1}.',
 	'ctrlKey':'ctrl+${0}',

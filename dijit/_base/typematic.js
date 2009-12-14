@@ -10,16 +10,22 @@ dijit.typematic = {
 	_fireEventAndReload: function(){
 		this._timer = null;
 		this._callback(++this._count, this._node, this._evt);
-		this._currentTimeout = (this._currentTimeout < 0) ? this._initialDelay : ((this._subsequentDelay > 1) ? this._subsequentDelay : Math.round(this._currentTimeout * this._subsequentDelay));
+		
+		// Schedule next event, reducing the timer a little bit each iteration, bottoming-out at 10 to avoid
+		// browser overload (particularly avoiding starving DOH robot so it never gets to send a mouseup)
+		this._currentTimeout = Math.max(
+			this._currentTimeout < 0 ? this._initialDelay :
+				(this._subsequentDelay > 1 ? this._subsequentDelay : Math.round(this._currentTimeout * this._subsequentDelay)),
+			10);
 		this._timer = setTimeout(dojo.hitch(this, "_fireEventAndReload"), this._currentTimeout);
 	},
 
 	trigger: function(/*Event*/ evt, /* Object */ _this, /*DOMNode*/ node, /* Function */ callback, /* Object */ obj, /* Number */ subsequentDelay, /* Number */ initialDelay){
 		// summary:
-		//	    Start a timed, repeating callback sequence.
-		//	    If already started, the function call is ignored.
-		//	    This method is not normally called by the user but can be
-		//	    when the normal listener code is insufficient.
+		//		Start a timed, repeating callback sequence.
+		//		If already started, the function call is ignored.
+		//		This method is not normally called by the user but can be
+		//		when the normal listener code is insufficient.
 		// evt:
 		//		key or mouse event object to pass to the user callback
 		// _this:
@@ -57,7 +63,7 @@ dijit.typematic = {
 
 	stop: function(){
 		// summary:
-		//	  Stop an ongoing timed, repeating callback sequence.
+		//		Stop an ongoing timed, repeating callback sequence.
 		if(this._timer){
 			clearTimeout(this._timer);
 			this._timer = null;
@@ -103,7 +109,7 @@ dijit.typematic = {
 				if(evt.charOrCode == keyObject.charOrCode &&
 				(keyObject.ctrlKey === undefined || keyObject.ctrlKey == evt.ctrlKey) &&
 				(keyObject.altKey === undefined || keyObject.altKey == evt.altKey) &&
-				(keyObject.metaKey === undefined || keyObject.metaKey == (evt.metaKey||false)) && // IE doesn't even set metaKey
+				(keyObject.metaKey === undefined || keyObject.metaKey == (evt.metaKey || false)) && // IE doesn't even set metaKey
 				(keyObject.shiftKey === undefined || keyObject.shiftKey == evt.shiftKey)){
 					dojo.stopEvent(evt);
 					dijit.typematic.trigger(keyObject, _this, node, callback, keyObject, subsequentDelay, initialDelay);

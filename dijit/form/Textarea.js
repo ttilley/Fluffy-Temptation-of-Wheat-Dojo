@@ -29,7 +29,7 @@ dojo.declare(
 	_getHeight: function(textarea){
 		var newH = textarea.scrollHeight;
 		if(dojo.isIE){
-			newH += textarea.offsetHeight - textarea.clientHeight - ((dojo.isIE < 8 && this._strictMode)? dojo._getPadBorderExtents(textarea).h : 0);
+			newH += textarea.offsetHeight - textarea.clientHeight - ((dojo.isIE < 8 && this._strictMode) ? dojo._getPadBorderExtents(textarea).h : 0);
 		}else if(dojo.isMoz){
 			newH += textarea.offsetHeight - textarea.clientHeight; // creates room for horizontal scrollbar
 		}else if(dojo.isWebKit && !(dojo.isSafari < 4)){ // Safari 4.0 && Chrome
@@ -63,7 +63,7 @@ dojo.declare(
 		if(this._busyResizing){ return; }
 		this._busyResizing = true;
 		var textarea = this.textbox;
-		if(textarea.scrollHeight){
+		if(textarea.scrollHeight && textarea.offsetHeight && textarea.clientHeight){
 			var newH = this._getHeight(textarea) + "px";
 			if(textarea.style.height != newH){
 				textarea.style.maxHeight = textarea.style.height = newH;

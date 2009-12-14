@@ -16,7 +16,6 @@
 		<script type="text/javascript" src="../../helpers.js"></script>
 
 		<script type="text/javascript">
-			dojo.require("dijit.dijit"); // optimize: load dijit layer
 			dojo.require("dijit.robotx");
 
 			function normalize(str){
@@ -37,7 +36,7 @@
 				var metaKey = {ctrl: true}
 
 				var editor0, editor1;
-				
+
 				doh.register("setup", function setup(){
 					editor0 = dijit.byId("editor0");
 					editor1 = dijit.byId("editor1");
@@ -57,15 +56,14 @@
 							dijit.scrollIntoView(editor1.domNode);
 
 							// Focus the editor
-							doh.robot.mouseMoveAt("editor1_iframe", 500);
+							doh.robot.mouseMoveAt(editor1.editNode, 500);
 							doh.robot.mouseClick({left: true}, 500);
-							if(dojo.isMac && dojo.isMoz){
-								// Why do I need to click twice?   DOH bug?
-								doh.robot.mouseClick({left: true}, 2000);
-							}
+							// select all
+							doh.robot.sequence(function(){
+								editor1.execCommand("SelectAll");
+							},500);
 
-							doh.robot.keyPress("a", 500, metaKey);	// select all
-							doh.robot.typeKeys("hello ", 500);		// and erase (by typing something new)
+							doh.robot.typeKeys("hello ", 1000);		// and erase (by typing something new)
 
 							// turn on bold
 							doh.robot.mouseMoveAt(boldButton.domNode, 500);
@@ -76,7 +74,7 @@
 							// turn off bold
 							doh.robot.mouseMoveAt(boldButton.domNode, 500);
 							doh.robot.mouseClick({left: true}, 500);
-							
+
 							doh.robot.typeKeys(". ", 1000);
 
 							// turn on italic
@@ -98,6 +96,37 @@
 								var val = normalize(editor1.attr('value'));
 								doh.is("hello <b>world</b>. <i>how are you</i>?", val);
 							}), 5000);
+
+							return d;
+						}
+					},
+					{
+						name: "delete bold tag",
+						timeout: 20000,
+						runTest: function(){
+							var d = new doh.Deferred();
+							
+							// Find the bolded "world" word in the editor
+							var bold=dojo.query('b',editor1.editNode);
+							if(!bold.length){
+								bold=dojo.query('strong',editor1.editNode)
+							}
+							
+							// Double-click "world" to select it
+							doh.robot.mouseMoveAt(bold[0],500,100,5,5);
+							doh.robot.mouseClick({left: true}, 500);
+							doh.robot.mouseClick({left: true}, 50);
+
+							// Delete "world" and the space before it
+							doh.robot.keyPress(dojo.keys.DELETE,500);
+							if(!dojo.isSafari&&!dojo.isChrome){
+								// they delete the space too?
+								doh.robot.keyPress(dojo.keys.BACKSPACE,500);
+							}
+	
+							doh.robot.sequence(d.getTestCallback(function(){
+								doh.is("hello. <i>how are you</i>?", normalize(editor1.attr('value')));
+							}),500);
 
 							return d;
 						}

@@ -16,7 +16,6 @@
 		<script type="text/javascript" src="../../helpers.js"></script>
 
 		<script type="text/javascript">
-			dojo.require("dijit.dijit"); // optimize: load dijit layer
 			dojo.require("dijit.robotx");
 
 			function normalize(str){
@@ -37,7 +36,7 @@
 				var metaKey = {ctrl: true}
 
 				var editor0, editor1;
-				
+
 				doh.register("setup", function setup(){
 					editor0 = dijit.byId("editor0");
 					editor1 = dijit.byId("editor1");
@@ -66,7 +65,7 @@
 							doh.robot.typeKeys("exciting", 500);
 							doh.robot.keyPress("i", 500, metaKey);	// stop italic
 							doh.robot.typeKeys(" new world.", 500);
-							
+
 							doh.robot.sequence(d.getTestCallback(function(){
 								var val = normalize(editor1.attr('value'));
 								doh.is("hello <b>bold</b> and <i>exciting</i> new world.", val);
@@ -98,11 +97,11 @@
 
 
 							doh.robot.keyPress(dojo.keys.HOME, 500);
-							
+
 							doh.robot.sequence(d.getTestCallback(function(){
 								var toolbar = editor1.toolbar;
 								doh.t(toolbar, "found toolbar");
-								
+
 								var boldButton = toolbar.getChildren()[7];
 								doh.t(boldButton, "found bold button");
 								doh.f(boldButton.attr("checked"), "bold button not depressed");
@@ -120,22 +119,18 @@
 						timeout: 10000,
 						runTest: function(){
 							var d = new doh.Deferred();
-
-							// second word
-							if(dojo.isMac){
-								doh.robot.keyPress(dojo.keys.RIGHT_ARROW, 500, {alt: true});
+							doh.robot.sequence(function(){
+								editor1.placeCursorAtStart();
+							}, 500);
+							var i;
+							for(i = 0; i < 9; i++){
+								// Move to second letter of second word.
 								doh.robot.keyPress(dojo.keys.RIGHT_ARROW, 500);
-							}else{
-								doh.robot.keyPress(dojo.keys.RIGHT_ARROW, 500, {ctrl: true});
 							}
-							
-							// second letter of second word
-							doh.robot.keyPress(dojo.keys.RIGHT_ARROW, 500);
-							
 							doh.robot.sequence(d.getTestCallback(function(){
 								var toolbar = editor1.toolbar;
 								doh.t(toolbar, "found toolbar");
-								
+
 								var boldButton = toolbar.getChildren()[7];
 								doh.t(boldButton, "found bold button");
 								doh.t(boldButton.attr("checked"), "bold button depressed");
@@ -143,7 +138,7 @@
 								var italicButton = toolbar.getChildren()[8];
 								doh.t(italicButton, "found italic button");
 								doh.f(italicButton.attr("checked"), "italic button not depressed");
-							}), 500);
+							}), 1000);
 
 							return d;
 						}
@@ -154,21 +149,18 @@
 						runTest: function(){
 							var d = new doh.Deferred();
 
-							// third word
-							if(dojo.isMac){
-								doh.robot.keyPress(dojo.keys.RIGHT_ARROW, 500, {alt: true});
+							doh.robot.sequence(function(){
+								editor1.placeCursorAtStart();
+							}, 500);
+							var i;
+							for(i = 0; i < 15; i++){
+								// Move to second letter of third word.
 								doh.robot.keyPress(dojo.keys.RIGHT_ARROW, 500);
-							}else{
-								doh.robot.keyPress(dojo.keys.RIGHT_ARROW, 500, {ctrl: true});
 							}
-
-							// second letter of third word
-							doh.robot.keyPress(dojo.keys.RIGHT_ARROW, 500);
-							
 							doh.robot.sequence(d.getTestCallback(function(){
 								var toolbar = editor1.toolbar;
 								doh.t(toolbar, "found toolbar");
-								
+
 								var boldButton = toolbar.getChildren()[7];
 								doh.t(boldButton, "found bold button");
 								doh.f(boldButton.attr("checked"), "bold button not depressed");
@@ -176,7 +168,7 @@
 								var italicButton = toolbar.getChildren()[8];
 								doh.t(italicButton, "found italic button");
 								doh.t(italicButton.attr("checked"), "italic button depressed");
-							}), 500);
+							}), 1000);
 
 							return d;
 						}
@@ -207,7 +199,7 @@
 							doh.robot.keyPress(dojo.keys.SPACE, 500);
 
 							doh.robot.typeKeys("world", 500);
-							
+
 							doh.robot.sequence(d.getTestCallback(function(){
 								// Get the value and try to do some normalization to make all browsers look
 								// the same.   Would be nice if we didn't need this, the normalization should
@@ -273,10 +265,6 @@
 
 							// Go to link after editor1
 							doh.robot.keyPress(dojo.keys.TAB, 500);
-							if(dojo.isFF){
-								// On FF you need to hit tab twice to get out, see http://docs.dojocampus.org/dijit/Editor
-								doh.robot.keyPress(dojo.keys.TAB, 500);
-							}	
 
 							doh.robot.sequence(d.getTestCallback(function(){
 								doh.is("focusAfter", dojo.global.dijit._curFocus.id, "focused after editor1");
@@ -324,10 +312,6 @@
 							var d = new doh.Deferred();
 
 							doh.robot.keyPress(dojo.keys.TAB, 500, {shift: true});
-							if(dojo.isFF){
-								// Need to shift-tab twice on FF, see #9612
-								doh.robot.keyPress(dojo.keys.TAB, 500, {shift: true});
-							}								
 
 							doh.robot.sequence(d.getTestCallback(function(){
 								doh.is("focusBefore", dojo.global.dijit._curFocus.id, "focused before editor1");

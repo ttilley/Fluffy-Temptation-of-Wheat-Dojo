@@ -11,12 +11,11 @@
 		<!-- required: dojo.js -->
 		<script type="text/javascript" src="../../../dojo/dojo.js"
 			djConfig="isDebug: true"></script>
-			
+
 		<!-- functions to help test -->
 		<script type="text/javascript" src="../helpers.js"></script>
 
 		<script type="text/javascript">
-			dojo.require("dijit.dijit"); // optimize: load dijit layer
 			dojo.require("dijit.robotx");
 
 			dojo.addOnLoad(function(){
@@ -26,7 +25,7 @@
 				// first tooltip is shown
 				var masterTT;
 
-				doh.register("dijit.Tooltip keyboard tests", [
+				doh.register("dijit.Tooltip mouse tests", [
 					{
 						name: "show on mouse over",
 						timeout: 4000,
@@ -42,7 +41,7 @@
 								masterTT = dojo.global.dijit._masterTT;
 
 								doh.t(masterTT && isVisible(masterTT.domNode), "tooltip shown");
-							}), 1000);
+							}), 2000);
 
 							return d;
 						}
@@ -60,13 +59,13 @@
 
 							doh.robot.sequence(d.getTestCallback(function(){
 								doh.t(masterTT && isHidden(masterTT.domNode), "tooltip hidden");
-							}), 1000);
+							}), 2000);
 
 							return d;
 						}
 					}
 				]);
-				
+
 				doh.run();
 			});
 		</script>

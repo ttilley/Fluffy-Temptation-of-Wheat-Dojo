@@ -25,7 +25,7 @@ dojo.declare(
 		//				enter an arbitrary value.)
 		//			- The value submitted with the form is the hidden value (ex: CA),
 		//				not the displayed value a.k.a. label (ex: California)
-		// 
+		//
 		//		Enhancements over plain HTML version:
 		//			- If you type in some text then it will filter down the list of
 		//				possible values in the drop down list.
@@ -35,7 +35,7 @@ dojo.declare(
 		_isvalid: true,
 
 		// required: Boolean
-		//		True if user is required to enter a value into this field.
+		//		True (default) if user is required to enter a value into this field.
 		required: true,
 
 		_lastDisplayedValue: "",
@@ -45,8 +45,8 @@ dojo.declare(
 			return this._isvalid || (!this.required && this.attr('displayedValue') == ""); // #5974
 		},
 
-		_callbackSetLabel: function(	/*Array*/ result, 
-						/*Object*/ dataObject, 
+		_callbackSetLabel: function(	/*Array*/ result,
+						/*Object*/ dataObject,
 						/*Boolean?*/ priorityChange){
 			// summary:
 			//		Callback function that dynamically sets the label of the
@@ -56,20 +56,19 @@ dojo.declare(
 			// so it calls _callbackSetLabel directly,
 			// and so does not pass dataObject
 			// still need to test against _lastQuery in case it came too late
-			if((dataObject && dataObject.query[this.searchAttr] != this._lastQuery)||(!dataObject && result.length && this.store.getIdentity(result[0])!= this._lastQuery)){
+			if((dataObject && dataObject.query[this.searchAttr] != this._lastQuery) || (!dataObject && result.length && this.store.getIdentity(result[0]) != this._lastQuery)){
 				return;
 			}
 			if(!result.length){
 				//#3268: do nothing on bad input
-				//this._setValue("", "");
 				//#3285: change CSS to indicate error
 				this.valueNode.value = "";
-				dijit.form.TextBox.superclass._setValueAttr.call(this, "", priorityChange || (priorityChange===undefined && !this._focused));
+				dijit.form.TextBox.superclass._setValueAttr.call(this, "", priorityChange || (priorityChange === undefined && !this._focused));
 				this._isvalid = false;
 				this.validate(this._focused);
 				this.item = null;
 			}else{
-				this._setValueFromItem(result[0], priorityChange);
+				this.attr('item', result[0], priorityChange);
 			}
 		},
 
@@ -80,7 +79,7 @@ dojo.declare(
 			if(dataObject.query[this.searchAttr] != this._lastQuery){
 				return;
 			}
-			this._isvalid = results.length != 0; // FIXME: should this be greater-than?
+			this._isvalid = results.length || this._maxOptions; // result.length==0 && maxOptions != 0 implies the nextChoices item selected but then the datastore returned 0 more entries
 			this.validate(true);
 			dijit.form.ComboBoxMixin.prototype._openResultList.apply(this, arguments);
 		},
@@ -89,29 +88,14 @@ dojo.declare(
 			// summary:
 			//		Hook for attr('value') to work.
 
-			// don't get the textbox value but rather the previously set hidden value
-			// TODO: seems suspicious that we need this; how is FilteringSelect different
-			// than another MappedTextBox widget?
+			// don't get the textbox value but rather the previously set hidden value.
+			// Use this.valueNode.value which isn't always set for other MappedTextBox widgets until blur
 			return this.valueNode.value;
 		},
 
 		_getValueField: function(){
 			// Overrides ComboBox._getValueField()
 			return "value";
-		},
-
-		_setValue: function(	/*String*/ value, 
-					/*String*/ displayedValue,
-					/*Boolean?*/ priorityChange){
-			// summary:
-			//		Internal function for setting the displayed value and hidden value.
-			//		Differs from _setValueAttr() in that _setValueAttr() only takes a single
-			//		value argument, and has to look up the displayed value from that.
-			// tags:
-			//		private
-			this.valueNode.value = value;
-			dijit.form.FilteringSelect.superclass._setValueAttr.call(this, value, priorityChange, displayedValue);
-			this._lastDisplayedValue = displayedValue;
 		},
 
 		_setValueAttr: function(/*String*/ value, /*Boolean?*/ priorityChange){
@@ -131,49 +115,26 @@ dojo.declare(
 			//#3347: fetchItemByIdentity if no keyAttr specified
 			var self = this;
 			this.store.fetchItemByIdentity({
-				identity: value, 
+				identity: value,
 				onItem: function(item){
-					self._callbackSetLabel([item], undefined, priorityChange);
+					self._callbackSetLabel(item? [item] : [], undefined, priorityChange);
 				}
 			});
 		},
 
-		_setValueFromItem: function(/*item*/ item, /*Boolean?*/ priorityChange){
-			//	summary:
+		_setItemAttr: function(/*item*/ item, /*Boolean?*/ priorityChange, /*String?*/ displayedValue){
+			// summary:
 			//		Set the displayed valued in the input box, and the hidden value
 			//		that gets submitted, based on a dojo.data store item.
-			//	description:
+			// description:
 			//		Users shouldn't call this function; they should be calling
-			//		attr('displayedValue', value) or attr('value', ...) instead
+			//		attr('item', value)
 			// tags:
 			//		private
 			this._isvalid = true;
-			this.item = item; // Fix #6381
-			this._setValue(	this.store.getIdentity(item), 
-							this.labelFunc(item, this.store), 
-							priorityChange);
-		},
-
-		labelFunc: function(/*item*/ item, /*dojo.data.store*/ store){
-			// summary:
-			//		Computes the label to display based on the dojo.data store item.
-			// returns:
-			//		The label that the ComboBox should display
-			// tags:
-			//		private
-			
-			// Use toString() because XMLStore returns an XMLItem whereas this
-			// method is expected to return a String (#9354)
-			return store.getValue(item, this.searchAttr).toString();	// String
-		},
-
-		_doSelect: function(/*Event*/ tgt){
-			// summary:
-			//		Overrides ComboBox._doSelect(), the method called when an item in the menu is selected.
-			//	description:
-			//		FilteringSelect overrides this to set both the visible and
-			//		hidden value from the information stored in the menu.
-			this._setValueFromItem(tgt.item, true);
+			this.inherited(arguments);
+			this.valueNode.value = this.value;
+			this._lastDisplayedValue = this.textbox.value;
 		},
 
 		_getDisplayQueryString: function(/*String*/ text){
@@ -208,11 +169,11 @@ dojo.declare(
 				this._lastDisplayedValue = label;
 				var _this = this;
 				var fetch = {
-					query: query, 
+					query: query,
 					queryOptions: {
-						ignoreCase: this.ignoreCase, 
+						ignoreCase: this.ignoreCase,
 						deep: true
-					}, 
+					},
 					onComplete: function(result, dataObject){
 						_this._fetchHandle = null;
 						dojo.hitch(_this, "_callbackSetLabel")(result, dataObject, priorityChange);
@@ -220,7 +181,7 @@ dojo.declare(
 					onError: function(errText){
 						_this._fetchHandle = null;
 						console.error('dijit.form.FilteringSelect: ' + errText);
-						dojo.hitch(_this, "_setValue")("", label, false);
+						dojo.hitch(_this, "_callbackSetLabel")([], undefined, false);
 					}
 				};
 				dojo.mixin(fetch, this.fetchProperties);

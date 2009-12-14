@@ -44,27 +44,6 @@
 	line-height: normal;
 }
 
-.tundra .dijitTextBoxReadOnly,
-.tundra .dijitComboBoxReadOnly,
-.tundra .dijitSpinnerReadOnly,
-.tundra .dijitTextAreaReadOnly,
-.tundra .dijitTextBoxDisabled,
-.tundra .dijitComboBoxDisabled,
-.tundra .dijitSpinnerDisabled,
-.tundra .dijitTextAreaDisabled {
-	color: gray;
-}
-.dj_webkit .tundra .dijitTextBoxReadOnly,
-.dj_webkit .tundra .dijitComboBoxReadOnly,
-.dj_webkit .tundra .dijitSpinnerReadOnly,
-.dj_webkit .tundra .dijitTextAreaReadOnly,
-.dj_webkit .tundra .dijitTextBoxDisabled,
-.dj_webkit .tundra .dijitComboBoxDisabled,
-.dj_webkit .tundra .dijitSpinnerDisabled,
-.dj_webkit .tundra .dijitTextAreaDisabled {
-	color: #eee;
-}
-
 /* ComboBox specifix rules*/
 .tundra .dijitComboBox .dijitInputField {
 	padding: 1px 0;
@@ -135,19 +114,10 @@
 }
 
 
-/* MOW: trying to get this to look like a mini-dialog.  Advised? */
 .tundra .dijitInlineEditor {
 	/* fieldset surrounding an inlineEditor in edit mode */
 	display: inline-block;
-	display: -moz-inline-stack;
 	#display:inline;
-	/*
-	border-style: solid;
-	border-color: #7788a0 #344257 #344257 #7788a0;
-	border-width:1px 2px 2px 1px;
-	-moz-border-radius:0px 2px 0px 2px;	make BL and TR corners indent on Moz so it looks like we have a shadow
-	background-color:white;
-	*/
 }
 
 .dijitInlineEditor .saveButton,

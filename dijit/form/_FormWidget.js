@@ -5,7 +5,6 @@ dojo.require("dijit._Templated");
 
 dojo.declare("dijit.form._FormWidget", [dijit._Widget, dijit._Templated],
 	{
-	//
 	// summary:
 	//		Base class for widgets corresponding to native HTML elements such as <checkbox> or <button>,
 	//		which can be children of a <form> node or a `dijit.form.Form` widget.
@@ -15,7 +14,7 @@ dojo.declare("dijit.form._FormWidget", [dijit._Widget, dijit._Templated],
 	//		All these widgets should have these attributes just like native HTML input elements.
 	//		You can set them during widget construction or afterwards, via `dijit._Widget.attr`.
 	//
-	//	They also share some common methods.
+	//		They also share some common methods.
 
 	// baseClass: [protected] String
 	//		Root CSS class of the widget (ex: dijitTextBox), used to add CSS classes of widget
@@ -59,10 +58,10 @@ dojo.declare("dijit.form._FormWidget", [dijit._Widget, dijit._Templated],
 	// These mixins assume that the focus node is an INPUT, as many but not all _FormWidgets are.
 	attributeMap: dojo.delegate(dijit._Widget.prototype.attributeMap, {
 		value: "focusNode",
-		disabled: "focusNode",
 		id: "focusNode",
 		tabIndex: "focusNode",
-		alt: "focusNode"
+		alt: "focusNode",
+		title: "focusNode"
 	}),
 
 	postMixInProperties: function(){
@@ -75,15 +74,18 @@ dojo.declare("dijit.form._FormWidget", [dijit._Widget, dijit._Templated],
 	_setDisabledAttr: function(/*Boolean*/ value){
 		this.disabled = value;
 		dojo.attr(this.focusNode, 'disabled', value);
+		if(this.valueNode){
+			dojo.attr(this.valueNode, 'disabled', value);
+		}
 		dijit.setWaiState(this.focusNode, "disabled", value);
 
 		if(value){
-			//reset those, because after the domNode is disabled, we can no longer receive
-			//mouse related events, see #4200
+			// reset those, because after the domNode is disabled, we can no longer receive
+			// mouse related events, see #4200
 			this._hovering = false;
 			this._active = false;
 			// remove the tabIndex, especially for FF
-			this.focusNode.removeAttribute('tabIndex');
+			this.focusNode.setAttribute('tabIndex', "-1");
 		}else{
 			this.focusNode.setAttribute('tabIndex', this.tabIndex);
 		}
@@ -137,8 +139,8 @@ dojo.declare("dijit.form._FormWidget", [dijit._Widget, dijit._Templated],
 					// set a global event to handle mouseup, so it fires properly
 					//	even if the cursor leaves the button
 					var mouseUpConnector = this.connect(dojo.body(), "onmouseup", function(){
-						//if user clicks on the button, even if the mouse is released outside of it,
-						//this button should get focus (which mimics native browser buttons)
+						// if user clicks on the button, even if the mouse is released outside of it,
+						// this button should get focus (which mimics native browser buttons)
 						if(this._mouseDown && this.isFocusable()){
 							this.focus();
 						}
@@ -256,7 +258,7 @@ dojo.declare("dijit.form._FormWidget", [dijit._Widget, dijit._Templated],
 		// tags:
 		//		protected
 		if(typeof val1 == "number" && typeof val2 == "number"){
-			return (isNaN(val1) && isNaN(val2))? 0 : val1 - val2;
+			return (isNaN(val1) && isNaN(val2)) ? 0 : val1 - val2;
 		}else if(val1 > val2){
 			return 1;
 		}else if(val1 < val2){
@@ -304,9 +306,9 @@ dojo.declare("dijit.form._FormWidget", [dijit._Widget, dijit._Templated],
 				if(this._onChangeHandle){
 					clearTimeout(this._onChangeHandle);
 				}
-				// setTimout allows hidden value processing to run and 
+				// setTimout allows hidden value processing to run and
 				// also the onChange handler can safely adjust focus, etc
-				this._onChangeHandle = setTimeout(dojo.hitch(this, 
+				this._onChangeHandle = setTimeout(dojo.hitch(this,
 					function(){
 						this._onChangeHandle = null;
 						this.onChange(newValue);
@@ -323,9 +325,6 @@ dojo.declare("dijit.form._FormWidget", [dijit._Widget, dijit._Templated],
 	},
 
 	destroy: function(){
-		if(this._layoutHackHandle){
-			clearTimeout(this._layoutHackHandle);
-		}
 		if(this._onChangeHandle){ // destroy called before last onChange has fired
 			clearTimeout(this._onChangeHandle);
 			this.onChange(this._lastValueReported);
@@ -345,21 +344,6 @@ dojo.declare("dijit.form._FormWidget", [dijit._Widget, dijit._Templated],
 		//		Deprecated.   Use attr('value') instead.
 		dojo.deprecated(this.declaredClass+"::getValue() is deprecated. Use attr('value') instead.", "", "2.0");
 		return this.attr('value');
-	},
-
-	_layoutHack: function(){
-		// summary:
-		//		Work around table sizing bugs on FF2 by forcing redraw
-
-		if(dojo.isFF == 2 && !this._layoutHackHandle){
-			var node=this.domNode;
-			var old = node.style.opacity;
-			node.style.opacity = "0.999";
-			this._layoutHackHandle = setTimeout(dojo.hitch(this, function(){
-				this._layoutHackHandle = null;
-				node.style.opacity = old;
-			}), 0);
-		}
 	}
 });
 
@@ -399,7 +383,7 @@ dojo.declare("dijit.form._FormValueWidget", dijit.form._FormWidget,
 	},
 
 	postCreate: function(){
-		if(dojo.isIE || dojo.isWebKit){ // IE won't stop the event with keypress and Safari won't send an ESCAPE to keypress at all
+		if(dojo.isIE){ // IE won't stop the event with keypress
 			this.connect(this.focusNode || this.domNode, "onkeydown", this._onKeyDown);
 		}
 		// Update our reset value if it hasn't yet been set (because this.attr
@@ -442,18 +426,12 @@ dojo.declare("dijit.form._FormValueWidget", dijit.form._FormWidget,
 	_onKeyDown: function(e){
 		if(e.keyCode == dojo.keys.ESCAPE && !(e.ctrlKey || e.altKey || e.metaKey)){
 			var te;
-			if(dojo.isIE){ 
+			if(dojo.isIE){
 				e.preventDefault(); // default behavior needs to be stopped here since keypress is too late
 				te = document.createEventObject();
 				te.keyCode = dojo.keys.ESCAPE;
 				te.shiftKey = e.shiftKey;
 				e.srcElement.fireEvent('onkeypress', te);
-			}else if(dojo.isWebKit){ // ESCAPE needs help making it into keypress
-				te = document.createEvent('Events');
-				te.initEvent('keypress', true, true);
-				te.keyCode = dojo.keys.ESCAPE;
-				te.shiftKey = e.shiftKey;
-				e.target.dispatchEvent(te);
 			}
 		}
 	},

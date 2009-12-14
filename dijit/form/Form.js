@@ -53,11 +53,11 @@ dojo.declare(
 		templateString: "<form dojoAttachPoint='containerNode' dojoAttachEvent='onreset:_onReset,onsubmit:_onSubmit' ${nameAttrSetting}></form>",
 
 		attributeMap: dojo.delegate(dijit._Widget.prototype.attributeMap, {
-			action: "", 
-			method: "", 
-			encType: "", 
-			"accept-charset": "", 
-			accept: "", 
+			action: "",
+			method: "",
+			encType: "",
+			"accept-charset": "",
+			accept: "",
 			target: ""
 		}),
 
@@ -115,7 +115,7 @@ dojo.declare(
 			// create fake event so we can know if preventDefault() is called
 			var faux = {
 				returnValue: true, // the IE way
-				preventDefault: function(){  // not IE
+				preventDefault: function(){ // not IE
 							this.returnValue = false;
 						},
 				stopPropagation: function(){}, currentTarget: e.currentTarget, target: e.target
@@ -140,8 +140,8 @@ dojo.declare(
 				dojo.stopEvent(e);
 			}
 		},
-		
-		onSubmit: function(/*Event?*/e){ 
+
+		onSubmit: function(/*Event?*/e){
 			// summary:
 			//		Callback when user submits the form.
 			// description:

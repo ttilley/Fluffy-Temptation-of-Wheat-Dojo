@@ -56,14 +56,15 @@ dojo.declare(
 			//when no iframe is used, focus will be lost whenever another element gets focus.
 			//For IE, we can connect to onBeforeDeactivate, which will be called right before
 			//the focus is lost, so we can obtain the selected range. For other browsers,
-			//no equivelent of onBeforeDeactivate, so we need to do two things to make sure 
-			//selection is properly saved before focus is lost: 1) when user clicks another 
+			//no equivelent of onBeforeDeactivate, so we need to do two things to make sure
+			//selection is properly saved before focus is lost: 1) when user clicks another
 			//element in the page, in which case we listen to mousedown on the entire page and
 			//see whether user clicks out of a focus editor, if so, save selection (focus will
 			//only lost after onmousedown event is fired, so we can obtain correct caret pos.)
 			//2) when user tabs away from the editor, which is handled in onKeyDown below.
 			if(dojo.isIE){
 				this.events.push("onBeforeDeactivate");
+				this.events.push("onBeforeActivate");
 			}
 		},
 
@@ -165,14 +166,27 @@ dojo.declare(
 		resize: function(size){
 			// summary:
 			//		Resize the editor to the specified size, see `dijit.layout._LayoutWidget.resize`
-			dijit.layout._LayoutWidget.prototype.resize.apply(this,arguments);
+			if(size){
+				// we've been given a height/width for the entire editor (toolbar + contents), calls layout()
+				// to split the allocated size between the toolbar and the contents
+				dijit.layout._LayoutWidget.prototype.resize.apply(this, arguments);
+			}
+			/*
+			else{
+				// do nothing, the editor is already laid out correctly.   The user has probably specified
+				// the height parameter, which was used to set a size on the iframe
+			}
+			*/
 		},
 		layout: function(){
 			// summary:
 			//		Called from `dijit.layout._LayoutWidget.resize`.  This shouldn't be called directly
 			// tags:
 			//		protected
-			this.editingArea.style.height=(this._contentBox.h - dojo.marginBox(this.toolbar.domNode).h)+"px";
+
+			// Converts the iframe (or rather the <div> surrounding it) to take all the available space
+			// except what's needed for the toolbar
+			this.editingArea.style.height = (this._contentBox.h - dojo.marginBox(this.toolbar.domNode).h)+"px";
 			if(this.iframe){
 				this.iframe.style.height="100%";
 			}
@@ -183,11 +197,18 @@ dojo.declare(
 			//		IE only to prevent 2 clicks to focus
 			// tags:
 			//		private
-			delete this._savedSelection; // new mouse position overrides old selection
-			if(e.target.tagName == "BODY"){
-				setTimeout(dojo.hitch(this, "placeCursorAtEnd"), 0);
+
+			var outsideClientArea = this.document.body.componentFromPoint(e.x, e.y);
+			if(!outsideClientArea){
+				delete this._savedSelection; // new mouse position overrides old selection
+				if(e.target.tagName == "BODY"){
+					setTimeout(dojo.hitch(this, "placeCursorAtEnd"), 0);
+				}
+				this.inherited(arguments);
 			}
-			this.inherited(arguments);
+		},
+		onBeforeActivate: function(e){
+			this._restoreSelection();
 		},
 		onBeforeDeactivate: function(e){
 			// summary:
@@ -202,7 +223,7 @@ dojo.declare(
 			if(e.target.tagName != "BODY"){
 				this._saveSelection();
 			}
-	        //console.log('onBeforeDeactivate',this);
+			//console.log('onBeforeDeactivate',this);
 		},
 
 		/* beginning of custom undo/redo support */
@@ -248,16 +269,17 @@ dojo.declare(
 			//      Called by plugins, but not meant to be called by end users.
 			// tags:
 			//		protected
-			if(this.customUndo && (cmd=='undo' || cmd=='redo')){
+			if(this.customUndo && (cmd == 'undo' || cmd == 'redo')){
 				return this[cmd]();
 			}else{
 				if(this.customUndo){
 					this.endEditing();
 					this._beginEditing();
 				}
+				var r;
 				try{
-					var r = this.inherited('execCommand', arguments);
-					if(dojo.isWebKit && cmd=='paste' && !r){ //see #4598: safari does not support invoking paste from js
+					r = this.inherited('execCommand', arguments);
+					if(dojo.isWebKit && cmd == 'paste' && !r){ //see #4598: safari does not support invoking paste from js
 						throw { code: 1011 }; // throw an object like Mozilla's error
 					}
 				}catch(e){
@@ -283,8 +305,8 @@ dojo.declare(
 			//      Used by the plugins to know when to highlight/not highlight buttons.
 			// tags:
 			//		protected
-			if(this.customUndo && (cmd=='undo' || cmd=='redo')){
-				return cmd=='undo'?(this._steps.length>1):(this._undoedSteps.length>0);
+			if(this.customUndo && (cmd == 'undo' || cmd == 'redo')){
+				return cmd == 'undo' ? (this._steps.length > 1) : (this._undoedSteps.length > 0);
 			}else{
 				return this.inherited('queryCommandEnabled',arguments);
 			}
@@ -295,11 +317,13 @@ dojo.declare(
 			//		Selects the text specified in bookmark b
 			// tags:
 			//		private
-			var bookmark=b;
+			var bookmark = b.mark;
+			var mark = b.mark;
+			var col = b.isCollapsed;
 			if(dojo.isIE){
-				if(dojo.isArray(b)){//IE CONTROL
-					bookmark=[];
-					dojo.forEach(b,function(n){
+				if(dojo.isArray(mark)){//IE CONTROL
+					bookmark = [];
+					dojo.forEach(mark,function(n){
 						bookmark.push(dijit.range.getNode(n,this.editNode));
 					},this);
 				}
@@ -309,8 +333,9 @@ dojo.declare(
 				r.setEnd(dijit.range.getNode(b.endContainer,this.editNode),b.endOffset);
 				bookmark=r;
 			}
-			dojo.withGlobal(this.window,'moveToBookmark',dijit,[bookmark]);
+			dojo.withGlobal(this.window,'moveToBookmark',dijit,[{mark: bookmark, isCollapsed: col}]);
 		},
+
 		_changeToStep: function(from, to){
 			// summary:
 			//		Reverts editor to "to" setting, from the undo stack.
@@ -377,19 +402,22 @@ dojo.declare(
 			//		protected
 			var b=dojo.withGlobal(this.window,dijit.getBookmark);
 			var tmp=[];
-			if(dojo.isIE){
-				if(dojo.isArray(b)){//CONTROL
-					dojo.forEach(b,function(n){
-						tmp.push(dijit.range.getIndex(n,this.editNode).o);
-					},this);
-					b=tmp;
+			if(b.mark){
+				var mark = b.mark;
+				if(dojo.isIE){
+					if(dojo.isArray(mark)){//CONTROL
+						dojo.forEach(mark,function(n){
+							tmp.push(dijit.range.getIndex(n,this.editNode).o);
+						},this);
+						b.mark = tmp;
+					}
+				}else{//w3c range
+					tmp=dijit.range.getIndex(mark.startContainer,this.editNode).o;
+					b.mark ={startContainer:tmp,
+						startOffset:mark.startOffset,
+						endContainer:mark.endContainer === mark.startContainer?tmp:dijit.range.getIndex(mark.endContainer,this.editNode).o,
+						endOffset:mark.endOffset};
 				}
-			}else{//w3c range
-				tmp=dijit.range.getIndex(b.startContainer,this.editNode).o;
-				b={startContainer:tmp,
-					startOffset:b.startOffset,
-					endContainer:b.endContainer===b.startContainer?tmp:dijit.range.getIndex(b.endContainer,this.editNode).o,
-					endOffset:b.endOffset};
 			}
 			return b;
 		},
@@ -399,7 +427,7 @@ dojo.declare(
 			//		Deals with saving undo; see editActionInterval parameter.
 			// tags:
 			//		private
-			if(this._steps.length===0){
+			if(this._steps.length === 0){
 				this._steps.push({'text':this.savedContent,'bookmark':this._getBookmark()});
 			}
 		},
@@ -422,7 +450,7 @@ dojo.declare(
 
 			//We need to save selection if the user TAB away from this editor
 			//no need to call _saveSelection for IE, as that will be taken care of in onBeforeDeactivate
-			if(!dojo.isIE && !this.iframe && e.keyCode==dojo.keys.TAB && !this.tabIndent){
+			if(!dojo.isIE && !this.iframe && e.keyCode == dojo.keys.TAB && !this.tabIndent){
 				this._saveSelection();
 			}
 			if(!this.customUndo){
@@ -516,11 +544,10 @@ dojo.declare(
 			// tags:
 			//		private
 			if(this._savedSelection){
-				//only restore the selection if the current range is collapsed
-    				//if not collapsed, then it means the editor does not lose 
-    				//selection and there is no need to restore it
-    				if(dojo.withGlobal(this.window,'isCollapsed',dijit)){
-    					//console.log('_restoreSelection true')
+				// only restore the selection if the current range is collapsed
+				// if not collapsed, then it means the editor does not lose
+				// selection and there is no need to restore it
+				if(dojo.withGlobal(this.window,'isCollapsed',dijit)){
 					this._moveToBookmark(this._savedSelection);
 				}
 				delete this._savedSelection;

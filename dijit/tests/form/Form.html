@@ -40,7 +40,7 @@
 			obj = dijit.byId('myForm').attr('value');
 			console.log("Object is: " + dojo.toJson(obj, true));
 		}
-		
+
 		function setValues(){
 			if(!obj){
 		 		obj = {testF: 'testi'};
@@ -48,7 +48,7 @@
 			console.log("Object is: " + dojo.toJson(obj, true));
 			dijit.byId('myForm').attr('value', obj);
 		}
-		
+
 		function validate(){
 			console.log(dijit.byId('myForm').validate());
 		}
@@ -75,7 +75,8 @@
 							st1: "simple line 1\nsimple line 2",
 							richtext: "<h1>original</h1><p>This is the default content</p>",
 							filename: "",
-							readOnlyWidget: "Should be returned"
+							readOnlyWidget: "Should be returned",
+							duplicate: ["first", "second", "third"]
 						};
 
 		// we change the form to these values
@@ -91,7 +92,8 @@
 							st1: "new simple line 1\nnew simple line 2",
 							richtext: "<h1>changed</h1><p>This is the changed content set by attr('value', ...')</p>",
 							filename: "",
-							readOnlyWidget: "Should be returned"
+							readOnlyWidget: "Should be returned",
+							duplicate: ["1", "2", "3"]
 						};
 		var particalchanged = {
 							foo: {bar: {baz: {quux: d("2006-01-01")} } },
@@ -112,10 +114,54 @@
 							st1: "simple line 1\nsimple line 2",
 							richtext: "<h1>changed</h1><p>This is the changed content set by attr('value', ...')</p>", // not a form element, so not reset
 							filename: "",
-							readOnlyWidget: "Should be returned"
+							readOnlyWidget: "Should be returned",
+							duplicate: ["first", "second", "third"]
 						};
 
 		dojo.addOnLoad(function(){
+
+			// should be able to query for all of the inputs, including hidden ones
+			doh.register("query input by checked state", [
+				{
+					name: "all",
+					runTest: function(){
+						var queried=dojo.query("input[checked]");
+						doh.t(queried.length>0,"dojo.query could not find checked widgets.");
+						doh.is(3,queried.length,"expected: 3 checked widgets, got: "+queried.length);
+						doh.is(dojo.byId('dijit_form_CheckBox_1'),queried[0],"Expected 2nd checkbox.");
+						doh.is(dojo.byId('dijit_form_CheckBox_2'),queried[1],"Expected 3rd checkbox.");
+						doh.is(dojo.byId('dijit_form_RadioButton_1'),queried[2],"Expected 2nd radio button.");
+					}
+				}
+			]);
+
+			doh.register("query input by name",
+				dojo.map(
+					[
+						"foo.bar.baz.quux","available.from","available.to", // DateTextBox
+						"plop.combo", // ComboBox
+						"cb2", // CheckBox
+						"r2", // RadioButton
+						//"ms1", // MultiSelect
+						"h1", // plain hidden input
+						//"t1", "st1", // TextArea
+						//"richtext", // Editor
+						"filename", // TextBox set to file input
+						"disabledWidget" // disabled TextBox
+					],
+					function(name){
+						return {
+							name: name,
+							widgetName: name,
+							runTest: function(){
+								var queried = dojo.query("input[name="+this.widgetName+"]");
+								doh.t(queried.length > 0, "dojo.query could not find form widget: '"+this.widgetName+"'");
+							}
+						};
+					}
+				)
+			);
+
 			var resetready=false;
 			var formWidget = dijit.byId("myForm");
 			var testSubmittedValues = function(deferred, testValues, formValues){
@@ -136,24 +182,28 @@
 			};
 			doh.register("dijit.form.Form",
 				[
-					function setUp(){
-						var d=new doh.Deferred();
+					{
+						name: "setUp",
+						timeout: 5000,
+						runTest: function(){
+							var d=new doh.Deferred();
 
-						var defer=function(){
-							if(dijit.byId('t1')._resetValue!==undefined &&
-								!dijit.byId('editor').disabled){
-								doh.t(true);
-								d.callback(true);
-							}else{
-								setTimeout(defer,100);
-							}
-						};
-						setTimeout(defer,100);
-						return d;
+							var defer=function(){
+								if(dijit.byId('t1')._resetValue!==undefined &&
+									!dijit.byId('editor').disabled){
+									doh.t(true);
+									d.callback(true);
+								}else{
+									setTimeout(defer,100);
+								}
+							};
+							setTimeout(defer,1000);
+							return d;
+						}
 					},
 					function getValues(){
 						var values = formWidget.attr('value');
-						
+
 						// FF3 sticks in some tabs and newlines that mess up the equality check
 						// Need better way to compare two HTML trees but for now do this.
 						values.richtext = values.richtext.replace(/[\n\t]/, "", "g");
@@ -208,6 +258,7 @@
 					}
 				]
 			);
+
 			doh.run();
 		});
 
@@ -221,9 +272,9 @@
 	</p>
 	<div style="color:red">Currently only widgets are supported, not raw elements.</div>
 	<!--    to test form submission, you'll need to create an action handler similar to
-			http://www.utexas.edu/teamweb/cgi-bin/generic.cgi 
+			http://www.utexas.edu/teamweb/cgi-bin/generic.cgi
 		http://www.tipjar.com/cgi-bin/test -->
-	<form dojoType="dijit.form.Form" id="myForm" 
+	<form dojoType="dijit.form.Form" id="myForm"
 		encType="multipart/form-data" action="../formAction.html" method="" target="_formSubmitIframe">
 		<script type="dojo/method" event="onReset">
 			return confirm('Press OK to reset widget values');
@@ -396,7 +447,7 @@
 					<td>Auto-sizing textarea</td>
 					<td>t1</td>
 					<td>
-						<textarea id="t1" name="t1" 
+						<textarea id="t1" name="t1"
 	dojoType="dijit.form.Textarea">line 1
 line 2</textarea>
 					</td>
@@ -429,23 +480,44 @@ simple line 2</textarea>
 				</tr>
 				<tr>
 					<td>Disabled Widget</td>
-					<td>Disabled</td>
+					<td>disabledWidget</td>
 					<td>
 						<input dojoType="dijit.form.TextBox" name="disabledWidget" disabled="disabled" value="Should not be returned">
 					</td>
 				</tr>
 				<tr>
 					<td>Disabled Required Widget</td>
-					<td>Disabled Required</td>
+					<td>disabledRequiredWidget</td>
 					<td>
 						<input dojoType="dijit.form.ValidationTextBox" name="disabledRequiredWidget" disabled="disabled" required="true" value="">
 					</td>
 				</tr>
 				<tr>
 					<td>Read-only Widget</td>
-					<td>Read Only</td>
+					<td>readOnlyWidget</td>
 					<td>
 						<input dojoType="dijit.form.TextBox" name="readOnlyWidget" readOnly value="Should be returned">
+					</td>
+				</tr>
+				<tr>
+					<td>Duplicate named TextBox 1</td>
+					<td>duplicate</td>
+					<td>
+						<input dojoType="dijit.form.TextBox" name="duplicate" value="first">
+					</td>
+				</tr>
+				<tr>
+					<td>Duplicate named TextBox 2</td>
+					<td>duplicate</td>
+					<td>
+						<input dojoType="dijit.form.TextBox" name="duplicate" value="second">
+					</td>
+				</tr>
+				<tr>
+					<td>Duplicate named TextBox 3</td>
+					<td>duplicate</td>
+					<td>
+						<input dojoType="dijit.form.TextBox" name="duplicate" value="third">
 					</td>
 				</tr>
 			</tbody>
@@ -457,7 +529,7 @@ simple line 2</textarea>
 		<button dojoType="dijit.form.Button" type="submit" value="Submit">Submit</button>
 		<button dojoType="dijit.form.Button" type="reset">Reset</button>
 	</form>
-<button dojoType="dijit.form.Button" type="button" 
+<button dojoType="dijit.form.Button" type="button"
 onclick="dijit.byId('myForm').submit()">Submit programmatically</button>
 
 <iframe name="_formSubmitIframe" src="about:blank" onload="if(this.values)submittedValues(this.values)" style="display:none;"></iframe>

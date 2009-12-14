@@ -11,7 +11,7 @@ dojo.declare("dijit._editor.plugins.TabIndent",
 		//		This plugin is used to allow the use of the tab and shift-tab keys
 		//		to indent/outdent list items.  This overrides the default behavior
 		//		of moving focus from/to the toolbar
-		
+
 		// Override _Plugin.useDefaultCommand... processing is handled by this plugin, not by dijit.Editor.
 		useDefaultCommand: false,
 
@@ -35,9 +35,9 @@ dojo.declare("dijit._editor.plugins.TabIndent",
 
 		updateState: function(){
 			// Overrides _Plugin.updateState().
-			// Since (apparently) Ctrl-m in the editor will switch tabIndent mode on/off, we need to react to that.
+			// Ctrl-m in the editor will switch tabIndent mode on/off, so we need to react to that.
 
-			this.button.attr('checked', this.editor.isTabIndent);
+			this.button.attr('checked', this.editor.isTabIndent, false);
 		}
 	}
 );
