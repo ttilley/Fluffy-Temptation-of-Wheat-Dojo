@@ -40,12 +40,11 @@ dojo.provide("plugd.base");
 		showProperty  = useLayout ? "visible" : (d.config.useBlock ? "block" : ""),
 		
 		_getDuration = function(arg){
-			return (arg in speedMap) ? speedMap[arg] : speedMap.fast;
+			return speedMap[arg in speedMap ? arg : "fast"];
 		},
 		
 		// these too are for ShrinkSafe's benefit. 
 		NodeList = d.NodeList,
-		mirror = NodeList.prototype,
 		_each = NodeList._adaptAsForEach,
 		
 		// for dojo.generateId
@@ -53,11 +52,19 @@ dojo.provide("plugd.base");
 		id_count = 0, 
 		
 		// because IE is insane:
-		_jankyEvent = /enter|over/
+		_jankyEvent = /enter|over/,
+		
+		// dojo.selection function defition (one-time cost to determine):
+		_selection = "getSelection",
+		selection = d.global[_selection] || d.doc[_selection] || function(){
+			return d.doc.selection.createRange().text || "";
+		}
 	;
 
 	// namespace-polluting functions:
-	d.unique = function(/* Function */testFn, /* String? */b){
+	d[_selection] = function(){ return selection() + ""; }
+	
+	d.unique = function(/* Function */testFn, /* String? */base){
 		// summary: 
 		//		Return a unique string ID for something, based on a passed uniqueness test
 		//		function. Anything that returns a truthy value will suffice. 
@@ -68,7 +75,7 @@ dojo.provide("plugd.base");
 		//		until a falsy value is returned. The first failed string is returned to the
 		//		original caller, and is unique to whichever scope the caller intended.
 		//
-		// b: String?
+		// base: String?
 		//		An optional base to use as the prefix of the ID. defaults to "djid_"
 		//
 		// example:
@@ -88,12 +95,13 @@ dojo.provide("plugd.base");
 		//	|	var newDijitId = d.unique(dijit.byId, "dijit_auto");
 		//	|	new dijit.Dialog({ id: newDijitId, title:"Random" });
 		//
-		do{ globalId = (b || "djid_") + (++id_count); }
+		base = base || "djid_";
+		do{ globalId = base + (++id_count); }
 		while(testFn(globalId));
 		return globalId; // String
 	}
 
-	d.generateId = function(/* String? */b){
+	d.generateId = function(/* String? */base){
 		// summary: Generate an ID for a domNode, ensuring the id does not
 		//		exist previously in the DOM.
 		//
@@ -102,7 +110,7 @@ dojo.provide("plugd.base");
 		//		exist in the DOM at the time of execution. A unique number 
 		//		is appended to some string, and checked for uniqueness.
 		//
-		//	b: String?
+		//	base: String?
 		//		An optional base string to use for the id prefix. Defaults
 		//		to `djid_`
 		//
@@ -115,7 +123,7 @@ dojo.provide("plugd.base");
 		// example:
 		//	| dojo.create("div", { id: dojo.generateId() })
 		//
-		return d.unique(d.byId, b); // String
+		return d.unique(d.byId, base); // String
 	}
 	
 	d.load = function(){
@@ -140,12 +148,18 @@ dojo.provide("plugd.base");
 		//	|	dojo.load("dojo.NodeList-fx", function(){
 		//	|		dojo.query(".hidden").fadeIn().play();
 		//	|	});
+		//
+		// example:
+		//		Load multiple modules and register a `dojo.addOnLoad` function
+		//	|	dojo.load("dojo.fx", "dojo.NodeList-fx", function(){
+		//	|		dojo.query(".blah").anim({ opacity:0.5 });
+		//	|	})
 
 		var a = d._toArray(arguments), l = a.length,
 			f = l && !d.isString(a[l - 1]) ? a.pop() : null;
 
 		d.forEach(a, d.require, d);
-		f && d.addOnLoad(f);
+		f && d.ready(f);
 	}
 	
 	d.show = function(/* String|DomNode */n, /* String? */arg){
@@ -369,10 +383,138 @@ dojo.provide("plugd.base");
 		//	|		console.log("key is", key); // a, c
 		//	|	}))
 		//
+		scope = scope || d.global;
 		for(var key in obj){
-			callback.call(scope || d.global, obj[key], key, obj);
+			callback.call(scope, obj[key], key, obj);
 		}
 	}
+	
+	d.compose = function(/* Function... */){
+		// summary: Returns the composition of a list of functions.
+		//
+		// description: 
+		//		Returns the composition of a list of functions, where each
+		//		function consumes the return value of the function that follows.
+		//		
+		//		additionally, if one of the functions returns an array, the values
+		//		of that array are passed to the next function in the composition
+		//		as positional arguments.
+		//
+		//		This function is provided with a plethora of other useful functional
+		//		programming utilities in the official `dojox.lang.functional` package
+		//		named `lambda`.
+		//
+		// example:
+		//	|	var greet = function(name){ return "Hi: " + name; };
+		//	|	var exclaim = function(statement){ return statement + "!"; };
+		//	|	var welcome = dojo.compose(greet, exclaim);
+		//	|	welcome("Pete");
+		//	|	// Hi: Pete!
+		
+		var list = d._toArray(arguments);
+		return function(){ // function
+			var a = arguments;
+			d.forEach(list, function(fn){
+				a = fn.apply(this, d.isArrayLike(a) ? a : [a]);
+			});
+			return a; // Anything
+		}
+	}
+
+/*=====
+	d.delay = function(fn, timeout, args..){
+		// summary: Delay the execution of some function by a timeout. Any number
+		//		of positional arguments may come after the timeout value. Similar 
+		//		to setTimeout, but with normalized argument handling.
+		//
+		// fn: Function
+		//		The function to execute
+		//
+		// timeout: Integer
+		//		Time (in ms) to delay the execution
+		//
+		// args: Anything
+		//		Any number of positional arguments to pass along to the delayed function
+		// 
+		// example:
+		//	|	// alert after 1 full second
+		//	|	dojo.delay(function(){ alert("hi!") }, 1000);
+		//
+		// example:
+		//	|	// with curried arguments:
+		//	|	dojo.delay(function(a, b, c){ code(); }, 100, "a", "b", "c");
+		//
+		// returns: Timer
+		//		Returns the setTimeout handle for use with clearTimeout
+		return setTimeout(function(){}, timeout);
+	};
+=====*/	
+	
+	d.delay = function(){
+		var args = d._toArray(arguments), fn = args.shift(), timeout = args.shift();
+		return setTimeout(function(){
+			fn.apply(this, args);
+		}, timeout);
+	}
+	
+	d.defer = function(/* Function */fn){
+		// summary: Defer execution until the current callback stack has cleared. Similar to 
+		//		a setTimeout(..., 0).
+		//
+		// example: 
+		//	|	dojo.defer(function(){ alert('UI Updated.'); });
+		//
+		d.delay(fn, 0);
+	}
+	
+	d.now = function(){
+		// summary: Get a timestamp from NOW. Can be used for XHR timestamps,
+		//		or anywhere else a unique timestamp is required.
+		//
+		// example:
+		//	Slightly more convenient than `cacheBust:true`
+		//	|	dojo.xhrGet({ url:"foo.php?" + dojo.now() });
+		//
+		// example:
+		//	|	var n = dojo.now();
+		//	|	for(var i = 0; i < 100; i++){
+		//	|		/* do something expensive, lots */
+		//	|	}
+		//	|	console.log("took", dojo.now() - n, "ms");
+		return +(new Date()); // Number
+	}
+
+	d.reduce = function(arr, key){
+		// summary: Reduce an array of objects to an array of values from a key in each object.
+		//
+		// arr: Array
+		//		The array to map down
+		//
+		// key: String
+		//		The key to extract the value from on each iteration of the Array `arr`
+		//
+		// example:
+		//	|	var people = [{name:"joe", age:27 }, {name:"pete", age:29}];
+		//	|	var names = dojo.reduce(people, "name");
+		//	|	var ages = dojo.reduce(people, "ages");
+		//	| 	console.log(names, ages);
+		//	|	// [joe, pete], [27, 29]
+		return d.map(arr, function(item){
+			return item[key];
+		});
+	}
+
+/*=====
+	d.all = function(list, iterator, thisObj){
+		// summary: Alias to `dojo.every`
+	}
+	d.any = function(list, iterator, thisObj){
+		// summary: Alias to `dojo.some`
+	}
+=====*/
+
+	d.all = d.every;
+	d.any = d.some;
 	
 	// wrap them into dojo.NodeList
 	d.extend(NodeList, {
@@ -678,8 +820,9 @@ dojo.provide("plugd.base");
 			//		Determine the contentBox (as opposed to the default "maginBox");
 			//	|	dojo.query("#something").size("contentBox").w;
 
+			boxType = boxType || "marginBox";
 			var s = this.map(function(n){ 
-				return d[boxType || "marginBox"](n);
+				return d[boxType](n);
 			});
 			return s.length == 1 ? s[0] : s; // Array|Object
 		},
@@ -731,7 +874,7 @@ dojo.provide("plugd.base");
 		// as to not break with a stray comma after exlude block removal.		
 		//>>excludeEnd("redundant")
 
-/* In Dojo 1.4 / NodeList-manipulate				
+/* In Dojo 1.4 / NodeList-manipulate
 		// now I'm just making stuff up, this may or may not be the API:
 		// (it's not. jq .attr always returns a list iirc)
 		val: function(value){
@@ -781,11 +924,20 @@ dojo.provide("plugd.base");
 			//	|			}
 			//	|		);
 			//
+			// example:
+			//	Use a function for both over and out states:
+			//	|	dojo.query("ul > li").hover(function(e){
+			//	|		var isOver = /enter|over/.test(e.type);
+			//	|		if(isOver){ doSomething(); }else{
+			//	|			doSomethingElse();
+			//	|		}
+			//	|	});
+			//	
 			return this.onmouseenter(over).onmouseleave(out || over) // dojo.NodeList
 		},
 		
 		hoverClass: function(/* String */className){
-			// summary: add or remove a passed class name to these nodes
+			// summary: add or remove a passed class name to these nodes when hovered
 			//
 			// className: String
 			//		The class string to add or remove based on hover state.
@@ -796,8 +948,48 @@ dojo.provide("plugd.base");
 			//
 
 			return this.hover(function(e){ // dojo.NodeList
-				d[(_jankyEvent.test(e.type) ? "add" : "remove") + "Class"](this, className);
+				d.toggleClass(this, className, _jankyEvent.test(e.type));
 			});
+		},
+		
+		grab: function(url, extraArgs, method){
+			// summary: Grab some remote HTML and inject into these nodes.
+			//
+			// url: String
+			//		A url to fetch. Uses `dojo.xhr`, so must be same domain
+			//
+			// extraArgs: dojo._ioArgs?
+			//		An Optional parameter to mix in other standard dojo._ioArgs
+			//		into this request. (such as sync, timeout, error callbacks, 
+			//		and so on.)
+			// 
+			// method: String?
+			//		An optional HTTP verb to use. defaults to `GET`. Defines the transport 
+			//		to use, like POST/PUT/DELETE, and so on. 
+			//
+			// example:
+			//	|	dojo.query("#header").grab("header.html");
+			//
+			// example:
+			//	By using extraArgs we can make this NodeList xhr action synchronous
+			//	so the following chained functions apply to the newly injected markup.
+			//	|	dojo.query("ul li").grab("listitem.html", { sync:true })
+			//	|		.query("a").onclick(function(e){ dojo.stopEvent(e); });
+			//
+			// example:
+			//	An extraArgs load: function can be used to manipulate the data before
+			//	it is injected into the node. Simply return valid HTML from the callback.
+			//	|
+			//	|	dojo.query("ul#bar").grab("foo.json", { 
+			//	|		handleAs:"json",
+			//	|		load:function(response){
+			//	|			return dojo.replace("<li>{title}</li>", response);
+			//	|		}
+			//	|	});
+			
+			this.length && d.xhr(method || "GET", d._mixin({ url:url }, extraArgs))
+				.addCallback(this, function(r){ this.addContent(r, "only"); });
+			return this; // dojo.NodeList
 		}
 		
 	});
@@ -821,8 +1013,11 @@ dojo.provide("plugd.base");
 		//	example:
 		//	|	dojo.query("<div class='foo'>bar</div>").removeClass("foo").appendTo("#baz");
 		//
-		var c = d.isString(query) && query.charAt(0) == "<";
-		return oldQuery(c ? d.create(query) : query, scope) // dojo.NodeList
+		var c = d.isString(query) && query.charAt(0) == "<",
+			r = oldQuery(c ? d.create(query) : query, scope);
+		// r.selector = query; // maybe nice to add?
+		// r.context = scope; // ditto?
+		return r; // dojo.NodeList
 	}
 	
 	//>>excludeEnd("magicQuery");
@@ -850,8 +1045,8 @@ dojo.provide("plugd.base");
 		//	or someone has called dojo.conflict())
 		//	|	if(dojo.config.conflict){ /* $ is available */ }
 		//
-		window.$ = d.mixin(function(){ return d.mixin(d.query.apply(this, arguments), $.fn); }, { fn: {} });
-		window.$.fn.ready = d.addOnLoad;
+		d.global.$ = d.mixin(function(){ return d.mixin(d.query.apply(this, arguments), $.fn); }, { fn: {} });
+		d.global.$.fn.ready = d.ready;
 		d.config.conflict = true; // set to true so other things can know we're in conflict mode
 	}
 
