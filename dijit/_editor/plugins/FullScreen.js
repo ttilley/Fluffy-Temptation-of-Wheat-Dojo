@@ -129,11 +129,11 @@ dojo.declare("dijit._editor.plugins.FullScreen",dijit._editor._Plugin,{
 		});
 
 		//Adjust the inernal heights too, as they can be a bit off.
-		var tBox = dojo.marginBox(this.editor.toolbar.domNode);
+		var hHeight = this.editor.getHeaderHeight();
+		var fHeight = this.editor.getFooterHeight();
 		var extents = dojo._getPadBorderExtents(this.editor.domNode);
-
-		//AQdjust it.
-		var cHeight = vp.h - (tBox.h + extents.h);
+		
+		var cHeight = vp.h - (hHeight + extents.h + fHeight);
 		dojo.marginBox(this.editor.iframe.parentNode, {
 			h: cHeight
 		});
@@ -208,7 +208,8 @@ dojo.declare("dijit._editor.plugins.FullScreen",dijit._editor._Plugin,{
 				height: domStyle.height || "",
 				top: dojo.style(domNode, "top") || "",
 				left: dojo.style(domNode, "left") || "",
-				position: dojo.style(domNode, "position") || "static"
+				position: dojo.style(domNode, "position") || "static",
+				marginBox: dojo.marginBox(ed.domNode)
 			};
 
 			// Store the iframe state we have to restore later.
@@ -306,6 +307,18 @@ dojo.declare("dijit._editor.plugins.FullScreen",dijit._editor._Plugin,{
 			};
 			this._resizeHandle = dojo.connect(window, "onresize", this, resizer);
 
+			// Also monitor for direct calls to resize and adapt editor.
+			this._resizeHandle2 = dojo.connect(ed, "resize", dojo.hitch(this, function(){
+				if(this._resizer){
+					clearTimeout(this._resizer);
+					delete this._resizer;
+				}
+				this._resizer = setTimeout(dojo.hitch(this, function(){
+					delete this._resizer;
+					this._resizeEditor();
+				}), 10);
+			}));
+
 			// Call it once to work around IE glitchiness.  Safe for other browsers too.
 			this._resizeEditor();
 			var dn = this.editor.toolbar.domNode;
@@ -337,6 +350,11 @@ dojo.declare("dijit._editor.plugins.FullScreen",dijit._editor._Plugin,{
 				dojo.disconnect(this._resizeHandle);
 				this._resizeHandle = null;
 			}
+			if(this._resizeHandle2){
+				// Cleanup resizing listeners
+				dojo.disconnect(this._resizeHandle2);
+				this._resizeHandle2 = null;
+			}
 			if(this._rst){
 				clearTimeout(this._rst);
 				this._rst = null;
@@ -347,6 +365,8 @@ dojo.declare("dijit._editor.plugins.FullScreen",dijit._editor._Plugin,{
 			var self = this;
 			setTimeout(function(){
 				// Restore all the editor state.
+				var mb = self._origState.marginBox;
+				var oh = self._origState.height;
 				if(dojo.isIE && !dojo.isQuirks){
 					body.parentNode.style.overflow = self._oldBodyParentOverflow;
 					delete self._oldBodyParentOverflow;
@@ -364,10 +384,16 @@ dojo.declare("dijit._editor.plugins.FullScreen",dijit._editor._Plugin,{
 				delete self._origiFrameState;
 				// In case it is contained in a layout and the layout changed size,
 				// go ahead and call resize.
-				ed.resize();
 				var pWidget = dijit.getEnclosingWidget(ed.domNode.parentNode);
 				if(pWidget && pWidget.resize){
 				    pWidget.resize();
+				}else{
+					if(!oh || oh.indexOf("%") < 0){
+						// Resize if the original size wasn't set
+						// or wasn't in percent.  Timeout is to avoid
+						// an IE crash in unit testing.
+						setTimeout(dojo.hitch(this, function(){ed.resize({h: mb.h});}), 0);		
+					}
 				}
 				dijit.scrollIntoView(self.editor.toolbar.domNode);
 			}, 100);
@@ -381,6 +407,11 @@ dojo.declare("dijit._editor.plugins.FullScreen",dijit._editor._Plugin,{
 			// Cleanup resizing listeners
 			dojo.disconnect(this._resizeHandle);
 			this._resizeHandle = null;
+		}
+		if(this._resizeHandle2){
+			// Cleanup resizing listeners
+			dojo.disconnect(this._resizeHandle2);
+			this._resizeHandle2 = null;
 		}
 		if(this._resizer){
 			clearTimeout(this._resizer);

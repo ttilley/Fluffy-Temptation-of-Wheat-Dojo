@@ -127,13 +127,6 @@
 	margin: 0;
 }
 
-.dijitClickableRegion {
-	/* An InlineEditBox in view mode (click this to edit the text) */
-	background-color: #e2ebf2;
-	cursor: text;
-}
-
-
 .dijitDisplayNone {
 	/* hide something.  Use this as a class rather than element.style so another class can override */
 	display:none !important;
@@ -307,8 +300,7 @@
 .dijitReadOnly *,
 .dijitDisabled *,
 .dijitReadOnly,
-.dijitDisabled,
-.dijitDisabledClickableRegion {	/* a region the user would be able to click on, but it's disabled */
+.dijitDisabled {	/* a region the user would be able to click on, but it's disabled */
 	cursor: not-allowed !important;
 }
 
@@ -910,6 +902,9 @@ img.dijitColorPaletteUnder {
 
 /* Calendar */
 
+.dijitCalendarContainer {
+	width: auto;	/* in case user has specified a width for the TABLE nodes, see #10553 */
+}
 .dijitCalendarContainer thead tr th, .dijitCalendarContainer thead tr td, .dijitCalendarContainer tbody tr td, .dijitCalendarContainer tfoot tr td {
 	padding: 0;
 }
@@ -1245,28 +1240,25 @@ div.dijitTabBtnDisabled img {
     border: none !important;
 }
 
-.dijitInlineEditor {
-	/* span around an inline-editable value when in edit mode */
-	position:relative;
-	vertical-align:bottom;
-}
-.dj_ie .dijitInlineEditor {
-	vertical-align:middle;
+/* InlineEditBox */
+.dijitInlineEditBoxDisplayMode{
+	border: 1px solid transparent;	/* so keyline (border) on hover can appear without screen jump */
 }
 
-.dijitInlineValue {
-	/* span around an inline-editable value when NOT in edit mode */
+.dj_ie6 .dijitInlineEditBoxDisplayMode {
+	border: none;				/* except that IE6 doesn't support transparent borders */
 }
 
-.dijitInlineEditor .dijitButtonContainer {
-	/* div around the buttons -- makes them float below the field */
-	position:absolute;
-	right:0;
-	overflow:visible;
+.dijitInlineEditBoxDisplayMode-hover,
+.dj_ie6 .dijitInlineEditBoxDisplayMode-hover {
+	/* An InlineEditBox in view mode (click this to edit the text) */
+	background-color: #e2ebf2;
+	border: solid 1px black;
+	cursor: text;
 }
 
-.dijitInlineEditor .saveButton,
-.dijitInlineEditor .cancelButton {
+.dijitInlineEditBoxDisplayMode-disabled {
+	cursor: not-allowed;
 }
 
 /* Tree */

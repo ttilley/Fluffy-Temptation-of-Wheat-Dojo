@@ -20,23 +20,15 @@
 .nihilo .dijitTextBox,
 .nihilo .dijitComboBox,
 .nihilo .dijitSpinner,
-.nihilo .dijitInlineEditor input,
 .nihilo .dijitTextArea {
 	/* 	For all except dijit.form.NumberSpinner:  the actual input element.
 		For TextBox, ComboBox, Spinner: the table that contains the input.
 		Otherwise the actual input element.
 	*/
 	background:#fff url("../images/validationInputBg.png") repeat-x top left;
+	#background:#fff url('../images/validationInputBg.gif') repeat-x top left;
 	border:1px solid #d3d3d3;
 	line-height: normal;
-}
-
-.dj_ie6 .nihilo .dijitTextBox,
-.dj_ie6 .nihilo .dijitComboBox,
-.dj_ie6 .nihilo .dijitSpinner,
-.dj_ie6 .nihilo .dijitInlineEditor input,
-.dj_ie6 .nihilo .dijitTextArea {
-	background:#fff url('../images/validationInputBg.gif') repeat-x top left;
 }
 
 .nihilo .dijitComboBox .dijitButtonNode {
