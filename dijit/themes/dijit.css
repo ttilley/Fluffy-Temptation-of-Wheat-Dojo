@@ -806,64 +806,74 @@ body .dijitAlignClient { position: absolute; }
 	overflow: hidden;
 }
 
-/* Color Palette */
+/* Color Palette
+ * Sizes designed so that table cell positions match icons in underlying image,
+ * which appear at 20x20 intervals.
+ */
 
 .dijitColorPalette {
-	border:1px solid #999;
-	background:#fff;
-	-moz-border-radius:3pt;
+	border: 1px solid #999;
+	background: #fff;
+	position: relative;
 }
 
 img.dijitColorPaletteUnder {
-	border-style:none;
-	position:absolute;
-	left:0;
-	top:0;
+	/* This single image contains the "icons" for every color in the color palette, and sits behind the transparent <table> */
+	border-style: none;
+	position: absolute;
+	left: 0;
+	top: 0;
 }
-.dijitColorPaletteInner {
+.dijitColorPalette .dijitPaletteTable {
+	/* Table that holds the palette cells, and overlays image file with color swatches.
+	 * padding/margin to align table with image.
+	 */
+	padding: 2px 3px 3px 3px;
 	position: relative;
-	overflow:hidden;
-	outline:0;
+	overflow: hidden;
+	outline: 0;
+	border-collapse: separate;
 }
-.dijitPaletteCell {
-	width: 20px;
+.dj_ie6 .dijitColorPalette .dijitPaletteTable,
+.dj_ie7 .dijitColorPalette .dijitPaletteTable,
+.dj_iequirks .dijitColorPalette .dijitPaletteTable {
+	/* using padding above so that focus border isn't cutoff on moz/webkit,
+	 * but using margin on IE because padding doesn't seem to work
+	 */
+	padding: 0;
+	margin: 2px 3px 3px 3px;
+}
+
+.dijitColorPalette .dijitPaletteCell {
+	/* <td> in the <table>, matching size of color swatches embedded in the img.dijitColorPaletteUnder */
 	height: 20px;
-	position: absolute;
-	overflow: hidden;
-	z-index: 10;
-	outline-width: 0;
+	width: 20px;
+	font-size: 1px;
+	vertical-align: middle;
+	text-align: center;
 }
-.dijitPaletteImg {
-	width: 16px; /*This is the width of one color in the provided palettes. */
-	height: 14px; /* Height of one color in the provided palettes. */
-	position: absolute;
-	top: 1px;
-	left: 1px;
-	overflow: hidden;
+.dijitColorPalette .dijitPaletteImg {
+	/* transparent (but clickable) <img> node inside of each <td>, overlaying the color swatch.
+	 * displays border around a color swatch
+	 */
+	width: 16px;
+	height: 14px;
+	border: 1px solid #999;
 	cursor: default;
-	border:1px solid #999;
-	/* -moz-border-radius:2pt; */
 }
 
-.dijitPaletteCellHighlight img {
-	width: 14px; /*This is the width of one color in the provided palettes. */
-	height: 12px; /* Height of one color in the provided palettes. */
-	position: absolute;
-	top: 1px;
-	left: 1px;
-	overflow: hidden;
-	cursor: default;
-	border:2px solid #000;
-	outline:1px solid #dedede;
-	/* -moz-border-radius:0; */
+.dijitColorPalette .dijitPaletteCellHover .dijitPaletteImg {
+	/* hovered color swatch */
+	border: 1px solid #000;
 }
 
-.dijit_a11y .dijitPaletteCell {
-	background-color:transparent !important;
+.dijit_a11y .dijitColorPalette .dijitPaletteTable,
+.dijit_a11y .dijitColorPalette .dijitPaletteCell,
+.dijit_a11y .dijitColorPalette .dijitPaletteImg {
+	background-color: transparent !important;
 }
-.dijit_a11y .dijitPaletteImg {
-	background-color:transparent !important;
-}
+
+/* AccordionContainer */
 
 .dijitAccordionContainer {
 	border:1px solid #b7b7b7;
