@@ -1,15 +1,15 @@
 --- 
 util: 
   squashed: false
-  url: git://github.com/dojo/util.git
   branch: master
+  url: git://github.com/dojo/util.git
   type: git
   revision: 3a5ae5cb3565d9ce94d0745081e9ff968843c74d
   remote: braid/util
 dojox: 
   squashed: false
-  branch: master
   url: git://github.com/dojo/dojox.git
+  branch: master
   type: git
   revision: b8b3dad9a543599c059f7d17eff608b582e7c0ff
   remote: braid/dojox
@@ -24,12 +24,12 @@ dojo:
   branch: master
   url: git://github.com/dojo/dojo.git
   type: git
-  revision: 51dfa8e791e2b479605be68bf9a6e4fa58bb7eba
+  revision: b481e091d8b2c3424e1a60f06f5c388eb8fb55c5
   remote: braid/dojo
 dijit: 
   squashed: false
-  url: git://github.com/dojo/dijit.git
   branch: master
+  url: git://github.com/dojo/dijit.git
   type: git
   revision: 98632a2733b117f76d1bc6051b02bde5d8eebb5c
   remote: braid/dijit
