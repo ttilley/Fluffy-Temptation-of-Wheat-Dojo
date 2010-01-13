@@ -396,7 +396,7 @@ table .dijitComboButton .dijitButtonNode {
 	width: 8em;
 }
 
-/* rules for safari to deal with fuzzy blue focus border */
+/* rules for webkit to deal with fuzzy blue focus border */
 .dijitTextBox input:focus,
 .dijitComboBox input:focus,
 .dijitSpinner input:focus {
@@ -404,9 +404,8 @@ table .dijitComboButton .dijitButtonNode {
 }
 .dijitTextBoxFocused,
 .dijitComboBoxFocused,
-.dijitSpinnerFocused, .dijitSpinnerUpArrowActive, .dijitSpinnerDownArrowActive,
+.dijitSpinnerFocused,
 .dijitTextAreaFocused {
-	/* should we display focus like we do on other browsers, or use the safari standard focus indicator?? */
 	outline: auto 5px -webkit-focus-ring-color;
 }
 
@@ -860,8 +859,11 @@ img.dijitColorPaletteUnder {
 	height: 14px;
 	border: 1px solid #999;
 	cursor: default;
+		vertical-align: middle;
 }
-
+.dijitPaletteTable td {
+		padding: 0px;
+}
 .dijitColorPalette .dijitPaletteCellHover .dijitPaletteImg {
 	/* hovered color swatch */
 	border: 1px solid #000;
@@ -889,7 +891,7 @@ img.dijitColorPaletteUnder {
 .dijitAccordionTitle {
 	cursor: pointer;
 }
-.dijitAccordionFocused  {
+.dijitAccordionTitleFocused  {
 	text-decoration: underline;
 }
 
@@ -902,11 +904,11 @@ img.dijitColorPaletteUnder {
 }
 
 .dijit_a11y .dijitAccordionTitle .arrowTextUp,
-.dijit_a11y .dijitAccordionTitle-selected .arrowTextDown {
+.dijit_a11y .dijitAccordionTitleSelected .arrowTextDown {
 	display: inline;
 }
 
-.dijit_a11y .dijitAccordionTitle-selected .arrowTextUp {
+.dijit_a11y .dijitAccordionTitleSelected .arrowTextUp {
 	display: none;
 }
 
@@ -1145,19 +1147,10 @@ img.dijitColorPaletteUnder {
 	border-right: 0px;
 }
 
-div.dijitTabBtnDisabled, .dj_ie div.dijitTabBtnDisabled {
+div.dijitTabDisabled, .dj_ie div.dijitTabDisabled {
 	cursor: auto;
 }
-/*
-div.dijitTabBtnDisabled img {
-	opacity: 0.3;
-}
 
-
-.dj_ie div.dijitTabBtnDisabled img {
-	filter: gray() alpha(opacity=30);
-}
-*/
 .dijitTab {
 	position:relative;
 	cursor:pointer;
@@ -1212,25 +1205,25 @@ div.dijitTabBtnDisabled img {
 }
 
 
-.dijitTab .closeButton {
+.dijitTab .dijitTabCloseButton {
 	margin-left: 1em;
 }
 
 /* images off, high-contrast mode styles */
-.dijitTab .closeText {
+.dijitTab .dijitTabCloseText {
 	display:none;
 }
 
-.dijit_a11y .closeText {
+.dijit_a11y .dijitTabCloseText {
 	display:inline;
 	margin: 0px 6px;
 }
 
-.dijit_a11y .dijitTab .closeImage {
+.dijit_a11y .dijitTab .dijitTabCloseIcon {
 	display:none;
 }
 
-.dijit_a11y .closeButton-hover .closeText {
+.dijit_a11y .dijitTabCloseButtonHover .dijitTabCloseText {
 	border:thin solid;
 }
 .dijit_a11y .dijitTabChecked {

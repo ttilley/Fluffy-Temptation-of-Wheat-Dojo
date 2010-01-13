@@ -31,7 +31,15 @@ dojo.declare(
 		largeDelta: 10,
 
 		templateString: dojo.cache("dijit.form", "templates/Spinner.html"),
+
 		baseClass: "dijitSpinner",
+
+		// Set classes like dijitUpArrowButtonHover or dijitDownArrowButtonActive depending on
+		// mouse action over specified node
+		cssStateNodes: {
+			"upArrowNode": "dijitUpArrowButton",
+			"downArrowNode": "dijitDownArrowButton"
+		},
 
 		adjust: function(/* Object */ val, /*Number*/ delta){
 			// summary:
@@ -42,19 +50,10 @@ dojo.declare(
 			return val;
 		},
 
-		_arrowState: function(/*Node*/ node, /*Boolean*/ pressed){
-			// summary:
-			//		Called when an arrow key is pressed to update the relevant CSS classes
-			this._active = pressed;
-			this.stateModifier = node.getAttribute("stateModifier") || "";
-			this._setStateClass();
-		},
-
 		_arrowPressed: function(/*Node*/ nodePressed, /*Number*/ direction, /*Number*/ increment){
 			// summary:
 			//		Handler for arrow button or arrow key being pressed
 			if(this.disabled || this.readOnly){ return; }
-			this._arrowState(nodePressed, true);
 			this._setValueAttr(this.adjust(this.attr('value'), direction*increment), false);
 			dijit.selectInputText(this.textbox, this.textbox.value.length);
 		},
@@ -64,7 +63,6 @@ dojo.declare(
 			//		Handler for arrow button or arrow key being released
 			this._wheelTimer = null;
 			if(this.disabled || this.readOnly){ return; }
-			this._arrowState(node, false);
 		},
 
 		_typematicCallback: function(/*Number*/ count, /*DOMNode*/ node, /*Event*/ evt){
