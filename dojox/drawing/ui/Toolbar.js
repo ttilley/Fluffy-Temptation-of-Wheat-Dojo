@@ -58,12 +58,19 @@ dojo.declare("dojox.drawing.ui.Toolbar", [], {
 		
 		if(this.toolDrawing.ready){
 			this.makeButtons();
+			if(!this.strSelected && this.drawing.defaults.clickMode) { this.drawing.mouse.setCursor('default'); };
 		}else{
 			var c = dojo.connect(this.toolDrawing, "onSurfaceReady", this, function(){
 				//console.log("TB built")
 				dojo.disconnect(c);
 				this.drawing = dojox.drawing.getRegistered("drawing", dojo.attr(node, "drawingId")); // 
 				this.makeButtons();
+				if(!this.strSelected && this.drawing.defaults.clickMode) { 
+					var c = dojo.connect(this.drawing, "onSurfaceReady", this, function(){
+					dojo.disconnect(c);
+					this.drawing.mouse.setCursor('default'); 
+					});
+				};
 			});
 		}
 		
@@ -88,7 +95,7 @@ dojo.declare("dojox.drawing.ui.Toolbar", [], {
 	
 	//	strSlelected | selected: String
 	//		The button that should be selected at startup.
-	strSlelected:"",
+	strSelected:"",
 	//	strTools | tools: String
 	//		A comma delineated list of the Stencil-tools to include in the Toolbar.
 	//		If "all" is used, all registered tools are included.
@@ -125,6 +132,7 @@ dojo.declare("dojox.drawing.ui.Toolbar", [], {
 				this.buttons.push(btn);
 				if(this.strSelected==t){
 					btn.select();
+					this.selected = btn;
 					this.drawing.setTool(btn.toolType);
 				}
 				if(this.horizontal){
@@ -166,14 +174,27 @@ dojo.declare("dojox.drawing.ui.Toolbar", [], {
 				this.drawing.addPlugin({name:this.drawing.stencilTypeMap[p], options:{button:btn}});
 			}, this);
 		}
+		
+		dojo.connect(this.drawing, "onRenderStencil", this, "onRenderStencil");
+	},
+	
+	onRenderStencil: function(/* Object */stencil){
+		// summary:
+		//		Stencil render event.
+		if(this.drawing.defaults.clickMode){
+			this.drawing.mouse.setCursor("default");
+			this.selected && this.selected.deselect();
+			this.selected = null;
+		}
+
 	},
 	
 	addTool: function(){
-		// TODO: ad button here
+		// TODO: add button here
 	},
 	
 	addPlugin: function(){
-		// TODO: ad button here
+		// TODO: add button here
 	},
 	
 	addBack: function(){
@@ -181,13 +202,16 @@ dojo.declare("dojox.drawing.ui.Toolbar", [], {
 		//		Internal. Adds the back, behind the toolbar.
 		this.toolDrawing.addUI("rect", {data:{x:0, y:0, width:this.width, height:this.size + (this.padding*2), fill:"#ffffff", borderWidth:0}});
 	},
+	
 	onToolClick: function(/*Object*/button){
 		// summary:
 		//		Tool click event. May be connected to.
 		//
+		if(this.drawing.defaults.clickMode) { this.drawing.mouse.setCursor("crosshair"); };
 		dojo.forEach(this.buttons, function(b){
 			if(b.id==button.id){
 				b.select();
+				this.selected = b;
 				this.drawing.setTool(button.toolType)
 			}else{
 				b.deselect();
