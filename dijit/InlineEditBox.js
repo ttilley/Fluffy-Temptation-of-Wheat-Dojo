@@ -121,7 +121,20 @@ dojo.declare("dijit.InlineEditBox",
 			this.displayNode.setAttribute("tabIndex", 0);
 		}
 
-		this.attr('value', this.value || this.displayNode.innerHTML);
+		var val = this.value;
+		if(val === null){ val = ""; } // ia few programmatic users like to specify null instead of ""
+		if(val === "" && !("value" in this.params)){ // "" is a good value if specified directly so check params
+			val = this.displayNode.innerHTML;
+			if(!this.renderAsHtml){ // value should not but may contain HTML tags so escape them to avoid losing those tags, but leave <br> to add newlines
+				val = val.replace(/<br\/?>/gi,"\n").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, "<BR>");
+				this.displayNode.innerHTML = val; // re-render without HTML tags
+				val = this.displayNode.innerText || this.displayNode.textContent || ""; // automagically converts HTML entities to appropriate single characters, and <BR> to newlines
+			}
+		}
+		this.value = dojo.trim(val);
+		if(this.value === ""){
+			this.displayNode.innerHTML = this.noValueIndicator; // needed when value is not specified explicitly and no innerHTML as well
+		}
 		dojo.addClass(this.displayNode, 'dijitInlineEditBoxDisplayMode');
 	},
 
@@ -145,7 +158,7 @@ dojo.declare("dijit.InlineEditBox",
 		}else{
 			this.displayNode.setAttribute("tabIndex", 0);
 		}
-		dojo.toggleClass(this.displayNode, "dijitInlineEditBoxDisplayMode-disabled", disabled);
+		dojo.toggleClass(this.displayNode, "dijitInlineEditBoxDisplayModeDisabled", disabled);
 	},
 
 	_onMouseOver: function(){
@@ -154,7 +167,7 @@ dojo.declare("dijit.InlineEditBox",
 		// tags:
 		//		private
 		if(!this.disabled){
-			dojo.addClass(this.displayNode, "dijitInlineEditBoxDisplayMode-hover");
+			dojo.addClass(this.displayNode, "dijitInlineEditBoxDisplayModeHover");
 		}
 	},
 
@@ -163,7 +176,7 @@ dojo.declare("dijit.InlineEditBox",
 		//		Handler for onmouseout and onblur event.
 		// tags:
 		//		private
-		dojo.removeClass(this.displayNode, "dijitInlineEditBoxDisplayMode-hover");
+		dojo.removeClass(this.displayNode, "dijitInlineEditBoxDisplayModeHover");
 	},
 
 	_onClick: function(/*Event*/ e){
@@ -521,7 +534,7 @@ dojo.declare(
 
 		this.editWidget.focus();
 		setTimeout(dojo.hitch(this, function(){
-			if(this.editWidget.focusNode.tagName == "INPUT"){
+			if(this.editWidget.focusNode && this.editWidget.focusNode.tagName == "INPUT"){
 				dijit.selectInputText(this.editWidget.focusNode);
 			}
 		}), 0);

@@ -107,7 +107,7 @@ dojo.declare(
 
 		templateString: dojo.cache("dijit.form", "templates/ComboBox.html"),
 
-		baseClass:"dijitComboBox",
+		baseClass:"dijitTextBox dijitComboBox",
 
 		// Set classes like dijitDownArrowButtonHover depending on
 		// mouse action over button node
@@ -192,7 +192,6 @@ dojo.declare(
 				case dk.PAGE_UP:
 				case dk.UP_ARROW:
 					if(!this._isShowingNow){
-						this._arrowPressed();
 						doSearch = true;
 						searchFunction = "_startSearchAll";
 					}else{
@@ -367,7 +366,6 @@ dojo.declare(
 
 		_showResultList: function(){
 			this._hideResultList();
-			this._arrowPressed();
 			// hide the tooltip
 			this.displayMessage("");
 
@@ -421,7 +419,6 @@ dojo.declare(
 			this._abortQuery();
 			if(this._isShowingNow){
 				dijit.popup.close(this._popupWidget);
-				this._arrowIdle();
 				this._isShowingNow=false;
 				dijit.setWaiState(this.comboNode, "expanded", "false");
 				dijit.removeWaiState(this.focusNode,"activedescendant");
@@ -458,7 +455,6 @@ dojo.declare(
 			// summary:
 			//		Called magically when focus has shifted away from this widget and it's drop down
 			this._hideResultList();
-			this._arrowIdle();
 			this.inherited(arguments);
 		},
 
@@ -609,18 +605,6 @@ dojo.declare(
 
 		/////////////// Event handlers /////////////////////
 
-		_arrowPressed: function(){
-			if(!this.disabled && !this.readOnly && this.hasDownArrow){
-				dojo.addClass(this.downArrowNode, "dijitArrowButtonActive");
-			}
-		},
-
-		_arrowIdle: function(){
-			if(!this.disabled && !this.readOnly && this.hasDownArrow){
-				dojo.removeClass(this.downArrowNode, "dojoArrowButtonPushed");
-			}
-		},
-
 		// FIXME: For 2.0, rename to "_compositionEnd"
 		compositionend: function(/*Event*/ evt){
 			// summary:
@@ -644,9 +628,6 @@ dojo.declare(
 		},
 
 		postMixInProperties: function(){
-			if(!this.hasDownArrow){
-				this.baseClass = "dijitTextBox";
-			}
 			if(!this.store){
 				var srcNodeRef = this.srcNodeRef;
 
@@ -661,10 +642,7 @@ dojo.declare(
 				// IE6 and Opera set selectedIndex, which is automatically set
 				// by the selected attribute of an option tag
 				// IE6 does not set value, Opera sets value = selectedIndex
-				if(	!this.value || (
-						(typeof srcNodeRef.selectedIndex == "number") &&
-						srcNodeRef.selectedIndex.toString() === this.value)
-				){
+				if(!("value" in this.params)){
 					var item = this.store.fetchSelectedItem();
 					if(item){
 						var valueField = this._getValueField();
@@ -680,6 +658,10 @@ dojo.declare(
 			//		Subclasses must call this method from their postCreate() methods
 			// tags:
 			//		protected
+
+			if(!this.hasDownArrow){
+				this.downArrowNode.style.display = "none";
+			}
 
 			// find any associated label element and add to ComboBox node.
 			var label=dojo.query('label[for="'+this.id+'"]');
@@ -1154,7 +1136,16 @@ dojo.declare("dijit.form._ComboBoxDataStore", null, {
 
 	constructor: function( /*DomNode*/ root){
 		this.root = root;
-
+		if(root.tagName != "SELECT" && root.firstChild){
+			root = dojo.query("select", root);
+			if(root.length > 0){ // SELECT is a child of srcNodeRef
+				root = root[0];
+			}else{ // no select, so create 1 to parent the option tags to define selectedIndex
+				this.root.innerHTML = "<SELECT>"+this.root.innerHTML+"</SELECT>";
+				root = this.root.firstChild;
+			}
+			this.root = root;
+		}
 		dojo.query("> option", root).forEach(function(node){
 			//	TODO: this was added in #3858 but unclear why/if it's needed;  doesn't seem to be.
 			//	If it is needed then can we just hide the select itself instead?
@@ -1220,7 +1211,7 @@ dojo.declare("dijit.form._ComboBoxDataStore", null, {
 		//	|		{identity: "CA", onItem: function(item){...}
 		//
 		//		Call `onItem()` with the DOM node `<option value="CA">California</option>`
-		var item = dojo.query("option[value='" + args.identity + "']", this.root)[0];
+		var item = dojo.query("> option[value='" + args.identity + "']", this.root)[0];
 		args.onItem(item);
 	},
 
@@ -1230,9 +1221,9 @@ dojo.declare("dijit.form._ComboBoxDataStore", null, {
 		//		Not part of dojo.data API.
 		var root = this.root,
 			si = root.selectedIndex;
-		return dojo.query("> option:nth-child(" +
-			(si != -1 ? si+1 : 1) + ")",
-			root)[0];	// dojo.data.Item
+		return typeof si == "number"
+			? dojo.query("> option:nth-child(" + (si != -1 ? si+1 : 1) + ")", root)[0]
+			: null;	// dojo.data.Item
 	}
 });
 //Mix in the simple fetch implementation to this class.

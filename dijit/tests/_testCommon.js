@@ -38,7 +38,7 @@
 					document.getElementsByTagName("html")[0].dir = value;
 					break;
 				case "theme":
-					// tundra | soria | noir | squid | nihilo | null
+					// tundra | soria | nihilo | lucid | null
 					theme = value;
 					break;
 				case "a11y":
@@ -87,6 +87,7 @@
 			// Defer parsing and addOnLoad() execution until the specified CSS loads.
 			if(dojo.config._deferParsing){
 				setTimeout(function(){
+					dojo.addOnLoad = originalOnLoad;
 					dojo.parser.parse(b);
 					for(var i=0; i<loadFuncs.length; i++){
 						loadFuncs[i]();

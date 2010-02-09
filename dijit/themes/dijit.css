@@ -409,10 +409,8 @@ table .dijitComboButton .dijitButtonNode {
 	outline: auto 5px -webkit-focus-ring-color;
 }
 
-.dijitTextBox INPUT,
-.dijitComboBox INPUT,
-.dijitSpinner INPUT {
-	border-left: solid black 1px;	/* TODO: for RTL mode should be border-right */
+.dijitTextBox INPUT {
+	/* for when an <input> is embedded inside an inline-block <div> with a size and border */
 	display:inline;
 	position:static !important;
 	border:0 !important;
@@ -423,36 +421,29 @@ table .dijitComboButton .dijitButtonNode {
 	width:100% !important;
 }
 
-/* Display an "X" for invalid input. Themes will override these rules to display an icon instead.
-*/
+/* when there's an error, a11y mode displays a text X, otherwise themes display an icon */
 .dijitValidationIcon {
-	visibility: hidden;
-	display: block;
+	display: none;
 	padding: 0 2px;
 	float: right;
 	height: auto;
 }
 .dijitValidationIconText {
-	visibility: hidden;
 	display: none;
 	float:right;
-	font-family: sans-serif;
-	font-style:italic;
-	font-size: 0.75em;
-	padding-right: 0.15em;
-	line-height: 160%;
+	border: 1px solid black;
+	padding: 0px 1px;
+	font-size: 0.8em;
+	margin: 1px;
 }
-.dijit_a11y .dijitValidationIcon { display: none !important; }
-.dijit_a11y .dijitValidationIconText { display: block !important; }
-
-.dijitError .dijitValidationIcon,
-.dijitError .dijitValidationIconText {
-	visibility: visible;
+.dijitError .dijitValidationIcon {
+	display: block;
 }
-
-.dijitTextBox .dijitArrowButton {
-	/* this is for a combo box with no arrow displayed; we set baseClass=TextBox */
-	display:none;
+.dijit_a11y .dijitError .dijitValidationIconText {
+	display: inline !important;
+}
+.dijit_a11y .dijitError .dijitValidationIcon {
+	display: none !important;
 }
 
 /****
@@ -491,8 +482,9 @@ table .dijitComboButton .dijitButtonNode {
 
 .dijit_a11y .dijitCheckBox,
 .dijit_a11y .dijitRadio {
-	width: auto;
-	height: auto;
+	/* in a11y mode we display the native checkbox (not the icon), so don't restrict the size */
+	width: auto !important;
+	height: auto !important;
 }
 .dijit_a11y .dijitCheckBoxInput {
 	opacity: 1;
@@ -543,7 +535,7 @@ table .dijitComboButton .dijitButtonNode {
 
 .dijit_a11y .dijitProgressBarTile{
 	/* a11y:  The border provides visibility in high-contrast mode */
-	border-width:4px;
+	border-width:2px;
 	border-style:solid;
 	background-color:transparent !important;
 }
@@ -800,9 +792,32 @@ body .dijitAlignClient { position: absolute; }
 }
 
 /* TitlePane */
+
 .dijitTitlePane {
 	display: block;
 	overflow: hidden;
+}
+.dijitTitlePaneTitle * {
+	vertical-align: middle;
+}
+.dijitTitlePane .dijitArrowNodeInner {
+	/* normally, hide arrow text in favor of icon */
+	display: none;
+}
+.dijit_a11y .dijitTitlePane .dijitArrowNodeInner {
+	/* ... except in a11y mode, then show text arrow */
+	display:inline !important;
+	font-family: monospace;		/* because - and + are different widths */
+}
+.dijit_a11y .dijitTitlePane .dijitArrowNode {
+	/* ... and hide icon */
+	display:none;
+}
+
+.dj_ie6 .dijitTitlePaneContentOuter,
+.dj_ie6 .dijitTitlePane .dijitTitlePaneTitle {
+	/* force hasLayout to ensure borders etc, show up */
+	zoom: 1;
 }
 
 /* Color Palette
@@ -868,6 +883,12 @@ img.dijitColorPaletteUnder {
 	/* hovered color swatch */
 	border: 1px solid #000;
 }
+
+.dijitColorPalette .dijitPaletteCellActive .dijitPaletteImg,
+.dijitColorPalette .dijitPaletteCellSelected .dijitPaletteImg {
+	border: 2px solid #000;
+}
+
 
 .dijit_a11y .dijitColorPalette .dijitPaletteTable,
 .dijit_a11y .dijitColorPalette .dijitPaletteCell,
@@ -966,7 +987,6 @@ img.dijitColorPaletteUnder {
 	background-color:white;
 }
 .dijitMenuTable {
-	margin:1px 0;
 	border-collapse:collapse;
 	border-width:0;
 	background-color:white;
@@ -1252,15 +1272,15 @@ div.dijitTabDisabled, .dj_ie div.dijitTabDisabled {
 	border: none;				/* except that IE6 doesn't support transparent borders */
 }
 
-.dijitInlineEditBoxDisplayMode-hover,
-.dj_ie6 .dijitInlineEditBoxDisplayMode-hover {
+.dijitInlineEditBoxDisplayModeHover,
+.dj_ie6 .dijitInlineEditBoxDisplayModeHover {
 	/* An InlineEditBox in view mode (click this to edit the text) */
 	background-color: #e2ebf2;
 	border: solid 1px black;
 	cursor: text;
 }
 
-.dijitInlineEditBoxDisplayMode-disabled {
+.dijitInlineEditBoxDisplayModeDisabled {
 	cursor: not-allowed;
 }
 
@@ -1307,7 +1327,6 @@ div.dijitTabDisabled, .dj_ie div.dijitTabDisabled {
 .dijitDialog {
 	position: absolute;
 	z-index: 999;
-	padding: 1px;
 	overflow: hidden;       /* override overflow: auto; from ContentPane to make dragging smoother */
 }
 
@@ -1610,7 +1629,7 @@ div.dijitTabDisabled, .dj_ie div.dijitTabDisabled {
 	top: expression(eval((document.documentElement||document.body).scrollTop));
 }
 
-.RichTextEditable {
+.dijitEditor {
 	display: block;	/* prevents glitch on FF with InlineEditBox, see #8404 */
 }
 
@@ -1651,9 +1670,11 @@ div.dijitTabDisabled, .dj_ie div.dijitTabDisabled {
 	color:white;
 	cursor:pointer;
 }
-
-.dijit_a11y .dijitTimePickerItem {
-	border-bottom:1px solid #333;
+.dijit_a11y .dijitTimePickerItemSelected .dijitTimePickerItemInner {
+	border: solid 4px black;
+}
+.dijit_a11y .dijitTimePickerItemHover .dijitTimePickerItemInner {
+	border: dashed 4px black;
 }
 
 
@@ -1755,6 +1776,10 @@ div.dijitTabDisabled, .dj_ie div.dijitTabDisabled {
 	width: 16px;
 }
 
+.dijitSelectMenu .dijitMenuItemIcon {
+	/* avoid blank area in left side of menu (since we have no icons) */
+	display:none;
+}
 .dj_ie6 .dijitSelectMenu .dijitMenuItemLabel,
 .dj_ie7 .dijitSelectMenu .dijitMenuItemLabel {
 	/* Set back to static due to bug in ie6/ie7 - See Bug #9651 */
@@ -1827,3 +1852,10 @@ div.dijitTabDisabled, .dj_ie div.dijitTabDisabled {
 	width: auto;
 	margin: 0px 4px;
 }
+
+/* Used in cases, such as FullScreen plugin, when we need to force stuff to static positioning. */
+.dijitForceStatic {
+	position: static !important;
+}
+
+

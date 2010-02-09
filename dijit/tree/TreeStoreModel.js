@@ -156,16 +156,16 @@ dojo.declare(
 				onComplete(childItems);
 			}else{
 				// still waiting for some or all of the items to load
-				var onItem = function onItem(item){
-					if(--_waitCount == 0){
-						// all nodes have been loaded, send them to the tree
-						onComplete(childItems);
-					}
-				}
-				dojo.forEach(childItems, function(item){
+				dojo.forEach(childItems, function(item, idx){
 					if(!store.isItemLoaded(item)){
 						store.loadItem({
-							item: item,
+							item: function onItem(item){
+								childItems[idx] = item;
+								if(--_waitCount == 0){
+									// all nodes have been loaded, send them to the tree
+									onComplete(childItems);
+								}
+							},
 							onItem: onItem,
 							onError: onError
 						});
@@ -259,9 +259,9 @@ dojo.declare(
 					childItems.splice(insertIndex, 0, childItem);
 					store.setValues(newParentItem, parentAttr, childItems);
 				}else{
-				store.setValues(newParentItem, parentAttr,
-					store.getValues(newParentItem, parentAttr).concat(childItem));
-			}
+					store.setValues(newParentItem, parentAttr,
+						store.getValues(newParentItem, parentAttr).concat(childItem));
+				}
 			}
 		},
 

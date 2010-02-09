@@ -132,13 +132,16 @@ dojo.declare("dijit._editor.plugins.FullScreen",dijit._editor._Plugin,{
 		var hHeight = this.editor.getHeaderHeight();
 		var fHeight = this.editor.getFooterHeight();
 		var extents = dojo._getPadBorderExtents(this.editor.domNode);
+		var fcpExtents = dojo._getPadBorderExtents(this.editor.iframe.parentNode);
+		var fcmExtents = dojo._getMarginExtents(this.editor.iframe.parentNode);
 		
 		var cHeight = vp.h - (hHeight + extents.h + fHeight);
 		dojo.marginBox(this.editor.iframe.parentNode, {
-			h: cHeight
+			h: cHeight,
+			w: vp.w
 		});
 		dojo.marginBox(this.editor.iframe, {
-			h: cHeight
+			h: cHeight - (fcpExtents.h + fcmExtents.h)
 		});
 	},
 
@@ -162,27 +165,15 @@ dojo.declare("dijit._editor.plugins.FullScreen",dijit._editor._Plugin,{
 		//Alias this for shorter code.
 		var ed = this.editor;
 		var body = dojo.body();
+		var editorParent = ed.domNode.parentNode;
 
 		this.isFullscreen = full;
 
 		if(full){
 			//Parent classes can royally screw up this plugin, so we 
-			//have to clear them, then restore them on 
-			//toggle off
-			var editorParent = ed.domNode.parentNode;
-			this._classedParents = [];
+			//have to set eveything to position static.
 			while(editorParent && editorParent !== dojo.body()){
-				// FIXME:  This depends on the theme class being on body!
-				// Would prefer reparenting, but FF reloads the iframe, which
-				// breaks all sorts of stuff.
-				var classes = dojo.attr(editorParent, "class");
-				if(classes){
-					this._classedParents.push({
-						node: editorParent,
-						classes: classes
-					});
-					dojo.attr(editorParent, "class", "");
-				}
+				dojo.addClass(editorParent, "dijitForceStatic");
 				editorParent = editorParent.parentNode;
 			}
 
@@ -274,13 +265,6 @@ dojo.declare("dijit._editor.plugins.FullScreen",dijit._editor._Plugin,{
 			dojo.style(body, "overflow", "hidden");
 
 			var resizer = function(){
-				// Make sure no class states have been added by a resize.
-				var editorParent = this.editor.domNode.parentNode;
-				while(editorParent && editorParent !== dojo.body()){
-					dojo.attr(editorParent, "class", "");
-					editorParent = editorParent.parentNode;
-				}
-
 				// function to handle resize events.
 				// Will check current VP and only resize if
 				// different.
@@ -338,12 +322,11 @@ dojo.declare("dijit._editor.plugins.FullScreen",dijit._editor._Plugin,{
 				clearTimeout(this._rst);
 				this._rst = null;
 			}
-			if(this._classedParents){
-				while(this._classedParents.length > 0){
-					var classP = this._classedParents.pop();
-					dojo.attr(classP.node, "class", classP.classes);
-				}
-				delete this._classedParents;
+			
+			//Remove all position static class assigns.
+			while(editorParent && editorParent !== dojo.body()){
+				dojo.removeClass(editorParent, "dijitForceStatic");
+				editorParent = editorParent.parentNode;
 			}
 			
 			// Restore resize function

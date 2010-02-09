@@ -1,6 +1,7 @@
 dojo.provide("dijit._editor.RichText");
 
 dojo.require("dijit._Widget");
+dojo.require("dijit._CssStateMixin");
 dojo.require("dijit._editor.selection");
 dojo.require("dijit._editor.range");
 dojo.require("dijit._editor.html");
@@ -33,7 +34,7 @@ if(!dojo.config["useXDomain"] || dojo.config["allowXdRichTextSave"]){
 	}
 }
 
-dojo.declare("dijit._editor.RichText", dijit._Widget, {
+dojo.declare("dijit._editor.RichText", [dijit._Widget, dijit._CssStateMixin], {
 	constructor: function(params){
 		// summary:
 		//		dijit._editor.RichText is the core of dijit.Editor, which provides basic
@@ -104,6 +105,8 @@ dojo.declare("dijit._editor.RichText", dijit._Widget, {
 		this.onLoadDeferred = new dojo.Deferred();
 	},
 
+	baseClass: "dijitEditor",
+
 	// inheritWidth: Boolean
 	//		whether to inherit the parent's width or simply use 100%
 	inheritWidth: false,
@@ -167,6 +170,9 @@ dojo.declare("dijit._editor.RichText", dijit._Widget, {
 		if("textarea" == this.domNode.tagName.toLowerCase()){
 			console.warn("RichText should not be used with the TEXTAREA tag.  See dijit._editor.RichText docs.");
 		}
+
+		this.inherited(arguments);
+
 		dojo.publish(dijit._scopeName + "._editor.RichText::init", [this]);
 		this.open();
 		this.setupDefaultShortcuts();
@@ -450,7 +456,7 @@ dojo.declare("dijit._editor.RichText", dijit._Widget, {
 			dn.lastChild.style.marginTop = "-1.2em";
 		}
 
-		dojo.addClass(this.domNode, "RichTextEditable");
+		dojo.addClass(this.domNode, this.baseClass);
 	},
 
 	//static cache variables shared among all instance of this class
@@ -495,7 +501,7 @@ dojo.declare("dijit._editor.RichText", dijit._Widget, {
 			lineHeight = "normal";
 		}
 		var userStyle = "";
-		this.style.replace(/(^|;)(line-|font-?)[^;]+/g, function(match){ userStyle += match.replace(/^;/g,"") + ';'; });
+		this.style.replace(/(^|;)\s*(line-|font-?)[^;]+/ig, function(match){ userStyle += match.replace(/^;/ig,"") + ';'; });
 
 		// need to find any associated label element and update iframe document title
 		var label=dojo.query('label[for="'+this.id+'"]');
@@ -692,6 +698,14 @@ dojo.declare("dijit._editor.RichText", dijit._Widget, {
 			// not contentEditable.   Removing it would also probably remove the need for creating
 			// the extra <div> in _getIframeDocTxt()
 			this.editNode.style.zoom = 1.0;
+		}else{
+			this.connect(this.document, "onmousedown", function(){
+				// Clear the moveToStart focus, as mouse 
+				// down will set cursor point.  Required to properly
+				// work with selection/position driven plugins and clicks in
+				// the window. refs: #10678
+				delete this._cursorToStart;
+			}); 
 		}
 
 		if(dojo.isWebKit){
@@ -932,16 +946,19 @@ dojo.declare("dijit._editor.RichText", dijit._Widget, {
 	focus: function(){
 		// summary:
 		//		Move focus to this editor
+		if(!this.isLoaded){
+			this.focusOnLoad = true;
+			return;
+		}
+		if(this._cursorToStart){ 
+			delete this._cursorToStart;
+			if(this.editNode.childNodes){
+				this.placeCursorAtStart(); // this calls focus() so return
+				return;
+			}
+		}
 		if(!dojo.isIE){
 			dijit.focus(this.iframe);
-			if(this._cursorToStart){ 
-				delete this._cursorToStart;
-				if(this.editNode.childNodes && 
-					this.editNode.childNodes.length === 1 && 
-					this.editNode.innerHTML === "&nbsp;"){
-						this.placeCursorAtStart();
-				}
-			}
 		}else if(this.editNode && this.editNode.focus){
 			// editNode may be hidden in display:none div, lets just punt in this case
 			//this.editNode.focus(); -> causes IE to scroll always (strict and quirks mode) to the top the Iframe
@@ -1350,6 +1367,7 @@ dojo.declare("dijit._editor.RichText", dijit._Widget, {
 			}));
 			return;
 		}
+		this._cursorToStart = true;
 		if(this.textarea && (this.isClosed || !this.isLoaded)){
 			this.textarea.value=html;
 		}else{
@@ -1358,7 +1376,6 @@ dojo.declare("dijit._editor.RichText", dijit._Widget, {
 
 			// Use &nbsp; to avoid webkit problems where editor is disabled until the user clicks it
 			if(!html && dojo.isWebKit){
-				this._cursorToStart = true;
 				html = "&nbsp;";
 			}
 			node.innerHTML = html;
@@ -1609,7 +1626,7 @@ dojo.declare("dijit._editor.RichText", dijit._Widget, {
 		}
 		delete this.iframe;
 
-		dojo.removeClass(this.domNode, "RichTextEditable");
+		dojo.removeClass(this.domNode, this.baseClass);
 		this.isClosed = true;
 		this.isLoaded = false;
 

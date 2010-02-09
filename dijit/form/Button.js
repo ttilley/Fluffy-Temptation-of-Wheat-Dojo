@@ -132,6 +132,7 @@ dojo.declare("dijit.form.Button",
 		dojo.deprecated("dijit.form.Button.setLabel() is deprecated.  Use attr('label', ...) instead.", "", "2.0");
 		this.attr("label", content);
 	},
+
 	_setLabelAttr: function(/*String*/ content){
 		// summary:
 		//		Hook for attr('label', ...) to work.
@@ -191,6 +192,7 @@ dojo.declare("dijit.form.DropDownButton", [dijit.form.Button, dijit._Container, 
 			this.dropDown = dijit.byNode(dropDownNode);
 			delete this.dropDownContainer;
 		}
+		dijit.popup.moveOffScreen(this.dropDown.domNode);
 
 		this.inherited(arguments);
 	},
@@ -207,7 +209,7 @@ dojo.declare("dijit.form.DropDownButton", [dijit.form.Button, dijit._Container, 
 		var dropDown = this.dropDown;
 		if(!dropDown){ return; }
 		if(!this.isLoaded()){
-			var handler = dojo.connect(dropDown, "onLoad", function(){
+			var handler = dojo.connect(dropDown, "onLoad", this, function(){
 				dojo.disconnect(handler);
 				this.openDropDown();
 			});
@@ -258,6 +260,7 @@ dojo.declare("dijit.form.ComboButton", dijit.form.DropDownButton, {
 	// Set classes like dijitButtonContentsHover or dijitArrowButtonActive depending on
 	// mouse action over specified node
 	cssStateNodes: {
+		"buttonNode": "dijitButtonNode",
 		"titleNode": "dijitButtonContents",
 		"_popupStateNode": "dijitDownArrowButton"
 	},
@@ -276,6 +279,14 @@ dojo.declare("dijit.form.ComboButton", dijit.form.DropDownButton, {
 				});
 			}
 		}
+	},
+
+	_setLabelAttr: function(/*String*/ content){
+		var isIE = dojo.isIE;
+		if(isIE && (isIE < 8 || dojo.isQuirks)){ // fixed in IE8/strict
+			this.titleNode.style.width = "1px"; // onresize handler will set it to the correct size
+		}
+		this.inherited(arguments);
 	},
 
 	_onButtonKeyPress: function(/*Event*/ evt){
