@@ -58,7 +58,6 @@ dojo.declare("dojox.editor.plugins.GlobalTableHandler", dijit._editor._Plugin,{
 				return dojo.withGlobal(this.window, "getAncestorElement",dijit._editor.selection, [tagName]);
 			},
 			hasAncestorElement: function(tagName){
-				return true
 				return dojo.withGlobal(this.window, "hasAncestorElement",dijit._editor.selection, [tagName]);
 			},
 			selectElement: function(elem){
@@ -96,6 +95,7 @@ dojo.declare("dojox.editor.plugins.GlobalTableHandler", dijit._editor._Plugin,{
 			dojo.connect(this.editorDomNode , "mouseup", this.editor, "onClick"); 
 
 			dojo.connect(this.editor, "onDisplayChanged", this, "checkAvailable");
+			dojo.connect(this.editor, "onBlur", this, "checkAvailable");
 
 			this.doMixins();
 			this.connectDraggable();
@@ -249,7 +249,8 @@ dojo.declare("dojox.editor.plugins.GlobalTableHandler", dijit._editor._Plugin,{
 			return true;
 		}
 		
-		this.currentlyAvailable = this.editor.hasAncestorElement("table");
+		// Only return avalable if the editor is focused.
+		this.currentlyAvailable = this.editor._focused ? this.editor.hasAncestorElement("table") : false;
 		
 		if(this.currentlyAvailable){
 			this.connectTableKeys();
@@ -499,7 +500,9 @@ dojo.declare("dojox.editor.plugins.TablePlugins",
 		selectTable: function(){
 			// selects table that is in focus 
 			var o = this.getTableInfo();
-			dojo.withGlobal(this.editor.window, "selectElement",dijit._editor.selection, [o.tbl]);
+			if(o && o.tbl){
+				dojo.withGlobal(this.editor.window, "selectElement",dijit._editor.selection, [o.tbl]);
+			}
 		},
 		launchInsertDialog: function(){
 			var w = new dojox.editor.plugins.EditorTableDialog({});
@@ -518,6 +521,7 @@ dojo.declare("dojox.editor.plugins.TablePlugins",
 		},
 		
 		launchModifyDialog: function(){
+			if (!tablePluginHandler.checkAvailable()) {return;} 
 			var o = this.getTableInfo();
 			console.log("LAUNCH DIALOG")
 			var w = new dojox.editor.plugins.EditorModifyTableDialog({table:o.tbl});
@@ -897,8 +901,8 @@ dojo.declare("dojox.editor.plugins.EditorModifyTableDialog", [dijit.Dialog], {
 		this.selectWidthType.attr("value", p);
 		
 		this.selectBorder.attr("value", dojo.attr(this.table, "border"));
-		this.selectPad.attr("value", dojo.attr(this.table, "cellpadding"));
-		this.selectSpace.attr("value", dojo.attr(this.table, "cellspacing"));
+		this.selectPad.attr("value", dojo.attr(this.table, "cellPadding"));
+		this.selectSpace.attr("value", dojo.attr(this.table, "cellSpacing"));
 		this.selectAlign.attr("value", dojo.attr(this.table, "align"));
 	},
 	
@@ -912,12 +916,12 @@ dojo.declare("dojox.editor.plugins.EditorModifyTableDialog", [dijit.Dialog], {
 		dojo.style(this.backgroundCol, "backgroundColor", color);
 	},
 	onSet: function(){
-		dojo.attr(this.table, "bordercolor", this.brdColor);
-		dojo.attr(this.table, "bgcolor", this.bkColor);
+		dojo.attr(this.table, "borderColor", this.brdColor);
+		dojo.attr(this.table, "bgColor", this.bkColor);
 		dojo.attr(this.table, "width", (this.selectWidth.attr("value") + ((this.selectWidthType.attr("value")=="pixels")?"":"%") ));
 		dojo.attr(this.table, "border", this.selectBorder.attr("value"));
-		dojo.attr(this.table, "cellpadding", this.selectPad.attr("value"));
-		dojo.attr(this.table, "cellspacing", this.selectSpace.attr("value"));
+		dojo.attr(this.table, "cellPadding", this.selectPad.attr("value"));
+		dojo.attr(this.table, "cellSpacing", this.selectSpace.attr("value"));
 		dojo.attr(this.table, "align", this.selectAlign.attr("value"));
 		
 		this.hide();
