@@ -35,14 +35,6 @@ dojo.require('plugd.trigger');
             
             var dfd;
             
-            // TODO: find a way to return a sane deferred before xhr is even
-            // called...
-            // if (!dojo.trigger(element, 'ajax:before')) {
-            //   dfd = new dojo.Deferred();
-            //   dfd.cancel();
-            //   return dfd;
-            // }
-            
             dfd = _xhr(method, args, hasBody);
             
             var ajaxSuccess = _xhrDomEventHandler(element, 'ajax:success');
@@ -53,9 +45,7 @@ dojo.require('plugd.trigger');
             }, function(dfd){
                 ajaxFailure(dfd.ioArgs.xhr);
             });
-            
-            // dojo.trigger(element, 'ajax:after');
-            
+                        
             return dfd;
         }
     };
