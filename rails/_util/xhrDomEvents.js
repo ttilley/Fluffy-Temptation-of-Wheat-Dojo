@@ -8,8 +8,10 @@ dojo.require('plugd.trigger');
     var _xhrDomEventHandler = function(element, customEvent){
         var handler = dojo.hitch(element, dojo.trigger, element, customEvent);
         return function(xhr){
-            handler({request: xhr});
-        }
+            handler({
+                request: xhr
+            });
+        };
     };
     
     var _xhrDomEventsFor = function(element){
@@ -18,13 +20,23 @@ dojo.require('plugd.trigger');
             onLoaded: _xhrDomEventHandler(element, 'ajax:loaded'),
             onInteractive: _xhrDomEventHandler(element, 'ajax:interactive'),
             onComplete: _xhrDomEventHandler(element, 'ajax:complete')
-        }
+        };
     };
     
     dojo.xhr = function(method, args, hasBody){
         if (args && args.domEvents) {
             var element = args.domEvents;
             delete args.domEvents;
+            
+            var dfd;
+            
+            if (!dojo.trigger(element, 'ajax:before')) {
+                var emptyFunction = function(){
+                };
+                dfd = dojo._ioSetArgs(args, emptyFunction, emptyFunction, emptyFunction);
+                dfd.cancel();
+                return dfd;
+            }
             
             var readyStateCallbacks = _xhrDomEventsFor(element);
             if (args.readyStateCallbacks) {
@@ -33,9 +45,9 @@ dojo.require('plugd.trigger');
             }
             args.readyStateCallbacks = readyStateCallbacks;
             
-            var dfd;
-            
             dfd = _xhr(method, args, hasBody);
+            
+            dojo.trigger(element, 'ajax:after');
             
             var ajaxSuccess = _xhrDomEventHandler(element, 'ajax:success');
             var ajaxFailure = _xhrDomEventHandler(element, 'ajax:failure');
@@ -45,7 +57,7 @@ dojo.require('plugd.trigger');
             }, function(dfd){
                 ajaxFailure(dfd.ioArgs.xhr);
             });
-                        
+            
             return dfd;
         }
     };

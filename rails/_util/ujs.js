@@ -50,19 +50,13 @@ dojo.require('dojo.NodeList-traverse');
             hasBody = false;
         }
         
-        if (!dojo.trigger(el, 'ajax:before')) {
-            return false;
-        }
-        
         dojo.xhr(method, {
             url: url,
             handleAs: 'javascript',
             content: params,
             domEvents: el
         }, hasBody);
-        
-        dojo.trigger(el, 'ajax:after');
-    };
+    }
     
     function emulateVerb(el){
         var action = dojo.attr(el, 'data-url') || dojo.attr(el, 'href');
@@ -96,14 +90,14 @@ dojo.require('dojo.NodeList-traverse');
         }
         
         form.submit();
-    };
+    }
     
     function seekDisableableElement(el){
         return dojo.hasAttr(el, 'data-disable-with') ? el : dojo.query('[data-disable-with]', el)[0];
     }
     
-    function disableInput(el){
-        var el = seekDisableableElement(el);
+    function disableInput(element){
+        var el = seekDisableableElement(element);
         if (!el) {
             return true;
         }

@@ -17,7 +17,8 @@ dojo.provide('rails._util.xhrReadyState');
     
     dojo._xhrObj = function(args){
         var http = _xhrObj();
-        if (callbacks = args.readyStateCallbacks) {
+        var callbacks = args.readyStateCallbacks;
+        if (callbacks) {
             delete args.readyStateCallbacks;
             try {
                 http.onreadystatechange = dojo.hitch(null, _readyStateHandler, callbacks);
