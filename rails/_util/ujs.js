@@ -84,8 +84,8 @@ dojo.require('dojo.NodeList-traverse');
             }, form, 'last');
         }
         
-        csrf_param = dojo.query('meta[name=csrf-param]').attr('content')[0] || false;
-        csrf_token = dojo.query('meta[name=csrf-token]').attr('content')[0] || false;
+        var csrf_param = dojo.query('meta[name=csrf-param]').attr('content')[0] || false;
+        var csrf_token = dojo.query('meta[name=csrf-token]').attr('content')[0] || false;
         
         if (csrf_param && csrf_token) {
             dojo.create('input', {
