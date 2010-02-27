@@ -1,4 +1,5 @@
-dojo.require('plugd.trigger');
+dojo.provide('rails._util.ujs');
+dojo.require('rails._util.xhrDomEvents');
 dojo.require('dojo.NodeList-traverse');
 
 // main handlers:
@@ -40,13 +41,13 @@ dojo.require('dojo.NodeList-traverse');
             method = el.attr('method') || 'post';
             url = el.attr('action');
             params = dojo.formToObject(el);
-			hasBody = true;
+            hasBody = true;
         }
         else {
             method = el.attr('data-method') || 'get';
             url = el.attr('data-url') || el.attr('href');
             params = {};
-			hasBody = false;
+            hasBody = false;
         }
         
         if (!dojo.trigger(el, 'ajax:before')) {
@@ -54,10 +55,11 @@ dojo.require('dojo.NodeList-traverse');
         }
         
         dojo.xhr(method, {
-			url: url,
-			handleAs: 'javascript',
-			content: params
-		}, hasBody);
+            url: url,
+            handleAs: 'javascript',
+            content: params,
+            domEvents: el
+        }, hasBody);
         
         dojo.trigger(el, 'ajax:after');
     };
