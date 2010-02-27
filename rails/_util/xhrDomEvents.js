@@ -60,6 +60,9 @@ dojo.require('plugd.trigger');
             
             return dfd;
         }
+        else {
+            return _xhr(method, args, hasBody);
+        }
     };
     
 })();
