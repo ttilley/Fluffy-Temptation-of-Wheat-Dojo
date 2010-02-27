@@ -170,7 +170,7 @@ dojo.require('dojo.NodeList-traverse');
         }
     });
     
-    dojo.connect(document.body, 'ajax:after', function(event){
+    dojo.connect(document.body, 'ajax:complete', function(event){
         if (event.target.tagName.toLowerCase() == 'form') {
             var inputs = dojo.query("input[type=submit][disabled=true][data-disable-with]", event.target);
             for (var input in inputs) {
