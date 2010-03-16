@@ -23,7 +23,7 @@
 	background-position: -30px top;
 }
 
-.tundra table.dijitCalendarContainer {
+.tundra .dijitCalendarContainer {
 	font-size: 100%;
 	border-spacing: 0;
 	border-collapse: separate;
@@ -100,7 +100,6 @@
 }
 
 .tundra .dijitCalendarDisabledDate {
-	cursor:default !important;
 	text-decoration:line-through !important;
 }
 

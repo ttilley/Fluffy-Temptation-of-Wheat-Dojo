@@ -6,13 +6,12 @@
 }
 .tundra .dijitTitlePaneTitleHover  {
 	background: #f8fafd url("images/accordionItemHover.gif") bottom repeat-x;
-	cursor: pointer;
 }
 
-.tundra .dijitTitlePane .dijitOpen .dijitArrowNode,
-.tundra .dijitTitlePane .dijitClosed .dijitArrowNode {
+.tundra .dijitTitlePane .dijitArrowNode {
 	background-image: url('images/spriteArrows.png');
 	background-repeat: no-repeat;
+	background-position: 0px 0px;
 	height: 7px;
 	width: 7px;
 }
@@ -20,9 +19,6 @@
 	background-image: url('images/spriteArrows.gif');
 }
 
-.tundra .dijitTitlePane .dijitOpen .dijitArrowNode {
-	background-position: 0px 0px;
-}
 .tundra .dijitTitlePane .dijitClosed .dijitArrowNode {
 	background-position: -14px 0px;
 }
@@ -34,7 +30,7 @@
 .tundra .dijitTitlePaneContentOuter {
 	background: #ffffff;
 	border:1px solid #bfbfbf;
-	border-top: 1px solid #ccc;	/* w/out this, an <h1> on the top line causes a gap between the .content and .label */
+	border-top: 0px;
 }
 .tundra .dijitTitlePaneContentInner {
 	padding:10px;

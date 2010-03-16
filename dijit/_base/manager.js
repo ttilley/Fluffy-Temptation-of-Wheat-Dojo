@@ -206,7 +206,7 @@ dojo.declare("dijit.WidgetSet", null, {
 
 });
 
-(function(dojo, dijit){
+(function(){
 
 	/*=====
 	dijit.registry = {
@@ -218,7 +218,10 @@ dojo.declare("dijit.WidgetSet", null, {
 	=====*/
 	dijit.registry = new dijit.WidgetSet();
 
-	var hash = dijit.registry._hash;
+	var hash = dijit.registry._hash,
+		attr = dojo.attr,
+		hasAttr = dojo.hasAttr,
+		style = dojo.style;
 
 	dijit.byId = function(/*String|dijit._Widget*/ id){
 		// summary:
@@ -237,7 +240,7 @@ dojo.declare("dijit.WidgetSet", null, {
 				(widgetType in _widgetTypeCtr ?
 					++_widgetTypeCtr[widgetType] : _widgetTypeCtr[widgetType] = 0);
 		}while(hash[id]);
-		return id; // String
+		return dijit._scopeName == "dijit" ? id : dijit._scopeName + "_" + id; // String
 	};
 	
 	dijit.findWidgets = function(/*DomNode*/ root){
@@ -314,31 +317,31 @@ dojo.declare("dijit.WidgetSet", null, {
 		}
 		return null;
 	};
+
+	var shown = (dijit._isElementShown = function(/*Element*/ elem){
+		var s = style(elem);
+		return (s.visibility != "hidden")
+			&& (s.visibility != "collapsed")
+			&& (s.display != "none")
+			&& (attr(elem, "type") != "hidden");
+	});
 	
-	dijit._isElementShown = function(/*Element*/ elem){
-		var style = dojo.style(elem);
-		return (style.visibility != "hidden")
-			&& (style.visibility != "collapsed")
-			&& (style.display != "none")
-			&& (dojo.attr(elem, "type") != "hidden");
-	}
-	
-	dijit.isTabNavigable = function(/*Element*/ elem){
+	var isTabNavigable = (dijit.isTabNavigable = function(/*Element*/ elem){
 		// summary:
 		//		Tests if an element is tab-navigable
 	
-		// TODO: convert (and rename method) to return effectivite tabIndex; will save time in _getTabNavigable()
-		if(dojo.attr(elem, "disabled")){
+		// TODO: convert (and rename method) to return effective tabIndex; will save time in _getTabNavigable()
+		if(attr(elem, "disabled")){
 			return false;
-		}else if(dojo.hasAttr(elem, "tabIndex")){
+		}else if(hasAttr(elem, "tabIndex")){
 			// Explicit tab index setting
-			return dojo.attr(elem, "tabIndex") >= 0; // boolean
+			return attr(elem, "tabIndex") >= 0; // boolean
 		}else{
 			// No explicit tabIndex setting, need to investigate node type
 			switch(elem.nodeName.toLowerCase()){
 				case "a":
 					// An <a> w/out a tabindex is only navigable if it has an href
-					return dojo.hasAttr(elem, "href");
+					return hasAttr(elem, "href");
 				case "area":
 				case "button":
 				case "input":
@@ -356,7 +359,7 @@ dojo.declare("dijit.WidgetSet", null, {
 							body = doc && doc.body;
 						return body && body.contentEditable == 'true';
 					}else{
-						// contentWindow.document isn't accessbile within IE7/8
+						// contentWindow.document isn't accessible within IE7/8
 						// if the iframe.src points to a foreign url and this
 						// page contains an element, that could get focus
 						try{
@@ -371,7 +374,7 @@ dojo.declare("dijit.WidgetSet", null, {
 					return elem.contentEditable == 'true';
 			}
 		}
-	};
+	});
 	
 	dijit._getTabNavigable = function(/*DOMNode*/ root){
 		// summary:
@@ -390,10 +393,10 @@ dojo.declare("dijit.WidgetSet", null, {
 		var first, last, lowest, lowestTabindex, highest, highestTabindex;
 		var walkTree = function(/*DOMNode*/parent){
 			dojo.query("> *", parent).forEach(function(child){
-				var isShown = dijit._isElementShown(child);
-				if(isShown && dijit.isTabNavigable(child)){
-					var tabindex = dojo.attr(child, "tabIndex");
-					if(!dojo.hasAttr(child, "tabIndex") || tabindex == 0){
+				var isShown = shown(child);
+				if(isShown && isTabNavigable(child)){
+					var tabindex = attr(child, "tabIndex");
+					if(!hasAttr(child, "tabIndex") || tabindex == 0){
 						if(!first){ first = child; }
 						last = child;
 					}else if(tabindex > 0){
@@ -410,7 +413,7 @@ dojo.declare("dijit.WidgetSet", null, {
 				if(isShown && child.nodeName.toUpperCase() != 'SELECT'){ walkTree(child) }
 			});
 		};
-		if(dijit._isElementShown(root)){ walkTree(root) }
+		if(shown(root)){ walkTree(root) }
 		return { first: first, last: last, lowest: lowest, highest: highest };
 	}
 	dijit.getFirstInTabbingOrder = function(/*String|DOMNode*/ root){
@@ -442,4 +445,4 @@ dojo.declare("dijit.WidgetSet", null, {
 	
 	dijit.defaultDuration = dojo.config["defaultDuration"] || 200;
 
-})(dojo, dijit);
+})();

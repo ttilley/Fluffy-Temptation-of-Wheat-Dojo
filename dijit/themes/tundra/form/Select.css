@@ -1,10 +1,11 @@
-/* Cursor States */
-.tundra .dijitSelectDisabled * {
-    cursor: not-allowed !important;
+.tundra .dijitSelect .dijitButtonContents {
+	border-right: none;
 }
-.tundra .dijitSelectReadOnly * {
-    cursor: default !important;
+.dijitRtl .tundra .dijitSelect .dijitButtonContents {
+	border-left: none;
+	border-right-width: 1px;
 }
+
 .tundra .dijitSelect .dijitButtonNode {
 	padding: 0px;
 }

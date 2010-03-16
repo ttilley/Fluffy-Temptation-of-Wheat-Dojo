@@ -22,6 +22,10 @@ dojo.declare("dijit._PaletteMixin",
 	// value: String
 	//		Currently selected color/emoticon/etc.
 	value: null,
+	
+	// _selectedCell: [private] Integer
+	//		Index of the currently selected cell. Initially, none selected
+	_selectedCell: -1,
 
 	// _currentFocus: [private] DomNode
 	//		The currently focused cell (if the palette itself has focus), or otherwise
@@ -112,8 +116,8 @@ dojo.declare("dijit._PaletteMixin",
 			// The down key the index is increase by the x dimension.
 			DOWN_ARROW: this._xDim,
 			// Right and left move the index by 1.
-			RIGHT_ARROW: 1,
-			LEFT_ARROW: -1
+			RIGHT_ARROW: dojo._isBodyLtr() ? 1 : -1,
+			LEFT_ARROW: dojo._isBodyLtr() ? -1 : 1
 		};
 		for(var key in keyIncrementMap){
 			this._connects.push(
@@ -174,8 +178,14 @@ dojo.declare("dijit._PaletteMixin",
 		// tags:
 		//		private
 
-		var target = evt.currentTarget;
-		this._selectCell(target);
+		var target = evt.currentTarget,	
+			value = this._getDye(target).getValue();
+		this._setValueAttr(value, true);		
+
+		// workaround bug where hover class is not removed on popup because the popup is
+		// closed and then there's no onblur event on the cell
+		dojo.removeClass(target, "dijitPaletteCellHover");
+
 		dojo.stopEvent(evt);
 	},
 
@@ -198,15 +208,40 @@ dojo.declare("dijit._PaletteMixin",
 		}
 	},
 
-	_selectCell: function(/*DomNode*/ cell){
+	_setValueAttr: function(value, priorityChange){
 		// summary:
-		// 		Callback when user clicks a given cell (to select it).  Triggers the onChange event.
-		// selectNode: DomNode
-		//		the clicked cell
+		// 		This selects a cell. It triggers the onChange event.
+		// value: String value of the cell to select
 		// tags:
 		//		protected
-        var dye = this._getDye(cell);
-		this.onChange(this.value = dye.getValue());
+		// priorityChange:
+		//		Optional parameter used to tell the select whether or not to fire
+		//		onChange event.
+		
+		// clear old value and selected cell
+		this.value = null;
+		if(this._selectedCell >= 0){
+			dojo.removeClass(this._cells[this._selectedCell].node, "dijitPaletteCellSelected");
+		}
+		this._selectedCell = -1;
+
+		// search for cell matching specified value
+		if(value){
+			for(var i = 0; i < this._cells.length; i++){
+				if(value == this._cells[i].dye.getValue()){
+					this._selectedCell = i;
+					this.value = value;
+
+					dojo.addClass(this._cells[i].node, "dijitPaletteCellSelected");
+
+					if(priorityChange || priorityChange === undefined){
+						this.onChange(value);
+					}
+
+					break;
+				}
+			}
+		}
 	},
 
 	onChange: function(value){
