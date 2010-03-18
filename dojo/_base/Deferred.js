@@ -1,26 +1,7 @@
 dojo.provide("dojo._base.Deferred");
 
 (function(){
-	function Promise() {
-	};
-	dojo.extend(Promise, {
-		addCallback: function (/*Function*/callback) {
-			return this.addCallbacks(dojo.hitch.apply(dojo, arguments));
-		},
-	
-		addErrback: function (/*Function*/errback) {
-			return this.addCallbacks(null, dojo.hitch.apply(dojo, arguments));
-		},
-	
-		addBoth: function (/*Function*/callback) {
-			var enclosed = dojo.hitch.apply(dojo, arguments);
-			return this.addCallbacks(enclosed, enclosed);
-
-		}
-	});
 		
-	Deferred.prototype = Promise.prototype;
-	
 	var freeze = Object.freeze || function(){};
 	// A deferred provides an API for creating and resolving a promise.
 	dojo.Deferred = function(/*Function?*/canceller){
@@ -171,7 +152,7 @@ dojo.provide("dojo._base.Deferred");
 	
 	function Deferred(canceller){
 		var result, finished, isError, head, nextListener;
-		var promise = this.promise = new Promise();
+		var promise = this.promise = {};
 		
 		function complete(value){
 			if(finished){
@@ -214,7 +195,8 @@ dojo.provide("dojo._base.Deferred");
 		// calling resolve will resolve the promise
 		var resolve = this.resolve = this.callback = function(value){
 			// summary:
-			//		Fulfills the Deferred instance successfully with the provide value 
+			//		Fulfills the Deferred instance successfully with the provide value
+			this.fired = 0; 
 			complete(value);
 		};
 		
@@ -224,6 +206,7 @@ dojo.provide("dojo._base.Deferred");
 			// summary:
 			//		Fulfills the Deferred instance as an error with the provided error 
 			isError = true;
+			this.fired = 1;
 			complete(error);
 			(dojo.config.deferredOnError || console.error)(error);
 		};
@@ -289,7 +272,7 @@ dojo.provide("dojo._base.Deferred");
 			// summary:
 			//		Cancels the asynchronous operation
 			if(!finished){
-				var error = canceller && canceller();
+				var error = canceller && canceller(this);
 				if (!(error instanceof Error)) {
 					error = new Error(error);
 				}
@@ -298,6 +281,22 @@ dojo.provide("dojo._base.Deferred");
 		}
 		freeze(promise);
 	};
+	dojo.extend(Deferred, {
+		addCallback: function (/*Function*/callback) {
+			return this.addCallbacks(dojo.hitch.apply(dojo, arguments));
+		},
+	
+		addErrback: function (/*Function*/errback) {
+			return this.addCallbacks(null, dojo.hitch.apply(dojo, arguments));
+		},
+	
+		addBoth: function (/*Function*/callback) {
+			var enclosed = dojo.hitch.apply(dojo, arguments);
+			return this.addCallbacks(enclosed, enclosed);
+		},
+		fired: -1
+	});
+	
 })();
 dojo.when = function(promiseOrValue, /*Function?*/callback, /*Function?*/errback, /*Function?*/progressHandler){
 	// summary:
@@ -322,7 +321,7 @@ dojo.when = function(promiseOrValue, /*Function?*/callback, /*Function?*/errback
 	//		|	printFirstAndLast([1,2,3,4]) will work just as well as
 	//		|	printFirstAndLast(dojo.xhrGet(...));
 	
-	if(typeof promiseOrValue.then === "function"){
+	if(promiseOrValue && typeof promiseOrValue.then === "function"){
 		return promiseOrValue.then(callback, errback, progressHandler);
 	}
 	return callback(promiseOrValue);
