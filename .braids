@@ -26,6 +26,13 @@ dojo:
   type: git
   revision: 49e102a44861208663e4a4bfa4f1848cd0233004
   remote: braid/dojo
+codeglass: 
+  squashed: true
+  url: git://github.com/nonken/CodeGlass.git
+  branch: master
+  type: git
+  revision: 6b6a4082046830f5d26cea4aeee90ba17c39673a
+  remote: braid/codeglass
 dijit: 
   squashed: false
   branch: master
