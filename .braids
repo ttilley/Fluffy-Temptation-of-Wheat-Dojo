@@ -4,12 +4,12 @@ util:
   branch: master
   url: git://github.com/dojo/util.git
   type: git
-  revision: 5f753fddf6eb8c52e1a4fbc99687af97094098c1
+  revision: 87460bdf16758b8b14ccc6a6b4a74d7ec87fe005
   remote: braid/util
 dojox: 
   squashed: false
-  branch: master
   url: git://github.com/dojo/dojox.git
+  branch: master
   type: git
   revision: c9d773ca2ee4ec49b16ecf20bb89e37ebd47f8c2
   remote: braid/dojox
@@ -21,22 +21,22 @@ plugd:
   remote: braid/plugd
 dojo: 
   squashed: false
-  branch: master
   url: git://github.com/dojo/dojo.git
+  branch: master
   type: git
   revision: 49e102a44861208663e4a4bfa4f1848cd0233004
   remote: braid/dojo
 codeglass: 
   squashed: true
-  url: git://github.com/nonken/CodeGlass.git
   branch: master
+  url: git://github.com/nonken/CodeGlass.git
   type: git
   revision: 6b6a4082046830f5d26cea4aeee90ba17c39673a
   remote: braid/codeglass
 dijit: 
   squashed: false
-  branch: master
   url: git://github.com/dojo/dijit.git
+  branch: master
   type: git
   revision: fc90855a9774af2a32e0d4caafeb803369ee3e30
   remote: braid/dijit
