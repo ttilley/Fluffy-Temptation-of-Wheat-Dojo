@@ -13,12 +13,6 @@
 		"11月", 
 		"12月"
 	], 
-	"quarters-standAlone-narrow": [
-		"1", 
-		"2", 
-		"3", 
-		"4"
-	], 
 	"field-weekday": "周天", 
 	"dateFormatItem-yQQQ": "y年QQQ", 
 	"dateFormatItem-yMEd": "y年M月d日，E", 
@@ -27,6 +21,8 @@
 		"公元前", 
 		"公元"
 	], 
+	"dayPeriods-format-wide-earlyMorning": "清晨", 
+	"dayPeriods-format-wide-morning": "上午", 
 	"dateFormat-long": "y年M月d日", 
 	"months-format-wide": [
 		"1月", 
@@ -91,7 +87,6 @@
 	], 
 	"dateFormatItem-yyQ": "yy年第Q季度", 
 	"timeFormat-full": "zzzzah时mm分ss秒", 
-	"am": "上午", 
 	"dateFormatItem-H": "H时", 
 	"months-standAlone-abbr": [
 		"一月", 
@@ -119,7 +114,6 @@
 		"第3季度", 
 		"第4季度"
 	], 
-	"dateFormatItem-HHmmss": "HH:mm:ss", 
 	"dateFormatItem-M": "L", 
 	"days-standAlone-wide": [
 		"星期日", 
@@ -130,9 +124,8 @@
 		"星期五", 
 		"星期六"
 	], 
-	"dateFormatItem-MMMMd": "MMMMd日", 
 	"dateFormatItem-yyMMM": "yy年MMM", 
-	"timeFormat-medium": "ahh:mm:ss", 
+	"timeFormat-medium": "ah:mm:ss", 
 	"dateFormatItem-Hm": "H:mm", 
 	"quarters-standAlone-abbr": [
 		"1季", 
@@ -146,6 +139,7 @@
 	], 
 	"field-minute": "分钟", 
 	"field-dayperiod": "上午/下午", 
+	"dayPeriods-format-wide-night": "晚上", 
 	"days-standAlone-abbr": [
 		"周日", 
 		"周一", 
@@ -157,11 +151,12 @@
 	], 
 	"dateFormatItem-d": "d日", 
 	"dateFormatItem-ms": "mm:ss", 
+	"dateFormatItem-h": "ah", 
 	"dateTimeFormat-long": "{1}{0}", 
 	"dateFormatItem-MMMd": "MMMd日", 
+	"dayPeriods-format-wide-midDay": "中午", 
 	"dateFormatItem-MEd": "M-dE", 
 	"dateTimeFormat-full": "{1}{0}", 
-	"dateFormatItem-yMMMM": "y年MMMM", 
 	"field-day": "日", 
 	"days-format-wide": [
 		"星期日", 
@@ -224,10 +219,10 @@
 		"六"
 	], 
 	"dateFormatItem-MMM": "LLL", 
-	"pm": "下午", 
-	"dateFormatItem-MMMMEd": "MMMMd日E", 
 	"dateFormatItem-MMMMdd": "MMMMdd日", 
+	"dayPeriods-format-wide-weeHours": "凌晨", 
 	"dateFormat-short": "yy-M-d", 
+	"dayPeriods-format-wide-afternoon": "下午", 
 	"field-second": "秒钟", 
 	"dateFormatItem-yMMMEd": "y年MMMd日EEE", 
 	"dateFormatItem-Ed": "d日E", 
@@ -235,6 +230,7 @@
 	"dateFormat-medium": "yyyy-M-d", 
 	"dateFormatItem-yyyyM": "y年M月", 
 	"dateTimeFormat-short": "{1} {0}", 
+	"dateFormatItem-Hms": "H:mm:ss", 
 	"dateFormatItem-hms": "ah:mm:ss", 
 	"dateFormatItem-yyyy": "y年"
 })

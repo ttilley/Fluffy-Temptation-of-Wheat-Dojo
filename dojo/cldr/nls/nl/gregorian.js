@@ -1,11 +1,12 @@
 ({
-	"dateFormatItem-yM": "M-yyyy", 
+	"dateFormatItem-yM": "M-y", 
 	"field-dayperiod": "AM/PM", 
+	"dayPeriods-format-wide-pm": "PM", 
 	"dateFormatItem-yQ": "Q yyyy", 
 	"field-minute": "Minuut", 
 	"eraNames": [
 		"Voor Christus", 
-		"Anno Domini"
+		"na Christus"
 	], 
 	"dateFormatItem-MMMEd": "E d MMM", 
 	"dateFormatItem-MMdd": "dd-MM", 
@@ -35,6 +36,7 @@
 		"N", 
 		"D"
 	], 
+	"dayPeriods-format-wide-am": "AM", 
 	"field-era": "Tijdperk", 
 	"field-hour": "Uur", 
 	"quarters-standAlone-abbr": [
@@ -89,15 +91,8 @@
 		"3e kwartaal", 
 		"4e kwartaal"
 	], 
-	"dateFormatItem-yMMMM": "MMMM y", 
 	"dateFormatItem-ms": "mm:ss", 
 	"field-year": "Jaar", 
-	"quarters-standAlone-narrow": [
-		"1", 
-		"2", 
-		"3", 
-		"4"
-	], 
 	"field-week": "Week", 
 	"months-standAlone-wide": [
 		"januari", 
@@ -113,7 +108,6 @@
 		"november", 
 		"december"
 	], 
-	"dateFormatItem-MMMMEd": "E d MMMM", 
 	"dateFormatItem-MMMd": "d-MMM", 
 	"dateFormatItem-yyQ": "Q yy", 
 	"timeFormat-long": "HH:mm:ss z", 
@@ -149,8 +143,6 @@
 		"vr", 
 		"za"
 	], 
-	"pm": "PM", 
-	"dateFormatItem-mmss": "mm:ss", 
 	"dateFormatItem-M": "L", 
 	"days-format-narrow": [
 		"Z", 
@@ -178,7 +170,6 @@
 		"N", 
 		"D"
 	], 
-	"am": "AM", 
 	"days-standAlone-abbr": [
 		"zo", 
 		"ma", 
@@ -192,7 +183,7 @@
 	"dateFormatItem-yMMMEd": "EEE d MMM y", 
 	"dateFormat-full": "EEEE d MMMM y", 
 	"dateFormatItem-Md": "d-M", 
-	"dateFormatItem-yMEd": "EEE d-M-yyyy", 
+	"dateFormatItem-yMEd": "EEE d-M-y", 
 	"months-format-wide": [
 		"januari", 
 		"februari", 

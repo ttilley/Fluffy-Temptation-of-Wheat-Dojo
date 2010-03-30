@@ -13,12 +13,6 @@
 		"Ν", 
 		"Δ"
 	], 
-	"quarters-standAlone-narrow": [
-		"1", 
-		"2", 
-		"3", 
-		"4"
-	], 
 	"field-weekday": "Ημέρα εβδομάδας", 
 	"dateFormatItem-yyQQQQ": "QQQQ yy", 
 	"dateFormatItem-yQQQ": "y QQQ", 
@@ -28,7 +22,7 @@
 		"π.Χ.", 
 		"μ.Χ."
 	], 
-	"dateFormat-long": "dd MMMM y", 
+	"dateFormat-long": "d MMMM y", 
 	"months-format-wide": [
 		"Ιανουαρίου", 
 		"Φεβρουαρίου", 
@@ -44,7 +38,8 @@
 		"Δεκεμβρίου"
 	], 
 	"dateFormatItem-EEEd": "EEE d", 
-	"dateFormat-full": "EEEE, dd MMMM y", 
+	"dayPeriods-format-wide-pm": "μ.μ.", 
+	"dateFormat-full": "EEEE, d MMMM y", 
 	"dateFormatItem-Md": "d/M", 
 	"field-era": "Περίοδος", 
 	"dateFormatItem-yM": "M/yyyy", 
@@ -92,8 +87,7 @@
 	], 
 	"dateFormatItem-yyQ": "Q yy", 
 	"timeFormat-full": "h:mm:ss a zzzz", 
-	"am": "π.μ.", 
-	"dateFormatItem-H": "H", 
+	"dateFormatItem-H": "HH", 
 	"months-standAlone-abbr": [
 		"Ιαν", 
 		"Φεβ", 
@@ -134,7 +128,7 @@
 	"dateFormatItem-MMMMd": "d MMMM", 
 	"dateFormatItem-yyMMM": "MMM yy", 
 	"timeFormat-medium": "h:mm:ss a", 
-	"dateFormatItem-Hm": "H:mm", 
+	"dateFormatItem-Hm": "HH:mm", 
 	"quarters-standAlone-abbr": [
 		"Τ1", 
 		"Τ2", 
@@ -223,15 +217,15 @@
 	], 
 	"dateFormatItem-MMM": "LLL", 
 	"dateFormatItem-HHmm": "HH:mm", 
-	"pm": "μ.μ.", 
+	"dayPeriods-format-wide-am": "π.μ.", 
 	"dateFormatItem-MMMMEd": "E, d MMMM", 
 	"dateFormatItem-MMMMdd": "dd MMMM", 
-	"dateFormat-short": "dd/MM/yyyy", 
+	"dateFormat-short": "d/M/yy", 
 	"field-second": "Δευτερόλεπτο", 
 	"dateFormatItem-yMMMEd": "EEE, d MMM y", 
 	"dateFormatItem-Ed": "E d", 
 	"field-week": "Εβδομάδα", 
-	"dateFormat-medium": "dd MMM y", 
+	"dateFormat-medium": "d MMM y", 
 	"dateFormatItem-mmss": "mm:ss", 
 	"dateFormatItem-yyyy": "y"
 })

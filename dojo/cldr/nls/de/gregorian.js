@@ -13,21 +13,17 @@
 		"N", 
 		"D"
 	], 
-	"quarters-standAlone-narrow": [
-		"1", 
-		"2", 
-		"3", 
-		"4"
-	], 
 	"field-weekday": "Wochentag", 
 	"dateFormatItem-yyQQQQ": "QQQQ yy", 
 	"dateFormatItem-yQQQ": "QQQ y", 
-	"dateFormatItem-yMEd": "EEE, yyyy-M-d", 
+	"dateFormatItem-yMEd": "EEE, d.M.y", 
 	"dateFormatItem-MMMEd": "E d. MMM", 
 	"eraNarrow": [
 		"v. Chr.", 
 		"n. Chr."
 	], 
+	"dayPeriods-format-wide-earlyMorning": "morgens", 
+	"dayPeriods-format-wide-morning": "vormittags", 
 	"dateFormat-long": "d. MMMM y", 
 	"months-format-wide": [
 		"Januar", 
@@ -43,13 +39,14 @@
 		"November", 
 		"Dezember"
 	], 
-	"dateTimeFormat-medium": "{1} {0}", 
+	"dayPeriods-format-wide-evening": "abends", 
 	"dateFormatItem-EEEd": "d. EEE", 
 	"dateFormat-full": "EEEE, d. MMMM y", 
 	"dateFormatItem-Md": "d.M.", 
 	"dateFormatItem-yyMMdd": "dd.MM.yy", 
+	"dayPeriods-format-wide-noon": "Mittag", 
 	"field-era": "Epoche", 
-	"dateFormatItem-yM": "yyyy-M", 
+	"dateFormatItem-yM": "M.y", 
 	"months-standAlone-wide": [
 		"Januar", 
 		"Februar", 
@@ -74,7 +71,7 @@
 	"timeFormat-long": "HH:mm:ss z", 
 	"field-year": "Jahr", 
 	"dateFormatItem-yMMM": "MMM y", 
-	"dateFormatItem-yQ": "Q yyyy", 
+	"dateFormatItem-yQ": "Q y", 
 	"dateFormatItem-yyyyMMMM": "MMMM y", 
 	"field-hour": "Stunde", 
 	"dateFormatItem-MMdd": "dd.MM.", 
@@ -94,8 +91,7 @@
 	], 
 	"dateFormatItem-yyQ": "Q yy", 
 	"timeFormat-full": "HH:mm:ss zzzz", 
-	"am": "vorm.", 
-	"dateFormatItem-H": "H", 
+	"dateFormatItem-H": "HH", 
 	"months-standAlone-abbr": [
 		"Jan", 
 		"Feb", 
@@ -122,7 +118,6 @@
 		"3. Quartal", 
 		"4. Quartal"
 	], 
-	"dateFormatItem-HHmmss": "HH:mm:ss", 
 	"dateFormatItem-M": "L", 
 	"days-standAlone-wide": [
 		"Sonntag", 
@@ -133,10 +128,9 @@
 		"Freitag", 
 		"Samstag"
 	], 
-	"dateFormatItem-MMMMd": "d. MMMM", 
 	"dateFormatItem-yyMMM": "MMM yy", 
 	"timeFormat-medium": "HH:mm:ss", 
-	"dateFormatItem-Hm": "H:mm", 
+	"dateFormatItem-Hm": "HH:mm", 
 	"eraAbbr": [
 		"v. Chr.", 
 		"n. Chr."
@@ -152,13 +146,11 @@
 		"Fr.", 
 		"Sa."
 	], 
+	"dayPeriods-format-wide-night": "nachts", 
 	"dateFormatItem-d": "d", 
 	"dateFormatItem-ms": "mm:ss", 
-	"dateTimeFormat-long": "{1} {0}", 
 	"dateFormatItem-MMMd": "d. MMM", 
 	"dateFormatItem-MEd": "E, d.M.", 
-	"dateTimeFormat-full": "{1} {0}", 
-	"dateFormatItem-yMMMM": "MMMM y", 
 	"field-day": "Tag", 
 	"days-format-wide": [
 		"Sonntag", 
@@ -219,18 +211,15 @@
 		"S"
 	], 
 	"dateFormatItem-MMM": "LLL", 
-	"dateFormatItem-HHmm": "HH:mm", 
-	"pm": "nachm.", 
-	"dateFormatItem-MMMMEd": "E d. MMMM", 
 	"dateFormatItem-MMMMdd": "dd. MMMM", 
 	"dateFormat-short": "dd.MM.yy", 
 	"dateFormatItem-MMd": "d.MM.", 
+	"dayPeriods-format-wide-afternoon": "nachmittags", 
 	"field-second": "Sekunde", 
 	"dateFormatItem-yMMMEd": "EEE, d. MMM y", 
 	"dateFormatItem-Ed": "E d.", 
 	"field-week": "Woche", 
 	"dateFormat-medium": "dd.MM.yyyy", 
-	"dateFormatItem-mmss": "mm:ss", 
-	"dateTimeFormat-short": "{1} {0}", 
+	"dateFormatItem-Hms": "HH:mm:ss", 
 	"dateFormatItem-yyyy": "y"
 })

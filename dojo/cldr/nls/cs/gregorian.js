@@ -18,6 +18,12 @@
 		"3. čtvrtletí", 
 		"4. čtvrtletí"
 	], 
+	"dateFormatItem-Hm": "H:mm", 
+	"dateFormatItem-H": "H", 
+	"eraNarrow": [
+		"př.Kr.", 
+		"po Kr."
+	], 
 	"months-format-narrow": [
 		"l", 
 		"ú", 
@@ -32,11 +38,7 @@
 		"l", 
 		"p"
 	], 
-	"eraNarrow": [
-		"př.Kr.", 
-		"po Kr."
-	], 
-	"pm": "odp.", 
+	"timeFormat-full": "H:mm:ss zzzz", 
 	"months-standAlone-narrow": [
 		"l", 
 		"ú", 
@@ -69,7 +71,6 @@
 		"př.Kr.", 
 		"po Kr."
 	], 
-	"am": "dop.", 
 	"days-standAlone-narrow": [
 		"N", 
 		"P", 
@@ -79,6 +80,7 @@
 		"P", 
 		"S"
 	], 
+	"dayPeriods-format-wide-pm": "odp.", 
 	"months-standAlone-abbr": [
 		"1.", 
 		"2.", 
@@ -93,8 +95,10 @@
 		"11.", 
 		"12."
 	], 
+	"dayPeriods-format-wide-am": "dop.", 
 	"timeFormat-medium": "H:mm:ss", 
 	"dateFormat-long": "d. MMMM y", 
+	"dateFormatItem-Hms": "H:mm:ss", 
 	"dateFormat-short": "d.M.yy", 
 	"months-format-wide": [
 		"ledna", 
@@ -129,6 +133,15 @@
 		"S"
 	], 
 	"timeFormat-short": "H:mm", 
+	"days-standAlone-abbr": [
+		"ne", 
+		"po", 
+		"út", 
+		"st", 
+		"čt", 
+		"pá", 
+		"so"
+	], 
 	"months-format-abbr": [
 		"ledna", 
 		"února", 
@@ -143,15 +156,6 @@
 		"listopadu", 
 		"prosince"
 	], 
-	"days-standAlone-abbr": [
-		"ne", 
-		"po", 
-		"út", 
-		"st", 
-		"čt", 
-		"pá", 
-		"so"
-	], 
 	"days-format-wide": [
 		"neděle", 
 		"pondělí", 
@@ -161,6 +165,7 @@
 		"pátek", 
 		"sobota"
 	], 
+	"timeFormat-long": "H:mm:ss z", 
 	"eraAbbr": [
 		"př.Kr.", 
 		"po Kr."

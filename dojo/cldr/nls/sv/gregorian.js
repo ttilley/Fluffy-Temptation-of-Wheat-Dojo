@@ -42,7 +42,9 @@
 		"november", 
 		"december"
 	], 
-	"dateFormat-full": "EEEE d MMMM y", 
+	"dateFormatItem-EEEd": "EEE d", 
+	"dayPeriods-format-wide-pm": "em", 
+	"dateFormat-full": "EEEE'en' 'den' d:'e' MMMM y", 
 	"dateFormatItem-Md": "d/M", 
 	"dateFormatItem-MMMMEEEd": "EEE d MMMM", 
 	"field-era": "era", 
@@ -61,14 +63,14 @@
 		"november", 
 		"december"
 	], 
-	"timeFormat-short": "HH.mm", 
+	"timeFormat-short": "HH:mm", 
 	"quarters-format-wide": [
 		"1:a kvartalet", 
 		"2:a kvartalet", 
 		"3:e kvartalet", 
 		"4:e kvartalet"
 	], 
-	"timeFormat-long": "HH.mm.ss z", 
+	"timeFormat-long": "HH:mm:ss z", 
 	"field-year": "år", 
 	"dateFormatItem-yMMM": "y MMM", 
 	"dateFormatItem-yQ": "yyyy Q", 
@@ -89,8 +91,7 @@
 		"dec"
 	], 
 	"dateFormatItem-yyQ": "Q yy", 
-	"timeFormat-full": "'kl'. HH.mm.ss zzzz", 
-	"am": "fm", 
+	"timeFormat-full": "'kl'. HH:mm:ss zzzz", 
 	"months-standAlone-abbr": [
 		"jan", 
 		"feb", 
@@ -117,8 +118,6 @@
 		"3:e kvartalet", 
 		"4:e kvartalet"
 	], 
-	"dateFormatItem-HHmmss": "HH.mm.ss", 
-	"dateFormatItem-hhmmss": "h.mm.ss a", 
 	"dateFormatItem-M": "L", 
 	"days-standAlone-wide": [
 		"söndag", 
@@ -130,10 +129,10 @@
 		"lördag"
 	], 
 	"dateFormatItem-yyyyMMM": "MMM y", 
-	"dateFormatItem-MMMMd": "d MMMM", 
+	"dateFormatItem-MMMMd": "d:'e' MMMM", 
 	"dateFormatItem-yyMMM": "MMM -yy", 
-	"timeFormat-medium": "HH.mm.ss", 
-	"dateFormatItem-Hm": "H.mm", 
+	"timeFormat-medium": "HH:mm:ss", 
+	"dateFormatItem-Hm": "HH:mm", 
 	"quarters-standAlone-abbr": [
 		"K1", 
 		"K2", 
@@ -156,10 +155,9 @@
 		"lör"
 	], 
 	"dateFormatItem-d": "d", 
-	"dateFormatItem-ms": "mm.ss", 
+	"dateFormatItem-ms": "mm:ss", 
 	"dateFormatItem-MMMd": "d MMM", 
 	"dateFormatItem-MEd": "E d/M", 
-	"dateFormatItem-yMMMM": "y MMMM", 
 	"field-day": "dag", 
 	"days-format-wide": [
 		"söndag", 
@@ -188,6 +186,7 @@
 		"D"
 	], 
 	"dateFormatItem-yyMM": "yy-MM", 
+	"dateFormatItem-hm": "h:mm a", 
 	"days-format-abbr": [
 		"sön", 
 		"mån", 
@@ -221,15 +220,15 @@
 		"L"
 	], 
 	"dateFormatItem-MMM": "LLL", 
-	"dateFormatItem-HHmm": "HH.mm", 
-	"pm": "em", 
-	"dateFormatItem-MMMMEd": "E d MMMM", 
+	"dayPeriods-format-wide-am": "fm", 
+	"dateFormatItem-MMMMEd": "E d:'e' MMMM", 
 	"dateFormat-short": "yyyy-MM-dd", 
 	"dateFormatItem-MMd": "d/M", 
 	"field-second": "sekund", 
 	"dateFormatItem-yMMMEd": "EEE d MMM y", 
-	"dateFormatItem-hhmm": "hh.mm a", 
 	"field-week": "vecka", 
 	"dateFormat-medium": "d MMM y", 
-	"dateFormatItem-yyyyQQQQ": "QQQQ y"
+	"dateFormatItem-yyyyQQQQ": "QQQQ y", 
+	"dateFormatItem-Hms": "HH:mm:ss", 
+	"dateFormatItem-hms": "h:mm:ss a"
 })
