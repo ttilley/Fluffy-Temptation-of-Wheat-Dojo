@@ -4,6 +4,7 @@ dojo.require("dojo.window");
 dojo.require("dojo.regexp");
 dojo.require("dojo.data.util.simpleFetch");
 dojo.require("dojo.data.util.filter");
+dojo.require("dijit._CssStateMixin");
 
 dojo.require("dijit.form._FormWidget");
 dojo.require("dijit.form.ValidationTextBox");
@@ -548,7 +549,8 @@ dojo.declare(
 				var popupId = this.id + "_popup";
 				this._popupWidget = new dijit.form._ComboBoxMenu({
 					onChange: dojo.hitch(this, this._selectOption),
-					id: popupId
+					id: popupId,
+					dir: this.dir
 				});
 				dijit.removeWaiState(this.focusNode,"activedescendant");
 				dijit.setWaiState(this.textbox,"owns",popupId); // associate popup with textbox
@@ -758,7 +760,7 @@ dojo.declare(
 
 dojo.declare(
 	"dijit.form._ComboBoxMenu",
-	[dijit._Widget, dijit._Templated],
+	[dijit._Widget, dijit._Templated, dijit._CssStateMixin],
 	{
 		// summary:
 		//		Focus-less menu for internal use in `dijit.form.ComboBox`
@@ -773,6 +775,8 @@ dojo.declare(
 		// _messages: Object
 		//		Holds "next" and "previous" text for paging buttons on drop down
 		_messages: null,
+		
+		baseClass: "dijitComboBoxMenu",
 
 		postMixInProperties: function(){
 			this._messages = dojo.i18n.getLocalization("dijit.form", "ComboBox", this.lang);

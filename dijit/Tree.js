@@ -88,7 +88,7 @@ dojo.declare(
 		var pixels = (Math.max(indent, 0) * this.tree._nodePixelIndent) + "px";
 
 		dojo.style(this.domNode, "backgroundPosition",	pixels + " 0px");
-		dojo.style(this.rowNode, dojo._isBodyLtr() ? "paddingLeft" : "paddingRight", pixels);
+		dojo.style(this.rowNode, this.isLeftToRight() ? "paddingLeft" : "paddingRight", pixels);
 
 		dojo.forEach(this.getChildren(), function(child){
 			child.attr("indent", indent+1);
@@ -319,6 +319,8 @@ dojo.declare(
 							isExpandable: model.mayHaveChildren(item),
 							label: tree.getLabel(item),
 							tooltip: tree.getTooltip(item),
+							dir: tree.dir,
+							lang: tree.lang,
 							indent: this.indent + 1
 						});
 					if(existingNodes){

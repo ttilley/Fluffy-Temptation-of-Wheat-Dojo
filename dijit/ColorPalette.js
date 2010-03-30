@@ -52,13 +52,15 @@ dojo.declare("dijit.ColorPalette",
 	//		This is stores the path to the palette images
 	_imagePaths: {
 		"7x10": dojo.moduleUrl("dijit.themes", "a11y/colors7x10.png"),
-		"3x4": dojo.moduleUrl("dijit.themes", "a11y/colors3x4.png")
+		"3x4": dojo.moduleUrl("dijit.themes", "a11y/colors3x4.png"),
+		"7x10-rtl": dojo.moduleUrl("dijit.themes", "a11y/colors7x10-rtl.png"),
+		"3x4-rtl": dojo.moduleUrl("dijit.themes", "a11y/colors3x4-rtl.png")
 	},
 
 	// templateString: String
 	//		The template of this widget.
 	templateString: dojo.cache("dijit", "templates/ColorPalette.html"),
-	
+
 	baseClass: "dijitColorPalette",
 
 	dyeClass: 'dijit._Color',
@@ -69,7 +71,7 @@ dojo.declare("dijit.ColorPalette",
 
 		this.inherited(arguments);
 
-		this.imageNode.setAttribute("src", this._imagePaths[this.palette].toString());
+		this.imageNode.setAttribute("src", this._imagePaths[this.palette + (this.isLeftToRight() ? "" : "-rtl")].toString());
 
 		var i18nColorNames = dojo.i18n.getLocalization("dojo", "colors", this.lang);
 		this._preparePalette(
